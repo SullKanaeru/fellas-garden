@@ -1,0 +1,399 @@
+:root {
+    --bg-cream: #FDFBF2;
+    --forest-green: #2B5B35;
+    --grass-top: #7DB852;
+    --grass-side: #477431;
+    --grass-shadow: #2B3725;
+}
+
+* {
+    box-sizing: border-box;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: var(--bg-cream);
+    font-family: 'Patrick Hand', cursive, sans-serif;
+    color: #2c3e2e;
+}
+
+.font-garden-title {
+    font-family: 'Patrick Hand', cursive;
+    letter-spacing: 0.06em;
+}
+
+.font-hand {
+    font-family: 'Gaegu', 'Patrick Hand', cursive;
+}
+
+/* Custom dashed drawing box matching reference */
+.flower-draw-box {
+    border: 3px dashed #222222;
+    border-radius: 6px;
+    background-color: rgba(253, 251, 242, 0.88);
+    backdrop-filter: blur(2px);
+    box-shadow: 0 6px 20px rgba(43, 55, 37, 0.05);
+}
+
+/* Color dot styling matching reference */
+.color-dot {
+    width: 28px;
+    height: 28px;
+    border-radius: 9999px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    cursor: pointer;
+    border: 2px solid transparent;
+}
+.color-dot:hover {
+    transform: scale(1.13);
+}
+.color-dot.active {
+    border: 2.5px solid #1a1a1a;
+    transform: scale(1.15);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+}
+
+/* Plant Button matching reference */
+.plant-btn {
+    border: 1.5px solid #477431;
+    border-radius: 9999px;
+    background-color: #FDFBF2;
+    color: #2B5B35;
+    font-family: 'Patrick Hand', cursive;
+    letter-spacing: 0.08em;
+    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 2px 0 #477431;
+}
+.plant-btn:hover {
+    transform: translateY(-2px);
+    background-color: #f3f9ec;
+    box-shadow: 0 4px 0 #477431;
+}
+.plant-btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 1px 0 #477431;
+}
+
+/* Tool button styling */
+.tool-btn {
+    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    border: 2px solid #d7e2ce;
+    background: #FDFBF2;
+}
+.tool-btn:hover {
+    transform: translateY(-2px);
+    border-color: #7DB852;
+}
+.tool-btn.active {
+    background: #e9f5df;
+    border-color: #2B5B35;
+    color: #1f4627;
+    transform: translateY(-3px);
+    box-shadow: 0 4px 0 #2B5B35;
+}
+
+/* Custom subtle scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+}
+::-webkit-scrollbar-thumb {
+    background: #c5d6b8;
+    border-radius: 3px;
+}
+
+/* Pulse animation for planting mode */
+@keyframes gentlePulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.04); }
+}
+.planting-banner {
+    animation: gentlePulse 2s infinite ease-in-out;
+}
+
+/* Hide scrollbar utility */
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* Mobile & Safe Area Inset Support */
+body {
+    padding-top: env(safe-area-inset-top, 0);
+    padding-bottom: env(safe-area-inset-bottom, 0);
+    padding-left: env(safe-area-inset-left, 0);
+    padding-right: env(safe-area-inset-right, 0);
+}
+
+/* ====================================================================
+   RESPONSIVE OPTIMIZATIONS: PORTRAIT & LANDSCAPE FOR MOBILE PHONES
+   ==================================================================== */
+
+/* Narrow mobile screen in Portrait mode */
+@media (max-width: 640px) and (orientation: portrait) {
+    .sidebar-launchers {
+        right: 8px !important;
+        gap: 6px !important;
+    }
+    .launcher-btn {
+        width: 68px !important;
+        height: 68px !important;
+        padding: 5px 3px !important;
+        border-radius: 16px !important;
+    }
+    .launcher-btn div {
+        width: 32px !important;
+        height: 32px !important;
+    }
+    .launcher-btn svg {
+        width: 18px !important;
+        height: 18px !important;
+    }
+    .launcher-btn span.font-hand {
+        font-size: 10px !important;
+        line-height: 1.1 !important;
+        white-space: normal !important;
+        text-align: center !important;
+        max-width: 62px !important;
+        display: -webkit-box !important;
+        -webkit-line-clamp: 2 !important;
+        -webkit-box-orient: vertical !important;
+    }
+}
+
+/* Landscape mode on smartphones (Height <= 520px) */
+@media (max-height: 520px) and (orientation: landscape) {
+    header#topHeader, header {
+        top: 6px !important;
+    }
+    h1#gardenTitle {
+        font-size: 1.25rem !important;
+        padding: 1px 8px !important;
+    }
+    .sidebar-launchers {
+        right: 8px !important;
+        gap: 4px !important;
+        top: 50% !important;
+        transform: translateY(-50%) !important;
+    }
+    .launcher-btn {
+        width: 58px !important;
+        height: 52px !important;
+        padding: 3px 2px !important;
+        border-radius: 12px !important;
+    }
+    .launcher-btn div {
+        width: 24px !important;
+        height: 24px !important;
+        border-radius: 6px !important;
+    }
+    .launcher-btn svg {
+        width: 15px !important;
+        height: 15px !important;
+    }
+    .launcher-btn span.font-hand {
+        font-size: 9px !important;
+        line-height: 1.05 !important;
+        white-space: normal !important;
+        text-align: center !important;
+        max-width: 54px !important;
+        display: -webkit-box !important;
+        -webkit-line-clamp: 2 !important;
+        -webkit-box-orient: vertical !important;
+    }
+
+    /* Keep bottom dock compact and unobtrusive */
+    nav#bottomDockNav, nav.fixed.bottom-4 {
+        bottom: 6px !important;
+    }
+    .tool-btn {
+        width: 32px !important;
+        height: 32px !important;
+    }
+    .tool-btn svg {
+        width: 16px !important;
+        height: 16px !important;
+    }
+
+    /* Studio canvas in mobile landscape fits neatly on screen */
+    #flowerPadCanvas, #animalPadCanvas {
+        max-height: 54vh !important;
+        max-width: 54vh !important;
+    }
+}
+
+/* ========================================================
+   BOTTOM DOCK TOOL DROPDOWNS (PENCIL & ERASER)
+   ======================================================== */
+#pencilDropdownMenu,
+#eraserDropdownMenu,
+.tool-dropdown-menu {
+    background-color: #FDFBF2 !important;
+    background: #FDFBF2 !important;
+    border: 2px solid #477431 !important;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35), 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    z-index: 100 !important;
+    opacity: 1 !important;
+    backdrop-filter: none !important;
+}
+
+#eraserDropdownMenu {
+    border-color: #4B5563 !important;
+}
+
+.subtool-option {
+    background-color: #FFFFFF !important;
+    background: #FFFFFF !important;
+    border: 1px solid #DCE6D5 !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+    transition: all 0.15s ease !important;
+    cursor: pointer !important;
+}
+
+.subtool-option:hover {
+    background-color: #F0FDF4 !important;
+    border-color: #86EFAC !important;
+    transform: translateY(-1px);
+}
+
+.subtool-option.active {
+    background-color: #DCFCE7 !important;
+    border-color: #22C55E !important;
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.4), 0 2px 6px rgba(0, 0, 0, 0.1) !important;
+}
+
+.subtool-option-eraser:hover {
+    background-color: #FFFBEB !important;
+    border-color: #FDE68A !important;
+    transform: translateY(-1px);
+}
+
+.subtool-option-eraser.active {
+    background-color: #FEF3C7 !important;
+    border-color: #F59E0B !important;
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.4), 0 2px 6px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* ========================================================
+   SPLASH SCREEN DRAMATIC FADE IN & FADE OUT
+   ======================================================== */
+#splashScreen {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: #fef0d3 !important;
+    background: #fef0d3 !important;
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.85s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.85s ease;
+    cursor: pointer;
+    overflow: hidden;
+}
+
+#splashScreen.splash-fade-out {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
+#splashContent {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    animation: splashAppear 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    transform-origin: center center;
+    will-change: transform, opacity;
+}
+
+#splashScreen.splash-fade-out #splashContent {
+    animation: splashExit 0.85s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.splash-logo-container {
+    animation: splashFloat 3.2s ease-in-out infinite alternate;
+    filter: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+}
+
+#splashLogoVideo,
+#splashLogoImg {
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    filter: none !important;
+    background: transparent;
+    outline: none;
+    mask-image: radial-gradient(circle, black 55%, transparent 92%);
+    -webkit-mask-image: radial-gradient(circle, black 55%, transparent 92%);
+}
+
+@keyframes splashAppear {
+    0% {
+        opacity: 0;
+        transform: scale(0.82) translateY(20px);
+        filter: blur(6px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+        filter: blur(0px);
+    }
+}
+
+@keyframes splashExit {
+    0% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+        filter: blur(0px);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(1.09) translateY(-14px);
+        filter: blur(4px);
+    }
+}
+
+@keyframes splashFloat {
+    0% {
+        transform: translateY(0px) rotate(0deg);
+    }
+    50% {
+        transform: translateY(-6px) rotate(-1deg);
+    }
+    100% {
+        transform: translateY(0px) rotate(1deg);
+    }
+}
+
+/* Subtle glowing aura behind splash logo (disabled to keep unified seamless background) */
+.splash-glow-ring {
+    display: none !important;
+}
+
+@keyframes splashPulseGlow {
+    0% {
+        transform: scale(0.92);
+        opacity: 0.55;
+    }
+    100% {
+        transform: scale(1.18);
+        opacity: 0.95;
+    }
+}
+
+
+
+

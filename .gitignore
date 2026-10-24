@@ -1,0 +1,13 @@
+# Dependencies & temporary folders
+node_modules/
+.vercel/
+.codebase-memory/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Logs & temp files
+*.log
+inspect_audio.js
