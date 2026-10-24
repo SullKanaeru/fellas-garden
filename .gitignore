@@ -11,3 +11,5 @@ Desktop.ini
 # Logs & temp files
 *.log
 inspect_audio.js
+
+.vercel

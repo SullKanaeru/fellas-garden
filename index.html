@@ -80,6 +80,33 @@
       class="absolute inset-0 w-full h-full block cursor-crosshair touch-none"
     ></canvas>
 
+    <!-- ZEN MODE RESTORE PILL (Muncul saat Mode Bersih aktif) -->
+    <div
+      id="zenModeRestorePill"
+      class="hidden fixed top-3 right-3 z-50 pointer-events-auto"
+    >
+      <button
+        type="button"
+        onclick="toggleZenMode()"
+        class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#FDFBF2]/95 backdrop-blur-md border-2 border-[#477431] text-[#2B5B35] font-hand font-bold text-xs sm:text-sm shadow-xl hover:bg-white active:scale-95 transition cursor-pointer"
+        title="Tampilkan kembali menu dan alat berkebun"
+      >
+        <svg
+          class="w-4 h-4 text-emerald-700"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+          <circle cx="12" cy="12" r="3" />
+        </svg>
+        <span>Tampilkan Menu</span>
+      </button>
+    </div>
+
     <!-- TOP HEADER: GARDEN TITLE & QUICK STATUS -->
     <header
       class="fixed top-3 left-0 right-0 z-20 flex flex-col items-center pointer-events-none px-4"
@@ -145,7 +172,7 @@
       <!-- Subtle Status Pill -->
       <div
         id="statusToast"
-        class="mt-1 px-3.5 py-1 rounded-full bg-white/85 backdrop-blur-sm border border-[#d7e2ce] text-[#3a5a40] text-xs sm:text-sm flex items-center gap-3 shadow-sm pointer-events-auto"
+        class="mt-1 px-2.5 sm:px-3.5 py-0.5 sm:py-1 rounded-full bg-white/85 backdrop-blur-sm border border-[#d7e2ce] text-[#3a5a40] text-xs sm:text-sm flex items-center gap-1.5 sm:gap-3 shadow-sm pointer-events-auto max-w-[94vw] overflow-x-auto no-scrollbar"
       >
         <span
           id="flowerCountBadge"
@@ -222,7 +249,7 @@
         <button
           id="asmrToggleBtn"
           onclick="toggleAsmrFocusMode()"
-          class="inline-flex items-center gap-1 text-xs bg-[#eef5e6] hover:bg-[#dfeed0] px-2.5 py-0.5 rounded-full border border-[#c5d9b7] text-[#2B5B35] transition cursor-pointer"
+          class="hidden sm:inline-flex items-center gap-1 text-xs bg-[#eef5e6] hover:bg-[#dfeed0] px-2.5 py-0.5 rounded-full border border-[#c5d9b7] text-[#2B5B35] transition cursor-pointer"
           title="Mode ASMR & Pomodoro Timer (Sembunyikan UI untuk belajar/relaksasi)"
         >
           <svg
@@ -640,20 +667,41 @@
 
     <!-- FLOATING LAUNCHERS: STUDIO, GALLERY, HEWAN, DAFTAR KEBUN -->
     <aside
-      class="sidebar-launchers fixed right-2 sm:right-6 top-1/2 -translate-y-1/2 z-20 pointer-events-auto flex flex-col items-center gap-1.5 sm:gap-2.5"
+      id="sidebarLaunchers"
+      class="sidebar-launchers fixed right-2 sm:right-6 top-1/2 -translate-y-1/2 z-20 pointer-events-auto flex flex-col items-center gap-1.5 sm:gap-2.5 transition-transform duration-300"
     >
+      <!-- Mobile Drawer Handle Tab (Allows hiding/showing the launcher sidebar on phone) -->
+      <button
+        id="sidebarDrawerTab"
+        type="button"
+        onclick="toggleSidebarDrawer()"
+        class="absolute -left-7 top-1/2 -translate-y-1/2 w-7 h-11 bg-[#FDFBF2]/95 border-2 border-r-0 border-[#477431] rounded-l-2xl shadow-lg items-center justify-center text-[#2B5B35] transition active:scale-95 z-30"
+        title="Buka / Tutup Menu Samping"
+      >
+        <svg
+          id="sidebarDrawerIcon"
+          class="w-3.5 h-3.5 transition-transform duration-300"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+        >
+          <polyline points="9 18 15 12 9 6" />
+        </svg>
+      </button>
+
       <!-- Studio Button -->
       <button
         id="openStudioBtn"
         onclick="openFlowerStudioModal()"
-        class="launcher-btn group relative flex flex-col items-center justify-center gap-0.5 sm:gap-1 w-[68px] sm:w-[94px] h-[64px] sm:h-[86px] bg-[#FDFBF2]/95 hover:bg-white active:scale-95 border-2 border-[#477431] rounded-2xl p-1.5 sm:p-2 shadow-lg sm:shadow-xl hover:shadow-2xl transition duration-200"
+        class="launcher-btn group relative flex flex-col items-center justify-center gap-0.5 sm:gap-1 w-[56px] sm:w-[94px] h-[54px] sm:h-[86px] bg-[#FDFBF2]/95 hover:bg-white active:scale-95 border-2 border-[#477431] rounded-2xl p-1 sm:p-2 shadow-lg sm:shadow-xl hover:shadow-2xl transition duration-200"
         title="Buka Studio Gambar Bunga"
       >
         <div
-          class="w-8 h-8 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-[#2B5B35] text-white flex items-center justify-center shadow-md group-hover:scale-105 transition"
+          class="w-7 h-7 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-[#2B5B35] text-white flex items-center justify-center shadow-md group-hover:scale-105 transition"
         >
           <svg
-            class="w-5 h-5 sm:w-6 sm:h-6 text-white"
+            class="w-4 h-4 sm:w-6 sm:h-6 text-white"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -671,7 +719,7 @@
           </svg>
         </div>
         <span
-          class="font-hand font-bold text-[11px] sm:text-xs md:text-sm text-[#2B5B35] tracking-wide whitespace-nowrap"
+          class="font-hand font-bold text-[10px] sm:text-xs md:text-sm text-[#2B5B35] tracking-wide whitespace-nowrap"
         >
           Gambar Bunga
         </span>
@@ -685,11 +733,11 @@
       <button
         id="openGalleryBtn"
         onclick="openGalleryModal()"
-        class="launcher-btn group relative flex flex-col items-center justify-center gap-0.5 sm:gap-1 w-[68px] sm:w-[94px] h-[64px] sm:h-[86px] bg-[#FDFBF2]/95 hover:bg-white active:scale-95 border-2 border-[#b5832a] rounded-2xl p-1.5 sm:p-2 shadow-lg sm:shadow-xl hover:shadow-2xl transition duration-200"
+        class="launcher-btn group relative flex flex-col items-center justify-center gap-0.5 sm:gap-1 w-[56px] sm:w-[94px] h-[54px] sm:h-[86px] bg-[#FDFBF2]/95 hover:bg-white active:scale-95 border-2 border-[#b5832a] rounded-2xl p-1 sm:p-2 shadow-lg sm:shadow-xl hover:shadow-2xl transition duration-200"
         title="Buka Galeri (Bunga & Hewan Favorit)"
       >
         <div
-          class="w-8 h-8 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-amber-600 text-white flex items-center justify-center shadow-md group-hover:scale-105 transition"
+          class="w-7 h-7 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-amber-600 text-white flex items-center justify-center shadow-md group-hover:scale-105 transition"
         >
           <svg
             class="w-4 h-4 sm:w-5 sm:h-5 text-white"
@@ -709,7 +757,7 @@
           </svg>
         </div>
         <span
-          class="font-hand font-bold text-[11px] sm:text-xs md:text-sm text-[#8c5828] tracking-wide whitespace-nowrap"
+          class="font-hand font-bold text-[10px] sm:text-xs md:text-sm text-[#8c5828] tracking-wide whitespace-nowrap"
         >
           Galeri
         </span>
@@ -724,11 +772,11 @@
       <button
         id="openAnimalsBtn"
         onclick="openAnimalModal()"
-        class="launcher-btn group relative flex flex-col items-center justify-center gap-0.5 sm:gap-1 w-[68px] sm:w-[94px] h-[64px] sm:h-[86px] bg-[#FDFBF2]/95 hover:bg-white active:scale-95 border-2 border-[#5c8a4d] rounded-2xl p-1.5 sm:p-2 shadow-lg sm:shadow-xl hover:shadow-2xl transition duration-200"
+        class="launcher-btn group relative flex flex-col items-center justify-center gap-0.5 sm:gap-1 w-[56px] sm:w-[94px] h-[54px] sm:h-[86px] bg-[#FDFBF2]/95 hover:bg-white active:scale-95 border-2 border-[#5c8a4d] rounded-2xl p-1 sm:p-2 shadow-lg sm:shadow-xl hover:shadow-2xl transition duration-200"
         title="Kelola Hewan (Kucing, Anjing, Kelinci & Kupu-kupu)"
       >
         <div
-          class="w-8 h-8 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-[#37662c] text-white flex items-center justify-center shadow-md group-hover:scale-105 transition"
+          class="w-7 h-7 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-[#37662c] text-white flex items-center justify-center shadow-md group-hover:scale-105 transition"
         >
           <svg
             class="w-4 h-4 sm:w-5 sm:h-5 text-white"
@@ -748,7 +796,7 @@
           </svg>
         </div>
         <span
-          class="font-hand font-bold text-[11px] sm:text-xs md:text-sm text-[#2B5B35] tracking-wide whitespace-nowrap"
+          class="font-hand font-bold text-[10px] sm:text-xs md:text-sm text-[#2B5B35] tracking-wide whitespace-nowrap"
         >
           Hewan
         </span>
@@ -763,11 +811,11 @@
       <button
         id="openWorldSideBtn"
         onclick="openWorldManagerModal()"
-        class="launcher-btn group relative flex flex-col items-center justify-center gap-0.5 sm:gap-1 w-[68px] sm:w-[94px] h-[64px] sm:h-[86px] bg-[#FDFBF2]/95 hover:bg-white active:scale-95 border-2 border-[#3b7a57] rounded-2xl p-1.5 sm:p-2 shadow-lg sm:shadow-xl hover:shadow-2xl transition duration-200"
+        class="launcher-btn group relative flex flex-col items-center justify-center gap-0.5 sm:gap-1 w-[56px] sm:w-[94px] h-[54px] sm:h-[86px] bg-[#FDFBF2]/95 hover:bg-white active:scale-95 border-2 border-[#3b7a57] rounded-2xl p-1 sm:p-2 shadow-lg sm:shadow-xl hover:shadow-2xl transition duration-200"
         title="Kelola Daftar Kebun"
       >
         <div
-          class="w-8 h-8 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-[#1e4a32] text-white flex items-center justify-center shadow-md group-hover:scale-105 transition"
+          class="w-7 h-7 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-[#1e4a32] text-white flex items-center justify-center shadow-md group-hover:scale-105 transition"
         >
           <svg
             class="w-4 h-4 sm:w-5 sm:h-5 text-white"
@@ -784,7 +832,7 @@
           </svg>
         </div>
         <span
-          class="font-hand font-bold text-[11px] sm:text-xs md:text-sm text-[#1e4a32] tracking-wide whitespace-nowrap"
+          class="font-hand font-bold text-[10px] sm:text-xs md:text-sm text-[#1e4a32] tracking-wide whitespace-nowrap"
         >
           Daftar Kebun
         </span>
@@ -799,11 +847,11 @@
       <button
         id="openAchievementsBtn"
         onclick="openAchievementModal()"
-        class="launcher-btn group relative flex flex-col items-center justify-center gap-0.5 sm:gap-1 w-[68px] sm:w-[94px] h-[64px] sm:h-[86px] bg-[#FDFBF2]/95 hover:bg-white active:scale-95 border-2 border-[#d97706] rounded-2xl p-1.5 sm:p-2 shadow-lg sm:shadow-xl hover:shadow-2xl transition duration-200"
+        class="launcher-btn group relative flex flex-col items-center justify-center gap-0.5 sm:gap-1 w-[56px] sm:w-[94px] h-[54px] sm:h-[86px] bg-[#FDFBF2]/95 hover:bg-white active:scale-95 border-2 border-[#d97706] rounded-2xl p-1 sm:p-2 shadow-lg sm:shadow-xl hover:shadow-2xl transition duration-200"
         title="Lihat Daftar Prestasi & Pencapaianmu"
       >
         <div
-          class="w-8 h-8 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-md group-hover:scale-105 transition"
+          class="w-7 h-7 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-md group-hover:scale-105 transition"
         >
           <svg
             class="w-4 h-4 sm:w-5 sm:h-5 text-white"
@@ -827,7 +875,7 @@
           </svg>
         </div>
         <span
-          class="font-hand font-bold text-[11px] sm:text-xs md:text-sm text-[#92400e] tracking-wide whitespace-nowrap"
+          class="font-hand font-bold text-[10px] sm:text-xs md:text-sm text-[#92400e] tracking-wide whitespace-nowrap"
         >
           Prestasi
         </span>
@@ -3970,12 +4018,33 @@
             <circle cx="12" cy="17" r="0.5" fill="currentColor" />
           </svg>
         </button>
+
+        <!-- Utility 7: Zen Mode (Mode Bersih & Pemandangan Penuh) -->
+        <button
+          id="zenModeBtn"
+          onclick="toggleZenMode()"
+          class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-800 flex items-center justify-center transition active:scale-95"
+          title="Mode Bersih: Sembunyikan semua tombol untuk menikmati pemandangan kebun (Pintasan: Z)"
+        >
+          <svg
+            class="w-4 h-4 text-emerald-700"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
+        </button>
       </div>
     </nav>
 
     <!-- FLOATING ZOOM CONTROLS (BOTTOM-LEFT) - Hides on small mobile screens to keep dock centered and unobstructed -->
     <aside
-      class="hidden sm:flex fixed bottom-4 left-3 sm:left-6 z-20 items-center gap-1.5 bg-[#FDFBF2]/95 backdrop-blur-md border-2 border-[#477431] rounded-2xl px-2.5 py-1.5 shadow-xl text-xs sm:text-sm font-medium text-[#2B5B35] pointer-events-auto select-none"
+      class="hidden lg:flex fixed bottom-4 left-3 sm:left-6 z-20 items-center gap-1.5 bg-[#FDFBF2]/95 backdrop-blur-md border-2 border-[#477431] rounded-2xl px-2.5 py-1.5 shadow-xl text-xs sm:text-sm font-medium text-[#2B5B35] pointer-events-auto select-none"
     >
       <button
         onclick="zoomOut()"

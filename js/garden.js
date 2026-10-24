@@ -4,6 +4,9 @@
 
         // 3D Grass Island Engine & Viewport (state in js/state.js)
 
+        // High-DPI backing store multiplier for razor-sharp Retina/Mobile rendering
+        var canvasDpr = 1.0;
+
         function initCanvases() {
             if (!worldCanvas && typeof document !== 'undefined') {
                 worldCanvas = document.getElementById('worldCanvas');
@@ -18,9 +21,15 @@
             screenW = Math.max(320, Math.floor(window.innerWidth || (rect && rect.width) || (typeof document !== 'undefined' && document.documentElement.clientWidth) || 800));
             screenH = Math.max(320, Math.floor(window.innerHeight || (rect && rect.height) || (typeof document !== 'undefined' && document.documentElement.clientHeight) || 600));
 
+            // Support high-DPI (Retina / mobile) displays up to 2.25x for crisp HD without GPU lag
+            const rawDpr = (typeof window !== 'undefined' && window.devicePixelRatio) ? window.devicePixelRatio : 1.0;
+            canvasDpr = Math.min(Math.max(1.0, rawDpr), 2.25);
+
             if (worldCanvas) {
-                worldCanvas.width = screenW;
-                worldCanvas.height = screenH;
+                worldCanvas.width = Math.round(screenW * canvasDpr);
+                worldCanvas.height = Math.round(screenH * canvasDpr);
+                worldCanvas.style.width = screenW + 'px';
+                worldCanvas.style.height = screenH + 'px';
             }
 
             // Ensure offscreen world canvases match full world dimensions
@@ -33,6 +42,13 @@
             if (waterMaskCanvas && (waterMaskCanvas.width !== WORLD_W || waterMaskCanvas.height !== WORLD_H)) {
                 waterMaskCanvas.width = WORLD_W;
                 waterMaskCanvas.height = WORLD_H;
+            }
+
+            // On mobile devices (portrait or landscape phone), default to collapsed sidebar so view is clean and clear from the start
+            const isMobileDevice = screenW <= 768 || (screenH <= 500 && screenW <= 1024);
+            if (isMobileDevice && !isInitialSetupComplete) {
+                const sb = document.getElementById('sidebarLaunchers');
+                if (sb) sb.classList.add('sidebar-collapsed');
             }
 
             if (!isInitialSetupComplete) {
@@ -2996,6 +3012,15 @@
                     worldCanvas.setPointerCapture(e.pointerId);
                 } catch (err) {}
 
+                // On mobile, if sidebar is open and user interacts with garden, auto-collapse sidebar to maximize view
+                const isMobileScreen = window.innerWidth <= 768 || (window.innerHeight <= 500 && window.innerWidth <= 1024);
+                if (isMobileScreen) {
+                    const sb = document.getElementById('sidebarLaunchers');
+                    if (sb && !sb.classList.contains('sidebar-collapsed')) {
+                        sb.classList.add('sidebar-collapsed');
+                    }
+                }
+
                 activeTouchPointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
                 // If 2 pointers down -> start multi-touch pinch-to-zoom & two-finger pan
@@ -3689,7 +3714,12 @@
                 }
             }
 
-            // 1. Clear background with warm creamy paper tone (#FDFBF2) or night tone
+            // 1. Apply High-DPI backing scale so all drawings are crisp in Retina/HD
+            ctx.setTransform(canvasDpr, 0, 0, canvasDpr, 0, 0);
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+
+            // Clear background with warm creamy paper tone (#FDFBF2) or night tone
             // Day/Night transition interpolation
             if (isNightMode) {
                 nightTransition = Math.min(1, nightTransition + dt * 1.5);
@@ -3728,6 +3758,8 @@
             ctx.save();
             ctx.translate(panX, panY);
             ctx.scale(zoom, zoom);
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
 
             // 3. Draw the 3D Grass Island Layer
             ctx.drawImage(terrainLayerCanvas, 0, 0);
@@ -4592,6 +4624,35 @@
         window.eraseGrassLine = eraseGrassLine;
         window.updateStatusBadges = updateStatusBadges;
         window.updateWitherModeDisplay = updateWitherModeDisplay;
+        function toggleZenMode() {
+            const isZen = document.body.classList.toggle('zen-mode');
+            const restorePill = document.getElementById('zenModeRestorePill');
+            if (restorePill) {
+                if (isZen) {
+                    restorePill.classList.remove('hidden');
+                    restorePill.classList.add('flex');
+                } else {
+                    restorePill.classList.add('hidden');
+                    restorePill.classList.remove('flex');
+                }
+            }
+            if (typeof showGardenNotice === 'function') {
+                if (isZen) {
+                    showGardenNotice('Mode Bersih aktif! Nikmati kebun layar penuh tanpa tombol. Ketuk "Tampilkan Menu" di pojok kanan atas kapan saja. ✨🌿');
+                } else {
+                    showGardenNotice('Menu dan alat berkebun ditampilkan kembali.');
+                }
+            }
+        }
+
+        function toggleSidebarDrawer() {
+            const sb = document.getElementById('sidebarLaunchers');
+            if (!sb) return;
+            sb.classList.toggle('sidebar-collapsed');
+        }
+
+        window.toggleZenMode = toggleZenMode;
+        window.toggleSidebarDrawer = toggleSidebarDrawer;
         window.togglePencilDropdown = togglePencilDropdown;
         window.toggleEraserDropdown = toggleEraserDropdown;
         window.closeAllToolDropdowns = closeAllToolDropdowns;

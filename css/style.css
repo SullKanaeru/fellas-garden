@@ -394,6 +394,138 @@ body {
     }
 }
 
+/* ========================================================
+   ZEN MODE (FULL SCREEN IMMERSIVE VIEW - HIDES ALL UI OVERLAYS)
+   ======================================================== */
+body.zen-mode header,
+body.zen-mode #statusToast,
+body.zen-mode aside.sidebar-launchers,
+body.zen-mode #bottomDockNav,
+body.zen-mode #terrainBrushControls,
+body.zen-mode #customSoundDropdown,
+body.zen-mode aside.floating-zoom-aside {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transform: translateY(24px) !important;
+    transition: opacity 0.28s ease, transform 0.28s ease !important;
+}
+
+body.zen-mode header {
+    transform: translateY(-24px) !important;
+}
+
+body.zen-mode aside.sidebar-launchers {
+    transform: translate(60px, -50%) !important;
+}
+
+body.zen-mode #zenModeRestorePill {
+    display: flex !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    animation: zenFadeIn 0.3s ease forwards;
+}
+
+@keyframes zenFadeIn {
+    0% { opacity: 0; transform: translateY(-8px) scale(0.95); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ========================================================
+   COLLAPSIBLE MOBILE SIDEBAR LAUNCHER DRAWER
+   ======================================================== */
+#sidebarDrawerTab {
+    display: none;
+}
+
+@media (max-width: 768px), (max-height: 500px) and (max-width: 1024px) {
+    #sidebarDrawerTab {
+        display: flex !important;
+    }
+    #sidebarLaunchers {
+        transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+    #sidebarLaunchers.sidebar-collapsed {
+        transform: translate(calc(100% - 6px), -50%) !important;
+    }
+    #sidebarLaunchers.sidebar-collapsed #sidebarDrawerIcon {
+        transform: rotate(180deg);
+    }
+}
+
+/* ========================================================
+   MOBILE VIEWPORT & HIGH-DPI CANVAS ENHANCEMENTS
+   ======================================================== */
+#worldCanvas {
+    touch-action: none;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+@media (max-width: 640px) {
+    #bottomDockNav {
+        bottom: 8px;
+        max-width: 98vw;
+    }
+    #bottomDockNav > div {
+        padding: 4px 6px !important;
+        gap: 3px !important;
+    }
+    .tool-btn {
+        width: 32px !important;
+        height: 32px !important;
+    }
+    .tool-btn svg {
+        width: 16px !important;
+        height: 16px !important;
+    }
+    #terrainBrushControls {
+        padding: 4px 10px !important;
+        font-size: 11px !important;
+        gap: 6px !important;
+        max-width: 94vw !important;
+        bottom: 54px !important;
+    }
+    #terrainBrushSlider {
+        width: 60px !important;
+    }
+}
+
+/* Landscape mobile orientation (e.g. iPhone / Android rotated) */
+@media (max-height: 500px) {
+    header.fixed {
+        top: 3px !important;
+        transform: scale(0.85);
+        transform-origin: top center;
+    }
+    #bottomDockNav {
+        bottom: 3px !important;
+        transform: translateX(-50%) scale(0.82) !important;
+        transform-origin: bottom center;
+    }
+    #sidebarLaunchers {
+        transform: translateY(-50%) scale(0.80) !important;
+        transform-origin: right center;
+    }
+    #sidebarLaunchers.sidebar-collapsed {
+        transform: translate(calc(100% - 6px), -50%) scale(0.80) !important;
+    }
+    #terrainBrushControls {
+        bottom: 46px !important;
+        transform: translateX(-50%) scale(0.82) !important;
+        transform-origin: bottom center;
+    }
+}
+
+/* Hide scrollbars on horizontal lists */
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
 
 
 
