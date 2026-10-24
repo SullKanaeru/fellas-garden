@@ -325,10 +325,10 @@
             if (!toast) {
                 toast = document.createElement('div');
                 toast.id = 'gardenNoticeToast';
-                toast.className = 'fixed top-20 left-1/2 -translate-x-1/2 z-40 bg-[#2B5B35] text-[#FDFBF2] px-5 py-2 rounded-full shadow-2xl border-2 border-[#7DB852] font-medium text-sm sm:text-base flex items-center gap-2 pointer-events-none transition-all duration-300 opacity-0 -translate-y-3';
+                toast.className = 'fixed top-14 sm:top-20 left-1/2 -translate-x-1/2 z-40 bg-[#2B5B35] text-[#FDFBF2] px-3.5 sm:px-5 py-1.5 sm:py-2 rounded-full shadow-2xl border-2 border-[#7DB852] font-medium text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 pointer-events-none transition-all duration-300 opacity-0 -translate-y-3 max-w-[90vw] text-center justify-center';
                 document.body.appendChild(toast);
             }
-            toast.innerHTML = `<svg class="w-4 h-4 text-[#A7D97B] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 20h10"/><path d="M10 20c5.5-2.5.8-6.4 3-13"/><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4.1 5.5.8z"/></svg><span>${msg}</span>`;
+            toast.innerHTML = `<svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#A7D97B] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 20h10"/><path d="M10 20c5.5-2.5.8-6.4 3-13"/><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4.1 5.5.8z"/></svg><span>${msg}</span>`;
             toast.classList.remove('opacity-0', '-translate-y-3');
             toast.classList.add('opacity-100', 'translate-y-0');
             clearTimeout(toast._timer);
@@ -2084,18 +2084,13 @@
             if (pencilMenu) {
                 const willOpen = pencilMenu.classList.contains('hidden');
                 if (willOpen) {
+                    if (currentTool !== 'land' && currentTool !== 'water-terrain' && currentTool !== 'grass') {
+                        setWorldTool('land');
+                    }
                     pencilMenu.classList.remove('hidden');
                     if (brushCtrl) {
                         brushCtrl.classList.add('hidden');
                         brushCtrl.classList.remove('flex');
-                    }
-                    if (currentTool !== 'land' && currentTool !== 'water-terrain' && currentTool !== 'grass') {
-                        setWorldTool('land');
-                        pencilMenu.classList.remove('hidden');
-                        if (brushCtrl) {
-                            brushCtrl.classList.add('hidden');
-                            brushCtrl.classList.remove('flex');
-                        }
                     }
                 } else {
                     pencilMenu.classList.add('hidden');
@@ -2116,18 +2111,13 @@
             if (eraserMenu) {
                 const willOpen = eraserMenu.classList.contains('hidden');
                 if (willOpen) {
+                    if (currentTool !== 'erase-land' && currentTool !== 'erase-water' && currentTool !== 'erase-grass') {
+                        setWorldTool('erase-land');
+                    }
                     eraserMenu.classList.remove('hidden');
                     if (brushCtrl) {
                         brushCtrl.classList.add('hidden');
                         brushCtrl.classList.remove('flex');
-                    }
-                    if (currentTool !== 'erase-land' && currentTool !== 'erase-water' && currentTool !== 'erase-grass') {
-                        setWorldTool('erase-land');
-                        eraserMenu.classList.remove('hidden');
-                        if (brushCtrl) {
-                            brushCtrl.classList.add('hidden');
-                            brushCtrl.classList.remove('flex');
-                        }
                     }
                 } else {
                     eraserMenu.classList.add('hidden');
