@@ -30,6 +30,61 @@ function getLocalWorldsRegistry() {
   }
 }
 
+const EMERGENCY_BACKUP_KEY = "fella_emergency_backup_world";
+
+function getEmergencyLocalStorageBackup() {
+  try {
+    const raw = localStorage.getItem(EMERGENCY_BACKUP_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function saveEmergencyLocalStorageBackup(worldObj) {
+  try {
+    if (!worldObj) return;
+    const compact = {
+      id: worldObj.id,
+      name: worldObj.name,
+      createdAt: worldObj.createdAt,
+      lastPlayed: worldObj.lastPlayed,
+      terrainData: worldObj.terrainData,
+      waterData: worldObj.waterData,
+      grassDetails: worldObj.grassDetails,
+      flowers: worldObj.flowers,
+      animals: worldObj.animals,
+      decorations: worldObj.decorations,
+      camera: worldObj.camera,
+      settings: worldObj.settings,
+    };
+    localStorage.setItem(EMERGENCY_BACKUP_KEY, JSON.stringify(compact));
+  } catch (e) {
+    // LocalStorage quota may be reached if images are large; fail silently
+  }
+}
+
+async function createBackupWorldBeforeReset() {
+  try {
+    if (!currentWorldId) return;
+    const current = await dbGetWorld(currentWorldId);
+    if (!current) return;
+    const backupId = "world_backup_" + Date.now();
+    const backupObj = {
+      ...current,
+      id: backupId,
+      name: "[Cadangan] " + (current.name || "Kebun Fella"),
+      lastPlayed: new Date().toISOString(),
+    };
+    await dbSaveWorld(backupObj);
+    await updateWorldsBadge();
+    console.log("Automatic safety backup created before reset:", backupId);
+  } catch (e) {
+    console.warn("Safety backup creation failed:", e);
+  }
+}
+window.createBackupWorldBeforeReset = createBackupWorldBeforeReset;
+
 function setLocalWorldsRegistry(worlds) {
   try {
     if (!Array.isArray(worlds)) return;
@@ -467,6 +522,7 @@ async function saveCurrentWorld(silent = false) {
   };
 
   await dbSaveWorld(worldObj);
+  saveEmergencyLocalStorageBackup(worldObj);
   localStorage.setItem(CURRENT_WORLD_KEY, currentWorldId);
 
   // Keep registry in sync & update garden counter badge immediately
@@ -1230,24 +1286,40 @@ async function initWorldManager() {
   await updateWorldsBadge();
   let existingWorlds = await dbGetAllWorlds();
 
-  // Safety fallback: if DB returned empty but registry in localStorage says worlds exist, retry once
-  if ((!existingWorlds || existingWorlds.length === 0) && getLocalWorldsRegistry().length > 0) {
-    await new Promise((r) => setTimeout(r, 300));
-    existingWorlds = await dbGetAllWorlds();
+  // Safety fallback: if DB returned empty but registry in localStorage says worlds exist, retry up to 5 times
+  const localRegistry = getLocalWorldsRegistry();
+  if ((!existingWorlds || existingWorlds.length === 0) && localRegistry.length > 0) {
+    for (let attempt = 1; attempt <= 5; attempt++) {
+      await new Promise((r) => setTimeout(r, 350));
+      existingWorlds = await dbGetAllWorlds();
+      if (existingWorlds && existingWorlds.length > 0) break;
+    }
   }
 
   const savedWorldId = localStorage.getItem(CURRENT_WORLD_KEY);
+  const emergencyBackup = getEmergencyLocalStorageBackup();
 
   if (!existingWorlds || existingWorlds.length === 0) {
-    // First ever launch: initialize default world
-    currentWorldId = "world_default";
-    localStorage.setItem(CURRENT_WORLD_KEY, currentWorldId);
-    createDefaultOvalIsland();
-    createStarterFlowersMatchingReference();
-    spawnStarterAnimals();
-    isWorldReady = true;
-    window.isWorldReady = true;
-    await saveCurrentWorld(true);
+    if (emergencyBackup && emergencyBackup.id) {
+      console.warn("Restoring world from localStorage emergency backup...");
+      await dbSaveWorld(emergencyBackup);
+      currentWorldId = emergencyBackup.id;
+      localStorage.setItem(CURRENT_WORLD_KEY, currentWorldId);
+      await loadWorldById(currentWorldId);
+      if (typeof showGardenNotice === "function") {
+        showGardenNotice("Kebun berhasil dipulihkan dari cadangan otomatis! 🌿");
+      }
+    } else {
+      // Genuine first ever launch: initialize default world
+      currentWorldId = "world_default";
+      localStorage.setItem(CURRENT_WORLD_KEY, currentWorldId);
+      createDefaultOvalIsland();
+      createStarterFlowersMatchingReference();
+      spawnStarterAnimals();
+      isWorldReady = true;
+      window.isWorldReady = true;
+      await saveCurrentWorld(true);
+    }
   } else {
     // Load saved world or most recent world
     let targetWorld = existingWorlds.find((w) => w.id === savedWorldId);

@@ -2139,6 +2139,12 @@
             }
             closeAllToolDropdowns();
             updateToolbarUI();
+
+            if (toolName === 'hand') {
+                showGardenNotice('Mode Geser Layar aktif: Pandangan bebas digeser tanpa takut bunga tergeser! 🖐️');
+            } else if (toolName === 'move') {
+                showGardenNotice('Mode Atur Posisi aktif: Sentuh & geser bunga atau dekorasi untuk memindahkan posisinya! 🪴✥');
+            }
         }
 
         function togglePencilDropdown(e) {
@@ -2224,7 +2230,7 @@
 
         function updateToolbarUI() {
             // Standalone buttons
-            const buttons = ['hand', 'water'];
+            const buttons = ['hand', 'move', 'water'];
             buttons.forEach(t => {
                 const el = document.getElementById('tool-' + t);
                 if (el) {
@@ -2327,12 +2333,23 @@
             }
 
             // Set appropriate cursor
-            const hoveredAnimal = currentTool === 'hand' ? findAnimalAt(currentWorldX, currentWorldY) : null;
-            if (isDraggingCanvas || draggedFlower || draggedAnimal || draggedDecoration) worldCanvas.style.cursor = 'grabbing';
-            else if (currentTool === 'hand') worldCanvas.style.cursor = (hoveredFlower || hoveredAnimal) ? 'pointer' : 'grab';
-            else if (currentTool === 'water') worldCanvas.style.cursor = 'pointer';
-            else if (currentTool === 'plant' || currentTool === 'place-decor') worldCanvas.style.cursor = 'copy';
-            else worldCanvas.style.cursor = 'crosshair';
+            const hoveredAnimal = (currentTool === 'hand' || currentTool === 'move') ? findAnimalAt(currentWorldX, currentWorldY) : null;
+            const hoveredFlower = (currentTool === 'move') ? findFlowerAt(currentWorldX, currentWorldY) : null;
+            const hoveredDecor = (currentTool === 'move' && typeof findDecorationAt === 'function') ? findDecorationAt(currentWorldX, currentWorldY) : null;
+
+            if (isDraggingCanvas || draggedFlower || draggedAnimal || draggedDecoration) {
+                worldCanvas.style.cursor = 'grabbing';
+            } else if (currentTool === 'move') {
+                worldCanvas.style.cursor = (hoveredFlower || hoveredDecor || hoveredAnimal) ? 'move' : 'grab';
+            } else if (currentTool === 'hand') {
+                worldCanvas.style.cursor = hoveredAnimal ? 'pointer' : 'grab';
+            } else if (currentTool === 'water') {
+                worldCanvas.style.cursor = 'pointer';
+            } else if (currentTool === 'plant' || currentTool === 'place-decor') {
+                worldCanvas.style.cursor = 'copy';
+            } else {
+                worldCanvas.style.cursor = 'crosshair';
+            }
         }
 
         function updateTerrainBrushSize(val) {
@@ -3610,8 +3627,28 @@
                         else followedAnimal = null;
                     }
 
+                    selectedDecoration = null;
+                    if (typeof window !== 'undefined') window.selectedDecoration = null;
+                    // In Hand (Geser Layar) mode: NEVER drag flowers or decorations! Always pan canvas!
+                    isDraggingCanvas = true;
+                    dragStartScreenX = e.clientX;
+                    dragStartScreenY = e.clientY;
+                    dragStartPanX = panX;
+                    dragStartPanY = panY;
+                    worldCanvas.style.cursor = 'grabbing';
+                } else if (currentTool === 'move') {
+                    if (Array.isArray(droppedSeeds) && droppedSeeds.length > 0) {
+                        const hitSeed = droppedSeeds.find(s => Math.hypot(s.x - worldPos.x, s.y - worldPos.y) < 28);
+                        if (hitSeed) {
+                            pickupDroppedSeed(hitSeed.id);
+                            return;
+                        }
+                    }
+
+                    const hitAnimal = typeof findAnimalAt === 'function' ? findAnimalAt(worldPos.x, worldPos.y) : null;
                     const hit = findFlowerAt(worldPos.x, worldPos.y);
                     const hitDecor = (!hit && typeof findDecorationAt === 'function') ? findDecorationAt(worldPos.x, worldPos.y) : null;
+
                     if (hit) {
                         draggedFlower = hit;
                         draggedFlowerOrigX = hit.x;
@@ -3630,10 +3667,16 @@
                         dragStartScreenX = e.clientX;
                         dragStartScreenY = e.clientY;
                         worldCanvas.style.cursor = 'grabbing';
+                    } else if (hitAnimal) {
+                        draggedAnimal = hitAnimal;
+                        draggedAnimalOffset = { x: hitAnimal.x - worldPos.x, y: hitAnimal.y - worldPos.y };
+                        draggedAnimal.isBeingDragged = true;
+                        draggedAnimal.state = 'scared';
+                        worldCanvas.style.cursor = 'grabbing';
                     } else {
                         selectedDecoration = null;
                         if (typeof window !== 'undefined') window.selectedDecoration = null;
-                        // Smoothly drag garden canvas on empty area!
+                        // Smoothly drag garden canvas on empty area
                         isDraggingCanvas = true;
                         dragStartScreenX = e.clientX;
                         dragStartScreenY = e.clientY;
@@ -3740,24 +3783,27 @@
                     hoveredAnimal = typeof findAnimalAt === 'function' ? findAnimalAt(worldPos.x, worldPos.y) : null;
                     if (isSpacePressed) {
                         worldCanvas.style.cursor = 'grab';
+                    } else if (currentTool === 'move') {
+                        const hoveredDecor = typeof findDecorationAt === 'function' ? findDecorationAt(worldPos.x, worldPos.y) : null;
+                        worldCanvas.style.cursor = (hoveredFlower || hoveredDecor || hoveredAnimal) ? 'move' : 'grab';
                     } else if (currentTool === 'hand') {
-                        worldCanvas.style.cursor = (hoveredFlower || hoveredAnimal) ? 'pointer' : 'grab';
+                        worldCanvas.style.cursor = hoveredAnimal ? 'pointer' : 'grab';
                     }
                     return;
                 }
 
-                if (currentTool === 'hand' && draggedAnimal) {
+                if ((currentTool === 'move' || currentTool === 'hand') && draggedAnimal) {
                     draggedAnimal.x = worldPos.x + draggedAnimalOffset.x;
                     draggedAnimal.y = worldPos.y + draggedAnimalOffset.y;
                     draggedAnimal.isBeingDragged = true;
                     draggedAnimal.state = 'scared';
                     worldCanvas.style.cursor = 'grabbing';
-                } else if (currentTool === 'hand' && draggedFlower) {
+                } else if ((currentTool === 'move' || currentTool === 'hand') && draggedFlower) {
                     draggedFlower.x = worldPos.x + draggedFlowerOffset.x;
                     draggedFlower.y = worldPos.y + draggedFlowerOffset.y;
                     draggedFlower.onGrass = isPointOnGrass(draggedFlower.x, draggedFlower.y);
                     flowers.sort((a, b) => a.y - b.y);
-                } else if (currentTool === 'hand' && typeof draggedDecoration !== 'undefined' && draggedDecoration) {
+                } else if ((currentTool === 'move' || currentTool === 'hand') && typeof draggedDecoration !== 'undefined' && draggedDecoration) {
                     draggedDecoration.x = worldPos.x + draggedDecorationOffset.x;
                     draggedDecoration.y = worldPos.y + draggedDecorationOffset.y;
                     worldCanvas.style.cursor = 'grabbing';
@@ -4148,18 +4194,20 @@
                 } else if (e.key === '1') {
                     setWorldTool('hand');
                 } else if (e.key === '2') {
-                    setWorldTool('land');
+                    setWorldTool('move');
                 } else if (e.key === '3') {
-                    setWorldTool('water-terrain');
+                    setWorldTool('land');
                 } else if (e.key === '4') {
-                    setWorldTool('grass');
+                    setWorldTool('water-terrain');
                 } else if (e.key === '5') {
-                    setWorldTool('erase-land');
+                    setWorldTool('grass');
                 } else if (e.key === '6') {
-                    setWorldTool('erase-water');
+                    setWorldTool('erase-land');
                 } else if (e.key === '7') {
-                    setWorldTool('erase-grass');
+                    setWorldTool('erase-water');
                 } else if (e.key === '8') {
+                    setWorldTool('erase-grass');
+                } else if (e.key === '9') {
                     setWorldTool('water');
                 } else if (e.key === '+' || e.key === '=') {
                     zoomIn();
@@ -5231,6 +5279,22 @@
             document.getElementById('helpModal').classList.add('hidden');
         }
 
+        async function confirmResetGarden() {
+            const ok = window.confirm("⚠️ Peringatan Reset Kebun:\n\nApakah kamu yakin ingin mengembalikan kebun ini ke kondisi awal?\n\nSemua perubahan tata letak dan tanaman saat ini akan diganti. Kebun lamamu akan otomatis disimpan sebagai cadangan di Pengelola Kebun.");
+            if (!ok) return;
+
+            try {
+                if (typeof createBackupWorldBeforeReset === 'function') {
+                    await createBackupWorldBeforeReset();
+                }
+            } catch (err) {
+                console.warn('Backup error before reset:', err);
+            }
+
+            resetToDefaultGarden();
+            showGardenNotice('Kebun berhasil di-reset. Kebun lamamu tersimpan aman di Pengelola Kebun! 🌿');
+        }
+
         function resetToDefaultGarden() {
             createDefaultOvalIsland();
             createStarterFlowersMatchingReference();
@@ -5413,4 +5477,5 @@
         window.scrollSidebar = scrollSidebar;
         window.updateSidebarScrollIndicators = updateSidebarScrollIndicators;
         window.updateAndDrawScreenBlizzard = updateAndDrawScreenBlizzard;
+        window.confirmResetGarden = confirmResetGarden;
 
