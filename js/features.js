@@ -1058,17 +1058,28 @@ function updateDynamicWeather(dt, now) {
             });
         }
     } else if (dynamicWeather === 'drizzle' && !isRainingShower) {
-        // Gentle light drizzle streaks
+        // Gentle light drizzle streaks falling accurately on green terrain & water
+        const getTarget = typeof getRainTargetOnTerrain === 'function' ? getRainTargetOnTerrain : (typeof window !== 'undefined' ? window.getRainTargetOnTerrain : null);
         for (let i = 0; i < 3; i++) {
-            const rx = minX + Math.random() * (maxX - minX);
-            const ry = minY + Math.random() * (maxY - minY);
+            const target = getTarget ? getTarget(minX, maxX, minY, maxY) : null;
+            const rx = target ? target.x : minX + Math.random() * (maxX - minX);
+            const ry = target ? target.y : minY + Math.random() * (maxY - minY);
+            const fallDist = 120 + Math.random() * 120;
+            const vy = 8.5 + Math.random() * 3;
+            const vx = -0.9;
+            const fallTime = fallDist / vy;
+            const startX = rx - (vx * fallTime);
+            const startY = ry - fallDist;
+
             particles.push({
                 type: 'rainStreak',
-                x: rx,
-                y: ry - 120 - Math.random() * 120,
-                vx: -0.9,
-                vy: 8.5 + Math.random() * 3,
+                x: startX,
+                y: startY,
+                vx: vx,
+                vy: vy,
                 targetY: ry,
+                landingX: rx,
+                targetType: target && target.onWater ? 'water' : 'grass',
                 length: 12 + Math.random() * 8,
                 alpha: 0.5 + Math.random() * 0.25
             });
@@ -1102,17 +1113,28 @@ function updateDynamicWeather(dt, now) {
             }
         }
     } else if (dynamicWeather === 'thunderstorm') {
-        // Heavy rain streaks
+        // Heavy rain streaks falling accurately on green terrain & water
+        const getTarget = typeof getRainTargetOnTerrain === 'function' ? getRainTargetOnTerrain : (typeof window !== 'undefined' ? window.getRainTargetOnTerrain : null);
         for (let i = 0; i < 6; i++) {
-            const rx = minX + Math.random() * (maxX - minX);
-            const ry = minY + Math.random() * (maxY - minY);
+            const target = getTarget ? getTarget(minX, maxX, minY, maxY) : null;
+            const rx = target ? target.x : minX + Math.random() * (maxX - minX);
+            const ry = target ? target.y : minY + Math.random() * (maxY - minY);
+            const fallDist = 140 + Math.random() * 140;
+            const vy = 12.0 + Math.random() * 4;
+            const vx = -1.6;
+            const fallTime = fallDist / vy;
+            const startX = rx - (vx * fallTime);
+            const startY = ry - fallDist;
+
             particles.push({
                 type: 'rainStreak',
-                x: rx,
-                y: ry - 140 - Math.random() * 120,
-                vx: -1.6,
-                vy: 12.0 + Math.random() * 4,
+                x: startX,
+                y: startY,
+                vx: vx,
+                vy: vy,
                 targetY: ry,
+                landingX: rx,
+                targetType: target && target.onWater ? 'water' : 'grass',
                 length: 18 + Math.random() * 10,
                 alpha: 0.7 + Math.random() * 0.25
             });

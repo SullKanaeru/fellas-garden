@@ -2399,6 +2399,64 @@
         }
 
         /**
+         * Mencari koordinat target titik jatuh hujan yang secara akurat berada
+         * di atas medan hijau (grass) atau medan air (water) yang tampak di layar kamera.
+         */
+        function getRainTargetOnTerrain(customMinX, customMaxX, customMinY, customMaxY) {
+            const currentZoom = Math.max(0.1, zoom || 1.0);
+            const camMinX = customMinX !== undefined ? customMinX : Math.max(0, -panX / currentZoom - 40);
+            const camMaxX = customMaxX !== undefined ? customMaxX : Math.min(WORLD_W, (-panX + screenW) / currentZoom + 40);
+            const camMinY = customMinY !== undefined ? customMinY : Math.max(0, -panY / currentZoom - 40);
+            const camMaxY = customMaxY !== undefined ? customMaxY : Math.min(WORLD_H, (-panY + screenH) / currentZoom + 40);
+
+            const bb = getIslandBoundingBox();
+            const startX = Math.max(camMinX, bb.x);
+            const endX = Math.min(camMaxX, bb.x + bb.w);
+            const startY = Math.max(camMinY, bb.y);
+            const endY = Math.min(camMaxY, bb.y + bb.h);
+
+            // Jika kamera dan pulau beririsan, coba temukan titik acak di rumput atau air
+            if (startX < endX && startY < endY) {
+                for (let attempt = 0; attempt < 12; attempt++) {
+                    const rx = startX + Math.random() * (endX - startX);
+                    const ry = startY + Math.random() * (endY - startY);
+                    const onWater = isPointOnWater(rx, ry);
+                    const onGrass = !onWater && isPointOnGrass(rx, ry);
+                    if (onWater || onGrass) {
+                        return { x: rx, y: ry, onWater: onWater, onGrass: onGrass };
+                    }
+                }
+            }
+
+            // Jika sampling acak belum dapat (misal bagian pulau melengkung), cari dari kumpulan bunga yang tampak
+            if (flowers && flowers.length > 0) {
+                const visibleFlowers = flowers.filter(f => f.x >= camMinX && f.x <= camMaxX && f.y >= camMinY && f.y <= camMaxY);
+                const pool = visibleFlowers.length > 0 ? visibleFlowers : flowers;
+                const f = pool[Math.floor(Math.random() * pool.length)];
+                if (f) {
+                    const jx = f.x + (Math.random() - 0.5) * 50;
+                    const jy = f.y + (Math.random() - 0.5) * 40;
+                    const onWater = isPointOnWater(jx, jy);
+                    const onGrass = !onWater && isPointOnGrass(jx, jy);
+                    if (onWater || onGrass) {
+                        return { x: jx, y: jy, onWater: onWater, onGrass: onGrass };
+                    }
+                    return { x: f.x, y: f.y, onWater: false, onGrass: true };
+                }
+            }
+
+            // Fallback: pusat pulau
+            if (bb && bb.w > 0 && bb.h > 0) {
+                const cx = bb.x + bb.w * 0.5;
+                const cy = bb.y + bb.h * 0.5;
+                const onWater = isPointOnWater(cx, cy);
+                return { x: cx, y: cy, onWater: onWater, onGrass: !onWater };
+            }
+
+            return null;
+        }
+
+        /**
          * Update proses hujan berkelanjutan per frame selama durasi hujan
          */
         function updateRainShower(dt) {
@@ -2406,24 +2464,30 @@
 
             rainShowerTimer -= dt;
 
-            // Area viewport aktif di koordinat dunia kebun
-            const minX = Math.max(0, -panX - 120);
-            const maxX = Math.min(WORLD_W, -panX + screenW + 120);
-            const minY = Math.max(0, -panY - 120);
-            const maxY = Math.min(WORLD_H, -panY + screenH + 120);
-
-            // Munculkan 6 - 10 tetesan hujan diagonal setiap frame
+            // Munculkan 6 - 10 tetesan hujan diagonal setiap frame yang jatuh pas di rumput atau air
             const count = Math.floor(6 + Math.random() * 5);
             for (let i = 0; i < count; i++) {
-                const rx = minX + Math.random() * (maxX - minX);
-                const ry = minY + Math.random() * (maxY - minY);
+                const target = getRainTargetOnTerrain();
+                if (!target) continue;
+
+                const rx = target.x;
+                const ry = target.y;
+                const fallDist = 130 + Math.random() * 160;
+                const vy = 11 + Math.random() * 5;
+                const vx = -1.4;
+                const fallTime = fallDist / vy;
+                const startX = rx - (vx * fallTime);
+                const startY = ry - fallDist;
+
                 particles.push({
                     type: 'rainStreak',
-                    x: rx,
-                    y: ry - 140 - Math.random() * 200,
-                    vx: -1.4,
-                    vy: 11 + Math.random() * 5,
+                    x: startX,
+                    y: startY,
+                    vx: vx,
+                    vy: vy,
                     targetY: ry,
+                    landingX: rx,
+                    targetType: target.onWater ? 'water' : 'grass',
                     length: 15 + Math.random() * 12,
                     alpha: 0.65 + Math.random() * 0.3
                 });
@@ -4077,25 +4141,54 @@
                     targetCtx.restore();
 
                     if (p.y >= p.targetY) {
-                        particles.push({
-                            type: 'ripple',
-                            x: p.x,
-                            y: p.targetY,
-                            r: 2,
-                            maxR: 12 + Math.random() * 8,
-                            alpha: 0.55
-                        });
-                        if (Math.random() < 0.28) {
+                        const hitX = p.landingX !== undefined ? p.landingX : p.x;
+                        const hitY = p.targetY;
+                        const onWater = p.targetType === 'water' || (typeof isPointOnWater === 'function' && isPointOnWater(hitX, hitY));
+
+                        if (onWater) {
                             particles.push({
-                                type: 'sparkle',
-                                x: p.x,
-                                y: p.targetY - 2,
-                                vx: (Math.random() - 0.5) * 1.2,
-                                vy: -0.8 - Math.random() * 0.8,
-                                size: 2.2,
-                                color: '#7AC5F5',
-                                alpha: 0.8
+                                type: 'ripple',
+                                x: hitX,
+                                y: hitY,
+                                r: 2,
+                                maxR: 12 + Math.random() * 8,
+                                alpha: 0.65,
+                                color: 'rgba(130, 195, 240, '
                             });
+                            if (Math.random() < 0.28) {
+                                particles.push({
+                                    type: 'droplet',
+                                    x: hitX + (Math.random() - 0.5) * 4,
+                                    y: hitY - 2,
+                                    vx: (Math.random() - 0.5) * 1.0,
+                                    vy: -1.2 - Math.random() * 0.8,
+                                    size: 2.0,
+                                    targetY: hitY,
+                                    alpha: 0.75
+                                });
+                            }
+                        } else {
+                            particles.push({
+                                type: 'ripple',
+                                x: hitX,
+                                y: hitY,
+                                r: 1.5,
+                                maxR: 7 + Math.random() * 4,
+                                alpha: 0.45,
+                                color: 'rgba(165, 218, 175, '
+                            });
+                            if (Math.random() < 0.32) {
+                                particles.push({
+                                    type: 'sparkle',
+                                    x: hitX,
+                                    y: hitY - 2,
+                                    vx: (Math.random() - 0.5) * 1.4,
+                                    vy: -0.8 - Math.random() * 0.8,
+                                    size: 2.0,
+                                    color: Math.random() < 0.5 ? '#98E4B8' : '#7AC5F5',
+                                    alpha: 0.8
+                                });
+                            }
                         }
                         particles.splice(i, 1);
                     }
@@ -4130,7 +4223,7 @@
                         continue;
                     }
                     targetCtx.save();
-                    targetCtx.strokeStyle = `rgba(78, 168, 222, ${p.alpha})`;
+                    targetCtx.strokeStyle = p.color ? `${p.color}${Math.max(0, p.alpha)})` : `rgba(78, 168, 222, ${Math.max(0, p.alpha)})`;
                     targetCtx.lineWidth = 1.5;
                     targetCtx.beginPath();
                     targetCtx.ellipse(p.x, p.y, p.r, p.r * 0.45, 0, 0, Math.PI * 2);
@@ -4607,6 +4700,8 @@
         window.exitPlantingMode = exitPlantingMode;
         window.cycleWitherSpeed = cycleWitherSpeed;
         window.rainShowerAll = rainShowerAll;
+        window.getIslandBoundingBox = getIslandBoundingBox;
+        window.getRainTargetOnTerrain = getRainTargetOnTerrain;
         window.toggleDayNightMode = toggleDayNightMode;
         window.isPointOnWater = isPointOnWater;
         window.modifyWaterTerrain = modifyWaterTerrain;
