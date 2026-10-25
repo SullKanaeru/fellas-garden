@@ -830,7 +830,7 @@ function updateAnimals(dt, now) {
                 const ny = a.y + (dy / dist) * step;
                 if (isWaterSwimmable(nx, ny) || !inWaterNow) {
                     a.x = nx;
-                    a.y = ny + Math.sin(now * 3 + (a.swimPhase || 0)) * 0.3;
+                    a.y = ny + Math.sin(now * 0.003 + (a.swimPhase || 0)) * 0.25;
                     a.facingLeft = dx < 0;
                 } else {
                     a.stateTimer = 0;
@@ -871,7 +871,10 @@ function updateAnimals(dt, now) {
                     a.perchedFlowerId = null;
                 }
             } else {
-                a.wingSpeed = 18 + Math.sin(now * 3) * 4;
+                const tSec = now * 0.001;
+                a.wingSpeed = 14 + Math.sin(tSec * 2.5) * 3;
+                a.hopPhase = (a.hopPhase || 0) + dt * 5.2;
+                a.tailPhase = (a.tailPhase || 0) + dt * 2.4;
                 a.stateTimer = (a.stateTimer || 0) - dt;
 
                 if (a.stateTimer <= 0) {
@@ -918,11 +921,11 @@ function updateAnimals(dt, now) {
                         a.stateTimer = 0;
                     }
                 } else {
-                    const speed = 42;
+                    const speed = a.type === 'exclusive' ? 34 : 42;
                     a.vx = (dx / dist) * speed;
                     a.vy = (dy / dist) * speed;
                     a.x += a.vx * dt;
-                    a.y += a.vy * dt + Math.sin(now * 7 + (a.colorHue || 0)) * 0.7;
+                    a.y += a.vy * dt + Math.sin(now * 0.0035 + (a.colorHue || 0)) * 0.35;
                     a.facingLeft = dx < 0;
                 }
 
@@ -1106,13 +1109,13 @@ function updateAnimals(dt, now) {
                     a.x = nextX;
                     a.y = nextY;
 
-                    const hopSpeed = a.type === 'rabbit' ? 6.5 : 5.0;
+                    const hopSpeed = a.type === 'rabbit' ? 7.5 : (a.type === 'exclusive' ? 7.2 : 6.0);
                     a.hopPhase += dt * hopSpeed;
-                    a.tailPhase += dt * (a.type === 'dog' ? 2.2 : 1.5);
+                    a.tailPhase += dt * (a.type === 'dog' ? 2.5 : (a.type === 'exclusive' ? 2.8 : 1.8));
                 }
             }
         } else if (a.state === 'idle' || a.state === 'happy') {
-            const wagRate = a.state === 'happy' ? (a.type === 'dog' ? 3.8 : 2.5) : (a.type === 'dog' ? 1.0 : 0.7);
+            const wagRate = a.state === 'happy' ? (a.type === 'dog' ? 3.8 : 2.8) : (a.type === 'dog' ? 1.2 : 1.0);
             a.tailPhase += dt * wagRate;
         }
     }

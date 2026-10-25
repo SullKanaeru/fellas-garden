@@ -455,109 +455,168 @@
         const petId = a.variant || a.petId || a.type;
         const def = getExclusivePetDef(petId);
 
+        // Convert millisecond timestamp (from requestAnimationFrame) into seconds
+        // plus a deterministic per-pet phase offset so multiple pets never move in robotic lockstep
+        const rawSec = (typeof now === 'number' && now > 0) ? (now * 0.001) : (performance.now() * 0.001);
+        const idSeed = a.id ? String(a.id).charCodeAt(String(a.id).length - 1) : 0;
+        const phaseOffset = ((a.colorHue || 0) * 0.04) + (idSeed * 0.31);
+        const t = rawSec + phaseOffset;
+
         ctx.save();
         ctx.translate(a.x, a.y);
 
-        const isScared = a.isBeingDragged || a.state === 'scared';
+        const isScared = Boolean(a.isBeingDragged || a.state === 'scared');
+        const isWalking = a.state === 'walking';
+        const isSleeping = a.state === 'sleeping';
+        const isHappy = a.state === 'happy' || (a.petAnim || 0) > 0;
         const dragLift = a.isBeingDragged ? -16 : 0;
-        const tremble = isScared ? (Math.sin(now * 30) * 1.5) : 0;
+        const tremble = isScared ? (Math.sin(rawSec * 36) * 1.4) : 0;
         const petBounce = Math.sin((a.petAnim || 0) * Math.PI) * 12;
-        const walkHop = (a.state === 'walking') ? Math.abs(Math.sin((a.hopPhase || 0))) * 3.5 : 0;
+
+        // Smooth walking hop & stride cycle
+        const stride = isWalking ? ((a.hopPhase || 0) * 1.15) : (isScared ? rawSec * 18 : 0);
+        const walkHop = isWalking ? Math.abs(Math.sin(stride)) * 3.2 : 0;
         const bridgeLift = (!a.isBeingDragged && typeof getBridgeDeckElevation === 'function') ? getBridgeDeckElevation(a.x, a.y) : 0;
 
-        // Ground shadow
-        const shadowRadius = (def && def.tier === 'legendary') ? 18 : 14;
+        // Ground shadow (pulses slightly with height/hop)
+        const baseShadowRadius = (def && def.tier === 'legendary') ? 18 : 14;
+        const shadowScale = Math.max(0.7, 1 - (walkHop + petBounce) * 0.018);
         ctx.fillStyle = 'rgba(20, 35, 15, 0.18)';
         ctx.beginPath();
-        ctx.ellipse(0, 2 - dragLift, isScared ? shadowRadius * 0.75 : shadowRadius, isScared ? 4 : 5.5, 0, 0, Math.PI * 2);
+        ctx.ellipse(0, 2 - dragLift, (isScared ? baseShadowRadius * 0.75 : baseShadowRadius) * shadowScale, (isScared ? 4 : 5.5) * shadowScale, 0, 0, Math.PI * 2);
         ctx.fill();
 
         ctx.translate(0, -petBounce - walkHop - bridgeLift + dragLift + tremble);
         if (a.facingLeft) ctx.scale(-1, 1);
 
+        // Locomotion & secondary-motion state passed to individual pet renderers
+        const legSwing = isWalking ? Math.sin(stride) * 3.8 : (isScared ? Math.sin(rawSec * 20) * 3.0 : 0);
+        const legLiftL = isWalking ? Math.max(0, -Math.sin(stride)) * 2.8 : (isScared ? 1.5 : 0);
+        const legLiftR = isWalking ? Math.max(0, Math.sin(stride)) * 2.8 : (isScared ? 1.5 : 0);
+        const walkTilt = isWalking ? Math.sin(stride) * 0.055 : 0;
+        const headBob = isWalking ? Math.sin(stride * 2) * 1.1 : Math.sin(t * 2.0) * 0.45;
+        const breath = isSleeping ? Math.sin(t * 1.4) * 0.04 : Math.sin(t * 2.2) * 0.024;
+        const tailDynamic = (a.tailPhase || 0) * 0.6 + t * (isHappy ? 2.8 : (isWalking ? 2.2 : 1.5));
+        const isBlinking = isSleeping || ((t * 0.85) % 4.4 > 4.22);
+
+        const anim = {
+            t,
+            rawSec,
+            isWalking,
+            isSleeping,
+            isHappy,
+            isScared,
+            stride,
+            walkHop,
+            legSwing,
+            legLiftL,
+            legLiftR,
+            walkTilt,
+            headBob,
+            breath,
+            tailDynamic,
+            isBlinking
+        };
+
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
+
+        // Subtle breathing & walking pitch on body
+        ctx.rotate(walkTilt);
+        ctx.scale(1 + breath * 0.6, 1 - breath * 0.6);
 
         // Draw individual pet
         switch (petId) {
             case 'kurama':
-                drawChibiKurama(ctx, a, now);
+                drawChibiKurama(ctx, a, anim);
                 break;
             case 'baby_dragon':
-                drawBabyDragon(ctx, a, now);
+                drawBabyDragon(ctx, a, anim);
                 break;
             case 'crystal_deer':
-                drawCrystalDeer(ctx, a, now);
+                drawCrystalDeer(ctx, a, anim);
                 break;
             case 'sakura_kitsune':
-                drawSakuraKitsune(ctx, a, now);
+                drawSakuraKitsune(ctx, a, anim);
                 break;
             case 'phoenix_chick':
-                drawPhoenixChick(ctx, a, now);
+                drawPhoenixChick(ctx, a, anim);
                 break;
             case 'moon_rabbit':
-                drawMoonRabbit(ctx, a, now);
+                drawMoonRabbit(ctx, a, anim);
                 break;
             case 'mushroom_sprite':
-                drawMushroomSprite(ctx, a, now);
+                drawMushroomSprite(ctx, a, anim);
                 break;
             case 'cloud_spirit':
-                drawCloudSpirit(ctx, a, now);
+                drawCloudSpirit(ctx, a, anim);
                 break;
             case 'star_jellyfish':
-                drawStarJellyfish(ctx, a, now);
+                drawStarJellyfish(ctx, a, anim);
                 break;
             case 'axolotl_spirit':
-                drawAxolotlSpirit(ctx, a, now);
+                drawAxolotlSpirit(ctx, a, anim);
                 break;
             case 'tanuki_spirit':
-                drawTanukiSpirit(ctx, a, now);
+                drawTanukiSpirit(ctx, a, anim);
                 break;
             case 'mandragora':
-                drawMandragora(ctx, a, now);
+                drawMandragora(ctx, a, anim);
                 break;
             case 'rainbow_snail':
-                drawRainbowSnail(ctx, a, now);
+                drawRainbowSnail(ctx, a, anim);
                 break;
             case 'starlight_hedgehog':
-                drawStarlightHedgehog(ctx, a, now);
+                drawStarlightHedgehog(ctx, a, anim);
                 break;
             case 'jade_frog':
-                drawJadeFrog(ctx, a, now);
+                drawJadeFrog(ctx, a, anim);
                 break;
             default:
-                drawChibiKurama(ctx, a, now);
+                drawChibiKurama(ctx, a, anim);
                 break;
         }
 
         ctx.restore();
     }
 
+    // Helper for sleeping / blinking eye arcs
+    function drawClosedEyeArc(ctx, x, y, radius, color, lineWidth = 1.5) {
+        ctx.save();
+        ctx.strokeStyle = color || '#292524';
+        ctx.lineWidth = lineWidth;
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0.15 * Math.PI, 0.85 * Math.PI, false);
+        ctx.stroke();
+        ctx.restore();
+    }
+
     // -------------------------------------------------------------
-    // DETAILED CHIBI PET DRAWING IMPLEMENTATIONS
+    // DETAILED CHIBI PET DRAWING IMPLEMENTATIONS (WITH SMOOTH LOCOMOTION)
     // -------------------------------------------------------------
 
-    // 1. 🦊 CHIBI KURAMA (Nine-Tailed Fox with Flame Tails)
-    function drawChibiKurama(ctx, a, now) {
+    // 1. 🦊 CHIBI KURAMA (Nine-Tailed Fox with Fluid Chakra Flame Tails & Quadruped Gait)
+    function drawChibiKurama(ctx, a, anim) {
+        const { t, legSwing, legLiftL, legLiftR, headBob, tailDynamic, isBlinking } = anim;
         const bodyColor = '#EA580C';
         const darkFur = '#9A3412';
         const lightFur = '#FED7AA';
         const outlineColor = '#431407';
 
-        // Ambient Flame Tails (9 tails fanning out)
+        // Ambient Flame Tails (9 tails fanning out in a calm, majestic wave)
         for (let i = 0; i < 9; i++) {
-            const spread = (i - 4) * 0.22;
-            const wave = Math.sin(now * 4 + i * 0.6) * 0.15;
+            const spread = (i - 4) * 0.21;
+            const wave = Math.sin(tailDynamic * 0.95 + i * 0.55) * 0.14;
+            const tipFlick = Math.cos(tailDynamic * 1.2 + i * 0.7) * 2.2;
             const tailAngle = -Math.PI * 0.45 + spread + wave;
             ctx.save();
             ctx.translate(-8, -10);
             ctx.rotate(tailAngle);
 
-            // Tail Flame Gradient
-            const tailGrad = ctx.createLinearGradient(0, 0, 24, 0);
+            const tailGrad = ctx.createLinearGradient(0, 0, 25, 0);
             tailGrad.addColorStop(0, darkFur);
             tailGrad.addColorStop(0.5, '#F97316');
-            tailGrad.addColorStop(0.9, '#FDE047');
+            tailGrad.addColorStop(0.88, '#FDE047');
             tailGrad.addColorStop(1, '#FFFBEB');
 
             ctx.fillStyle = tailGrad;
@@ -565,26 +624,32 @@
             ctx.lineWidth = 1.2;
             ctx.beginPath();
             ctx.moveTo(0, -3);
-            ctx.quadraticCurveTo(12, -7, 24, 0);
-            ctx.quadraticCurveTo(12, 7, 0, 3);
+            ctx.quadraticCurveTo(12, -7 + tipFlick * 0.3, 24, tipFlick);
+            ctx.quadraticCurveTo(12, 7 + tipFlick * 0.3, 0, 3);
             ctx.closePath();
             ctx.fill();
             ctx.stroke();
 
             // Flame core highlight
-            ctx.fillStyle = 'rgba(254, 240, 138, 0.6)';
+            ctx.fillStyle = 'rgba(254, 240, 138, 0.55)';
             ctx.beginPath();
-            ctx.ellipse(14, 0, 6, 2, 0, 0, Math.PI * 2);
+            ctx.ellipse(13, tipFlick * 0.35, 5.5, 1.8, 0, 0, Math.PI * 2);
             ctx.fill();
             ctx.restore();
         }
 
-        // Paws
+        // Far-side Legs (Back-Right & Front-Left)
         ctx.fillStyle = darkFur;
+        ctx.strokeStyle = outlineColor;
+        ctx.lineWidth = 1.3;
         ctx.beginPath();
-        ctx.ellipse(-6, 0, 4, 3, 0, 0, Math.PI * 2);
-        ctx.ellipse(4, 0, 4, 3, 0, 0, Math.PI * 2);
+        ctx.ellipse(-7 - legSwing * 0.75, -0.5 - legLiftR, 3.8, 2.8, 0, 0, Math.PI * 2);
         ctx.fill();
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.ellipse(3 + legSwing * 0.75, -0.5 - legLiftL, 3.6, 2.7, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
 
         // Chubby Chibi Body
         const bodyGrad = ctx.createRadialGradient(0, -8, 2, 0, -8, 14);
@@ -594,25 +659,47 @@
         ctx.strokeStyle = outlineColor;
         ctx.lineWidth = 1.8;
         ctx.beginPath();
-        ctx.ellipse(0, -9, 13, 11, 0, 0, Math.PI * 2);
+        ctx.ellipse(0, -9, 13, 10.5, 0, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
 
         // Chest / Belly Fluff
         ctx.fillStyle = lightFur;
         ctx.beginPath();
-        ctx.ellipse(2, -7, 7, 6, 0.1, 0, Math.PI * 2);
+        ctx.ellipse(2.5, -7.2, 6.8, 5.8, 0.1, 0, Math.PI * 2);
         ctx.fill();
 
-        // Big Cute Chibi Fox Head
-        ctx.save();
-        ctx.translate(4, -18);
+        // Near-side Legs (Back-Left & Front-Right stepping in opposite phase)
+        ctx.fillStyle = bodyColor;
+        ctx.strokeStyle = outlineColor;
+        ctx.lineWidth = 1.4;
+        // Back near leg
+        ctx.beginPath();
+        ctx.ellipse(-4.5 + legSwing * 0.85, 0.5 - legLiftL, 4.1, 3.0, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        // Front near leg
+        ctx.beginPath();
+        ctx.ellipse(6.2 - legSwing * 0.85, 0.5 - legLiftR, 3.9, 2.9, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        // Dark paw tips on near legs
+        ctx.fillStyle = darkFur;
+        ctx.beginPath();
+        ctx.ellipse(-3.8 + legSwing * 0.85, 1.2 - legLiftL, 2.4, 1.5, 0, 0, Math.PI * 2);
+        ctx.ellipse(6.8 - legSwing * 0.85, 1.2 - legLiftR, 2.3, 1.5, 0, 0, Math.PI * 2);
+        ctx.fill();
 
-        // Pointy Fox Ears
+        // Big Cute Chibi Fox Head (with stride headBob)
+        ctx.save();
+        ctx.translate(4, -18 + headBob);
+
+        // Pointy Fox Ears (with gentle independent ear twitch)
         [-7, 7].forEach((ex, idx) => {
+            const earTwitch = Math.sin(t * 2.1 + idx * 1.7) * 0.06;
             ctx.save();
             ctx.translate(ex, -6);
-            ctx.rotate(idx === 0 ? -0.25 : 0.25);
+            ctx.rotate((idx === 0 ? -0.25 : 0.25) + earTwitch);
             ctx.fillStyle = darkFur;
             ctx.strokeStyle = outlineColor;
             ctx.lineWidth = 1.5;
@@ -662,27 +749,31 @@
             ctx.stroke();
         });
 
-        // Cute Shiny Fox Eyes with red liner
-        ctx.fillStyle = '#7F1D1D';
-        ctx.beginPath();
-        ctx.ellipse(-4, -1, 3.2, 3.8, 0, 0, Math.PI * 2);
-        ctx.ellipse(4, -1, 3.2, 3.8, 0, 0, Math.PI * 2);
-        ctx.fill();
+        // Eyes (Blinking / Sleeping support)
+        if (isBlinking) {
+            drawClosedEyeArc(ctx, -4, -0.5, 2.8, outlineColor, 1.6);
+            drawClosedEyeArc(ctx, 4, -0.5, 2.8, outlineColor, 1.6);
+        } else {
+            ctx.fillStyle = '#7F1D1D';
+            ctx.beginPath();
+            ctx.ellipse(-4, -1, 3.2, 3.8, 0, 0, Math.PI * 2);
+            ctx.ellipse(4, -1, 3.2, 3.8, 0, 0, Math.PI * 2);
+            ctx.fill();
 
-        ctx.fillStyle = '#DC2626';
-        ctx.beginPath();
-        ctx.ellipse(-4, 0, 2, 2.4, 0, 0, Math.PI * 2);
-        ctx.ellipse(4, 0, 2, 2.4, 0, 0, Math.PI * 2);
-        ctx.fill();
+            ctx.fillStyle = '#DC2626';
+            ctx.beginPath();
+            ctx.ellipse(-4, 0, 2, 2.4, 0, 0, Math.PI * 2);
+            ctx.ellipse(4, 0, 2, 2.4, 0, 0, Math.PI * 2);
+            ctx.fill();
 
-        // Eye glints
-        ctx.fillStyle = '#FFFFFF';
-        ctx.beginPath();
-        ctx.arc(-4.8, -1.8, 1.2, 0, Math.PI * 2);
-        ctx.arc(3.2, -1.8, 1.2, 0, Math.PI * 2);
-        ctx.arc(-3.2, 0.5, 0.6, 0, Math.PI * 2);
-        ctx.arc(4.8, 0.5, 0.6, 0, Math.PI * 2);
-        ctx.fill();
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.arc(-4.8, -1.8, 1.2, 0, Math.PI * 2);
+            ctx.arc(3.2, -1.8, 1.2, 0, Math.PI * 2);
+            ctx.arc(-3.2, 0.5, 0.6, 0, Math.PI * 2);
+            ctx.arc(4.8, 0.5, 0.6, 0, Math.PI * 2);
+            ctx.fill();
+        }
 
         // Button Nose & Smile
         ctx.fillStyle = outlineColor;
@@ -701,8 +792,9 @@
     }
 
     // 2. 🐉 BABY DRAGON (Emerald Miniature Sky Dragon)
-    function drawBabyDragon(ctx, a, now) {
-        const hoverLift = Math.sin(now * 3.5) * 4;
+    function drawBabyDragon(ctx, a, anim) {
+        const { t, headBob, tailDynamic, isBlinking } = anim;
+        const hoverLift = Math.sin(t * 2.2) * 3.5;
         ctx.translate(0, -6 + hoverLift);
 
         const emeraldDark = '#065F46';
@@ -711,33 +803,34 @@
         const bellyColor = '#D1FAE5';
         const outline = '#022C22';
 
-        // Dragon Tail with Spade
+        // Dragon Tail with Spade (smooth serpentine wave)
         ctx.save();
-        const tailWag = Math.sin(now * 4) * 0.2;
+        const tailWag = Math.sin(tailDynamic * 1.1) * 0.22;
+        const tipCurve = Math.cos(t * 2.6) * 2.5;
         ctx.translate(-10, -3);
         ctx.rotate(tailWag);
         ctx.strokeStyle = emeraldDark;
         ctx.lineWidth = 4;
         ctx.beginPath();
         ctx.moveTo(0, 0);
-        ctx.quadraticCurveTo(-10, 4, -16, -2);
+        ctx.quadraticCurveTo(-10, 4 + tipCurve * 0.4, -16, -2 + tipCurve);
         ctx.stroke();
         // Tail Spade
         ctx.fillStyle = emeraldLight;
         ctx.strokeStyle = outline;
         ctx.lineWidth = 1.2;
         ctx.beginPath();
-        ctx.moveTo(-16, -2);
-        ctx.lineTo(-20, -7);
-        ctx.lineTo(-22, -2);
-        ctx.lineTo(-20, 3);
+        ctx.moveTo(-16, -2 + tipCurve);
+        ctx.lineTo(-20, -7 + tipCurve);
+        ctx.lineTo(-22, -2 + tipCurve);
+        ctx.lineTo(-20, 3 + tipCurve);
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
         ctx.restore();
 
-        // Dragon Wings (flapping gracefully)
-        const wingFlap = Math.sin(now * 7) * 0.35;
+        // Dragon Wings (smooth rhythmic wingbeat)
+        const wingFlap = Math.sin(t * 4.6) * 0.30;
         [-1, 1].forEach(side => {
             ctx.save();
             ctx.translate(-2, -15);
@@ -757,6 +850,16 @@
             ctx.restore();
         });
 
+        // Dangling Back Foot
+        const footKick = Math.sin(t * 3.0) * 1.8;
+        ctx.fillStyle = emeraldDark;
+        ctx.strokeStyle = outline;
+        ctx.lineWidth = 1.3;
+        ctx.beginPath();
+        ctx.ellipse(-4 + footKick, 1.5 - Math.abs(footKick) * 0.3, 3.6, 2.5, 0.2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
         // Plump Emerald Body
         const bodyGrad = ctx.createRadialGradient(0, -8, 2, 0, -8, 12);
         bodyGrad.addColorStop(0, emeraldLight);
@@ -775,9 +878,18 @@
         ctx.ellipse(3, -6, 6, 7, 0.1, 0, Math.PI * 2);
         ctx.fill();
 
+        // Dangling Front Foot & Cute Little Arm
+        ctx.fillStyle = emeraldMain;
+        ctx.strokeStyle = outline;
+        ctx.lineWidth = 1.3;
+        ctx.beginPath();
+        ctx.ellipse(4 - footKick, 1.8 - Math.abs(footKick) * 0.3, 3.8, 2.6, -0.15, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
         // Cute Dragon Head
         ctx.save();
-        ctx.translate(4, -17);
+        ctx.translate(4, -17 + headBob * 0.7);
 
         // Tiny Horns with golden sheen
         [-4, 4].forEach((hx, idx) => {
@@ -820,72 +932,117 @@
         ctx.fill();
 
         // Huge Gem Eyes (Golden Amber with emerald ring)
-        ctx.fillStyle = '#78350F';
-        ctx.beginPath();
-        ctx.ellipse(-3, -1, 3.2, 3.8, 0, 0, Math.PI * 2);
-        ctx.ellipse(3, -1, 3.2, 3.8, 0, 0, Math.PI * 2);
-        ctx.fill();
+        if (isBlinking) {
+            drawClosedEyeArc(ctx, -3, -0.5, 2.8, outline, 1.6);
+            drawClosedEyeArc(ctx, 3, -0.5, 2.8, outline, 1.6);
+        } else {
+            ctx.fillStyle = '#78350F';
+            ctx.beginPath();
+            ctx.ellipse(-3, -1, 3.2, 3.8, 0, 0, Math.PI * 2);
+            ctx.ellipse(3, -1, 3.2, 3.8, 0, 0, Math.PI * 2);
+            ctx.fill();
 
-        ctx.fillStyle = '#FBBF24';
-        ctx.beginPath();
-        ctx.ellipse(-3, 0, 2.2, 2.5, 0, 0, Math.PI * 2);
-        ctx.ellipse(3, 0, 2.2, 2.5, 0, 0, Math.PI * 2);
-        ctx.fill();
+            ctx.fillStyle = '#FBBF24';
+            ctx.beginPath();
+            ctx.ellipse(-3, 0, 2.2, 2.5, 0, 0, Math.PI * 2);
+            ctx.ellipse(3, 0, 2.2, 2.5, 0, 0, Math.PI * 2);
+            ctx.fill();
 
-        // Highlights
-        ctx.fillStyle = '#FFFFFF';
-        ctx.beginPath();
-        ctx.arc(-3.8, -1.8, 1.2, 0, Math.PI * 2);
-        ctx.arc(2.2, -1.8, 1.2, 0, Math.PI * 2);
-        ctx.fill();
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.arc(-3.8, -1.8, 1.2, 0, Math.PI * 2);
+            ctx.arc(2.2, -1.8, 1.2, 0, Math.PI * 2);
+            ctx.fill();
+        }
 
         ctx.restore();
     }
 
-    // 3. 🦌 CRYSTAL DEER (Prismatic Rainbow Antlers)
-    function drawCrystalDeer(ctx, a, now) {
+    // 3. 🦌 CRYSTAL DEER (Prismatic Rainbow Antlers & Graceful Prancing Legs)
+    function drawCrystalDeer(ctx, a, anim) {
+        const { t, legSwing, legLiftL, legLiftR, headBob, tailDynamic, isBlinking } = anim;
         const bodyColor = '#E0F2FE';
         const shadeColor = '#BAE6FD';
         const outline = '#0369A1';
 
-        // Delicate hooves
-        ctx.fillStyle = '#0284C7';
-        [-6, -2, 3, 7].forEach(hx => {
+        // Helper to draw a slender deer leg with hoof
+        const drawDeerLeg = (hipX, hipY, swingX, liftY, isFar) => {
+            const footX = hipX + swingX;
+            const footY = 0.5 - liftY;
+            ctx.strokeStyle = outline;
+            ctx.lineWidth = 3.2;
             ctx.beginPath();
-            ctx.ellipse(hx, 0, 2, 2.5, 0, 0, Math.PI * 2);
+            ctx.moveTo(hipX, hipY);
+            ctx.quadraticCurveTo(hipX + swingX * 0.5, (hipY + footY) * 0.5 - liftY * 0.3, footX, footY);
+            ctx.stroke();
+
+            ctx.strokeStyle = isFar ? shadeColor : bodyColor;
+            ctx.lineWidth = 1.9;
+            ctx.beginPath();
+            ctx.moveTo(hipX, hipY);
+            ctx.quadraticCurveTo(hipX + swingX * 0.5, (hipY + footY) * 0.5 - liftY * 0.3, footX, footY);
+            ctx.stroke();
+
+            // Crystal Blue Hoof
+            ctx.fillStyle = '#0284C7';
+            ctx.beginPath();
+            ctx.ellipse(footX, footY + 0.5, 2.1, 1.8, 0, 0, Math.PI * 2);
             ctx.fill();
-        });
+        };
+
+        // Far-side Deer Legs
+        drawDeerLeg(-6.5, -5, -legSwing * 0.85, legLiftR, true);
+        drawDeerLeg(4.0, -5, legSwing * 0.85, legLiftL, true);
+
+        // Fluffy White Deer Tail (flicking gently)
+        ctx.save();
+        ctx.translate(-11, -11);
+        ctx.rotate(Math.sin(tailDynamic * 1.2) * 0.25);
+        ctx.fillStyle = '#FFFFFF';
+        ctx.strokeStyle = outline;
+        ctx.lineWidth = 1.3;
+        ctx.beginPath();
+        ctx.moveTo(0, 2);
+        ctx.quadraticCurveTo(-5, -3, -3, -6);
+        ctx.quadraticCurveTo(1, -4, 1, 1);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
 
         // Slender Body
         ctx.fillStyle = bodyColor;
         ctx.strokeStyle = outline;
         ctx.lineWidth = 1.6;
         ctx.beginPath();
-        ctx.ellipse(0, -9, 12, 8.5, 0, 0, Math.PI * 2);
+        ctx.ellipse(0, -9.5, 12, 8.2, 0, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
 
+        // Near-side Deer Legs
+        drawDeerLeg(-3.5, -5, legSwing * 0.9, legLiftL, false);
+        drawDeerLeg(7.0, -5, -legSwing * 0.9, legLiftR, false);
+
         // Dappled Starry White Spots
         ctx.fillStyle = '#FFFFFF';
-        [[-4, -11], [1, -12], [-2, -8], [4, -9]].forEach(([sx, sy]) => {
+        [[-4, -11.5], [1, -12.5], [-2, -8.5], [4, -9.5]].forEach(([sx, sy]) => {
             ctx.beginPath();
             ctx.arc(sx, sy, 1.2, 0, Math.PI * 2);
             ctx.fill();
         });
 
-        // Elegant Neck & Head
+        // Elegant Neck & Head (bobbing gracefully)
         ctx.save();
-        ctx.translate(6, -18);
+        ctx.translate(6, -18 + headBob);
 
-        // Prismatic Rainbow Crystal Antlers
+        // Prismatic Rainbow Crystal Antlers (smooth, slow color cycle)
         [-4, 4].forEach((ax, idx) => {
             ctx.save();
             ctx.translate(ax, -7);
             ctx.rotate(idx === 0 ? -0.3 : 0.3);
 
-            // Shimmering rainbow gradient cycling with time
             const prismGrad = ctx.createLinearGradient(0, 0, 0, -18);
-            const hueOffset = (now * 40 + idx * 60) % 360;
+            const hueOffset = (t * 24 + idx * 60) % 360;
             prismGrad.addColorStop(0, `hsl(${hueOffset}, 80%, 75%)`);
             prismGrad.addColorStop(0.5, `hsl(${(hueOffset + 120) % 360}, 85%, 80%)`);
             prismGrad.addColorStop(1, `hsl(${(hueOffset + 240) % 360}, 90%, 88%)`);
@@ -893,7 +1050,6 @@
             ctx.fillStyle = prismGrad;
             ctx.strokeStyle = '#0284C7';
             ctx.lineWidth = 1.2;
-            // Antler branches
             ctx.beginPath();
             ctx.moveTo(-1.5, 2);
             ctx.lineTo(-2, -14);
@@ -908,7 +1064,6 @@
             ctx.fill();
             ctx.stroke();
 
-            // Antler crystal sparkle glints
             ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
             ctx.beginPath();
             ctx.arc(-6, -19, 1.4, 0, Math.PI * 2);
@@ -917,13 +1072,14 @@
             ctx.restore();
         });
 
-        // Ears
+        // Ears (pivoting gently)
+        const earPivot = Math.sin(t * 2.2) * 0.08;
         ctx.fillStyle = shadeColor;
         ctx.strokeStyle = outline;
         ctx.lineWidth = 1.2;
         ctx.beginPath();
-        ctx.ellipse(-7, -3, 5, 2.5, -0.4, 0, Math.PI * 2);
-        ctx.ellipse(7, -3, 5, 2.5, 0.4, 0, Math.PI * 2);
+        ctx.ellipse(-7, -3, 5, 2.5, -0.4 - earPivot, 0, Math.PI * 2);
+        ctx.ellipse(7, -3, 5, 2.5, 0.4 + earPivot, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
 
@@ -937,17 +1093,22 @@
         ctx.stroke();
 
         // Soft dark deer eyes
-        ctx.fillStyle = '#0F172A';
-        ctx.beginPath();
-        ctx.ellipse(-3, -1, 2.6, 3.2, 0, 0, Math.PI * 2);
-        ctx.ellipse(3, -1, 2.6, 3.2, 0, 0, Math.PI * 2);
-        ctx.fill();
+        if (isBlinking) {
+            drawClosedEyeArc(ctx, -3, -0.5, 2.4, outline, 1.5);
+            drawClosedEyeArc(ctx, 3, -0.5, 2.4, outline, 1.5);
+        } else {
+            ctx.fillStyle = '#0F172A';
+            ctx.beginPath();
+            ctx.ellipse(-3, -1, 2.6, 3.2, 0, 0, Math.PI * 2);
+            ctx.ellipse(3, -1, 2.6, 3.2, 0, 0, Math.PI * 2);
+            ctx.fill();
 
-        ctx.fillStyle = '#FFFFFF';
-        ctx.beginPath();
-        ctx.arc(-3.6, -1.8, 1.1, 0, Math.PI * 2);
-        ctx.arc(2.4, -1.8, 1.1, 0, Math.PI * 2);
-        ctx.fill();
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.arc(-3.6, -1.8, 1.1, 0, Math.PI * 2);
+            ctx.arc(2.4, -1.8, 1.1, 0, Math.PI * 2);
+            ctx.fill();
+        }
 
         // Little nose
         ctx.fillStyle = '#0284C7';
@@ -959,20 +1120,20 @@
     }
 
     // 4. 🌸 SAKURA KITSUNE (Cherry Blossom Petal Fox)
-    function drawSakuraKitsune(ctx, a, now) {
+    function drawSakuraKitsune(ctx, a, anim) {
+        const { t, legSwing, legLiftL, legLiftR, headBob, tailDynamic, isBlinking } = anim;
         const bodyColor = '#FFF5F7';
         const pinkAccent = '#F472B6';
         const pinkDeep = '#DB2777';
         const outline = '#831843';
 
-        // Twin Sakura Petal Tails
+        // Twin Sakura Petal Tails (smooth swaying)
         [-1, 1].forEach((side, idx) => {
             ctx.save();
-            const wag = Math.sin(now * 3 + idx) * 0.2;
+            const wag = Math.sin(tailDynamic + idx * 0.9) * 0.18;
             ctx.translate(-8, -8);
-            ctx.rotate(-Math.PI * 0.4 + side * 0.3 + wag);
+            ctx.rotate(-Math.PI * 0.4 + side * 0.28 + wag);
 
-            // Petal gradient
             const petalGrad = ctx.createLinearGradient(0, 0, 22, 0);
             petalGrad.addColorStop(0, '#FDF2F8');
             petalGrad.addColorStop(0.6, pinkAccent);
@@ -991,31 +1152,57 @@
             ctx.restore();
         });
 
-        // Paws
+        // Far-side Paws
         ctx.fillStyle = pinkAccent;
+        ctx.strokeStyle = outline;
+        ctx.lineWidth = 1.2;
         ctx.beginPath();
-        ctx.ellipse(-5, 0, 3.5, 2.5, 0, 0, Math.PI * 2);
-        ctx.ellipse(4, 0, 3.5, 2.5, 0, 0, Math.PI * 2);
+        ctx.ellipse(-6.5 - legSwing * 0.75, -0.5 - legLiftR, 3.3, 2.3, 0, 0, Math.PI * 2);
         ctx.fill();
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.ellipse(3.0 + legSwing * 0.75, -0.5 - legLiftL, 3.3, 2.3, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
 
         // Porcelain Body
         ctx.fillStyle = bodyColor;
         ctx.strokeStyle = outline;
         ctx.lineWidth = 1.8;
         ctx.beginPath();
-        ctx.ellipse(0, -8, 12, 10, 0, 0, Math.PI * 2);
+        ctx.ellipse(0, -8.5, 12, 9.8, 0, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
 
+        // Near-side Paws (stepping in opposite phase)
+        ctx.fillStyle = bodyColor;
+        ctx.strokeStyle = outline;
+        ctx.lineWidth = 1.3;
+        ctx.beginPath();
+        ctx.ellipse(-4.0 + legSwing * 0.85, 0.5 - legLiftL, 3.6, 2.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.ellipse(5.8 - legSwing * 0.85, 0.5 - legLiftR, 3.6, 2.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        // Pink toe tips
+        ctx.fillStyle = pinkAccent;
+        ctx.beginPath();
+        ctx.ellipse(-3.5 + legSwing * 0.85, 1.0 - legLiftL, 2.0, 1.3, 0, 0, Math.PI * 2);
+        ctx.ellipse(6.3 - legSwing * 0.85, 1.0 - legLiftR, 2.0, 1.3, 0, 0, Math.PI * 2);
+        ctx.fill();
+
         // Head
         ctx.save();
-        ctx.translate(4, -17);
+        ctx.translate(4, -17 + headBob);
 
         // Ears with pink tips
         [-6, 6].forEach((ex, idx) => {
+            const earSway = Math.sin(t * 2.2 + idx * 1.5) * 0.06;
             ctx.save();
             ctx.translate(ex, -6);
-            ctx.rotate(idx === 0 ? -0.25 : 0.25);
+            ctx.rotate((idx === 0 ? -0.25 : 0.25) + earSway);
             ctx.fillStyle = bodyColor;
             ctx.strokeStyle = outline;
             ctx.lineWidth = 1.4;
@@ -1028,11 +1215,11 @@
             ctx.stroke();
             ctx.fillStyle = pinkAccent;
             ctx.beginPath();
-            ctx.moveTo(-1, -7); ctx.lineTo(0, -10); ctx.lineTo(1, -7); ctx.closePath(); ctx.fill();
+            ctx.moveTo(-1.5, -6); ctx.lineTo(0, -10.5); ctx.lineTo(1.5, -6); ctx.closePath(); ctx.fill();
             ctx.restore();
         });
 
-        // Head
+        // Head Base
         ctx.fillStyle = bodyColor;
         ctx.strokeStyle = outline;
         ctx.lineWidth = 1.8;
@@ -1048,17 +1235,22 @@
         ctx.fill();
 
         // Soft ruby eyes
-        ctx.fillStyle = pinkDeep;
-        ctx.beginPath();
-        ctx.ellipse(-3.5, -0.5, 2.8, 3.4, 0, 0, Math.PI * 2);
-        ctx.ellipse(3.5, -0.5, 2.8, 3.4, 0, 0, Math.PI * 2);
-        ctx.fill();
+        if (isBlinking) {
+            drawClosedEyeArc(ctx, -3.5, 0, 2.5, outline, 1.5);
+            drawClosedEyeArc(ctx, 3.5, 0, 2.5, outline, 1.5);
+        } else {
+            ctx.fillStyle = pinkDeep;
+            ctx.beginPath();
+            ctx.ellipse(-3.5, -0.5, 2.8, 3.4, 0, 0, Math.PI * 2);
+            ctx.ellipse(3.5, -0.5, 2.8, 3.4, 0, 0, Math.PI * 2);
+            ctx.fill();
 
-        ctx.fillStyle = '#FFFFFF';
-        ctx.beginPath();
-        ctx.arc(-4.2, -1.2, 1.1, 0, Math.PI * 2);
-        ctx.arc(2.8, -1.2, 1.1, 0, Math.PI * 2);
-        ctx.fill();
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.arc(-4.2, -1.2, 1.1, 0, Math.PI * 2);
+            ctx.arc(2.8, -1.2, 1.1, 0, Math.PI * 2);
+            ctx.fill();
+        }
 
         // Nose
         ctx.fillStyle = pinkDeep;
@@ -1070,8 +1262,9 @@
     }
 
     // 5. 🔥 PHOENIX CHICK (Fiery Radiant Chick)
-    function drawPhoenixChick(ctx, a, now) {
-        const hoverLift = Math.sin(now * 4.5) * 3;
+    function drawPhoenixChick(ctx, a, anim) {
+        const { t, tailDynamic, isBlinking } = anim;
+        const hoverLift = Math.sin(t * 2.5) * 3.0;
         ctx.translate(0, -6 + hoverLift);
 
         const fireRed = '#DC2626';
@@ -1079,10 +1272,10 @@
         const fireYellow = '#FDE047';
         const outline = '#450A0A';
 
-        // Flowing flame tail ribbons
+        // Flowing flame tail ribbons (smooth wave)
         for (let i = 0; i < 3; i++) {
             const spread = (i - 1) * 0.25;
-            const wave = Math.sin(now * 5 + i) * 0.2;
+            const wave = Math.sin(tailDynamic * 1.1 + i * 0.8) * 0.18;
             ctx.save();
             ctx.translate(-7, -4);
             ctx.rotate(-Math.PI * 0.6 + spread + wave);
@@ -1099,8 +1292,49 @@
             ctx.restore();
         }
 
-        // Flapping wings
-        const wingFlap = Math.sin(now * 12) * 0.4;
+        // Far Wing
+        const wingFlap = Math.sin(t * 5.2) * 0.34;
+        ctx.save();
+        ctx.translate(3, -10);
+        ctx.scale(-1, 1);
+        ctx.rotate(-wingFlap * 0.8);
+        ctx.fillStyle = fireRed;
+        ctx.strokeStyle = outline;
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.quadraticCurveTo(-9, -8, -12, -2);
+        ctx.quadraticCurveTo(-7, 4, 0, 0);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+
+        // Little Golden Talons tucked underneath
+        const clawSwing = Math.sin(t * 3.2) * 1.5;
+        ctx.fillStyle = '#F59E0B';
+        ctx.strokeStyle = outline;
+        ctx.lineWidth = 1.1;
+        ctx.beginPath();
+        ctx.ellipse(-2 + clawSwing, 1.5, 2.6, 1.8, 0.2, 0, Math.PI * 2);
+        ctx.ellipse(2.5 - clawSwing, 1.5, 2.6, 1.8, -0.2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Round Fiery Body
+        const bodyGrad = ctx.createRadialGradient(0, -7, 2, 0, -7, 11);
+        bodyGrad.addColorStop(0, fireYellow);
+        bodyGrad.addColorStop(0.6, fireOrange);
+        bodyGrad.addColorStop(1, fireRed);
+        ctx.fillStyle = bodyGrad;
+        ctx.strokeStyle = outline;
+        ctx.lineWidth = 1.8;
+        ctx.beginPath();
+        ctx.ellipse(0, -7, 10, 9, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Near Flapping Wing
         ctx.save();
         ctx.translate(-2, -9);
         ctx.rotate(wingFlap);
@@ -1116,24 +1350,11 @@
         ctx.stroke();
         ctx.restore();
 
-        // Round Fiery Body
-        const bodyGrad = ctx.createRadialGradient(0, -7, 2, 0, -7, 11);
-        bodyGrad.addColorStop(0, fireYellow);
-        bodyGrad.addColorStop(0.6, fireOrange);
-        bodyGrad.addColorStop(1, fireRed);
-        ctx.fillStyle = bodyGrad;
-        ctx.strokeStyle = outline;
-        ctx.lineWidth = 1.8;
-        ctx.beginPath();
-        ctx.ellipse(0, -7, 10, 9, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-
         // Glowing Crest Feathers on head
         [-3, 0, 3].forEach((cx, idx) => {
             ctx.save();
             ctx.translate(2 + cx, -16);
-            ctx.rotate((idx - 1) * 0.2 + Math.sin(now * 4 + idx) * 0.1);
+            ctx.rotate((idx - 1) * 0.2 + Math.sin(t * 2.6 + idx) * 0.09);
             ctx.fillStyle = fireYellow;
             ctx.strokeStyle = fireRed;
             ctx.lineWidth = 1;
@@ -1148,15 +1369,19 @@
         });
 
         // Large Cute Bird Eyes
-        ctx.fillStyle = '#450A0A';
-        ctx.beginPath();
-        ctx.ellipse(2, -8, 2.8, 3.2, 0, 0, Math.PI * 2);
-        ctx.fill();
+        if (isBlinking) {
+            drawClosedEyeArc(ctx, 2, -7.8, 2.4, outline, 1.5);
+        } else {
+            ctx.fillStyle = '#450A0A';
+            ctx.beginPath();
+            ctx.ellipse(2, -8, 2.8, 3.2, 0, 0, Math.PI * 2);
+            ctx.fill();
 
-        ctx.fillStyle = '#FFFFFF';
-        ctx.beginPath();
-        ctx.arc(1.5, -9, 1.1, 0, Math.PI * 2);
-        ctx.fill();
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.arc(1.5, -9, 1.1, 0, Math.PI * 2);
+            ctx.fill();
+        }
 
         // Cute golden beak
         ctx.fillStyle = '#FDE047';
@@ -1171,16 +1396,17 @@
         ctx.stroke();
     }
 
-    // 6. 🌙 MOON RABBIT (Celestial Indigo Bunny with Crescent Rune)
-    function drawMoonRabbit(ctx, a, now) {
+    // 6. 🌙 MOON RABBIT (Celestial Indigo Bunny with Springy Hop & Floppy Ears)
+    function drawMoonRabbit(ctx, a, anim) {
+        const { t, isWalking, stride, legSwing, legLiftL, legLiftR, headBob, tailDynamic, isBlinking } = anim;
         const bodyColor = '#1E1B4B';
         const midBlue = '#312E81';
         const outline = '#0F172A';
         const crescentColor = '#FDE047';
 
-        // Luminous White Cotton Tail
+        // Luminous White Cotton Tail (wiggling softly)
         ctx.save();
-        ctx.translate(-11, -7);
+        ctx.translate(-11, -7 + Math.sin(tailDynamic * 1.5) * 1.1);
         ctx.fillStyle = '#F8FAFC';
         ctx.shadowColor = '#60A5FA';
         ctx.shadowBlur = 4;
@@ -1190,12 +1416,12 @@
         ctx.shadowBlur = 0;
         ctx.restore();
 
-        // Back Paw
+        // Far Front Paw
         ctx.fillStyle = midBlue;
         ctx.strokeStyle = outline;
-        ctx.lineWidth = 1.4;
+        ctx.lineWidth = 1.3;
         ctx.beginPath();
-        ctx.ellipse(-6, 0, 5, 3.2, 0, 0, Math.PI * 2);
+        ctx.ellipse(4.5 - legSwing * 0.7, 0.2 - legLiftR, 3.2, 2.2, 0, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
 
@@ -1207,19 +1433,35 @@
         ctx.strokeStyle = outline;
         ctx.lineWidth = 1.8;
         ctx.beginPath();
-        ctx.ellipse(0, -8, 12, 9.5, 0, 0, Math.PI * 2);
+        ctx.ellipse(0, -8.5, 12, 9.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Springy Back Hind Foot & Near Front Paw
+        const backFootAngle = isWalking ? Math.sin(stride) * 0.25 : 0;
+        ctx.fillStyle = midBlue;
+        ctx.strokeStyle = outline;
+        ctx.lineWidth = 1.4;
+        ctx.beginPath();
+        ctx.ellipse(-5.5 + legSwing * 0.85, 0.5 - legLiftL, 5.2, 3.1, backFootAngle, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.ellipse(6.5 + legSwing * 0.75, 0.5 - legLiftL * 0.8, 3.4, 2.4, 0, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
 
         // Head
         ctx.save();
-        ctx.translate(5, -16);
+        ctx.translate(5, -16 + headBob);
 
-        // Long Silky Ears
+        // Long Silky Ears (flopping gently with hop & breeze)
+        const earFlop = isWalking ? Math.sin(stride - 0.6) * 0.16 : Math.sin(t * 1.9) * 0.06;
         [-4, 3].forEach((ex, idx) => {
             ctx.save();
             ctx.translate(ex, -6);
-            ctx.rotate(idx === 0 ? -0.15 : 0.2);
+            ctx.rotate((idx === 0 ? -0.18 : 0.18) - earFlop * (idx === 0 ? 1 : 0.7));
             ctx.fillStyle = bodyColor;
             ctx.strokeStyle = outline;
             ctx.lineWidth = 1.4;
@@ -1260,42 +1502,66 @@
         ctx.fill();
 
         // Ruby Moon Eyes
-        ctx.fillStyle = '#BE123C';
-        ctx.beginPath();
-        ctx.ellipse(-3, 0, 2.6, 3.2, 0, 0, Math.PI * 2);
-        ctx.ellipse(3, 0, 2.6, 3.2, 0, 0, Math.PI * 2);
-        ctx.fill();
+        if (isBlinking) {
+            drawClosedEyeArc(ctx, -3, 0.2, 2.4, '#818CF8', 1.5);
+            drawClosedEyeArc(ctx, 3, 0.2, 2.4, '#818CF8', 1.5);
+        } else {
+            ctx.fillStyle = '#BE123C';
+            ctx.beginPath();
+            ctx.ellipse(-3, 0, 2.6, 3.2, 0, 0, Math.PI * 2);
+            ctx.ellipse(3, 0, 2.6, 3.2, 0, 0, Math.PI * 2);
+            ctx.fill();
 
-        ctx.fillStyle = '#FFFFFF';
-        ctx.beginPath();
-        ctx.arc(-3.6, -0.8, 1.0, 0, Math.PI * 2);
-        ctx.arc(2.4, -0.8, 1.0, 0, Math.PI * 2);
-        ctx.fill();
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.arc(-3.6, -0.8, 1.0, 0, Math.PI * 2);
+            ctx.arc(2.4, -0.8, 1.0, 0, Math.PI * 2);
+            ctx.fill();
+        }
 
         // Nose & Whisker twitch
+        const noseTwitch = Math.sin(t * 4.5) * 0.35;
         ctx.fillStyle = '#F472B6';
         ctx.beginPath();
-        ctx.ellipse(0, 3.2, 1.1, 0.8, 0, 0, Math.PI * 2);
+        ctx.ellipse(0, 3.2 + noseTwitch, 1.2, 0.85, 0, 0, Math.PI * 2);
         ctx.fill();
 
         ctx.restore();
     }
 
     // 7. 🍄 MUSHROOM SPRITE (Waddling Shroom with Glowing Cap)
-    function drawMushroomSprite(ctx, a, now) {
+    function drawMushroomSprite(ctx, a, anim) {
+        const { t, isWalking, stride, legSwing, legLiftL, legLiftR, headBob, isBlinking } = anim;
         const outline = '#450A0A';
-        const waddle = (a.state === 'walking') ? Math.sin(now * 10) * 0.15 : 0;
+        const waddle = isWalking ? Math.sin(stride) * 0.10 : Math.sin(t * 1.6) * 0.025;
         ctx.rotate(waddle);
 
-        // Stubby feet
+        // Stubby feet (alternating step and lift)
         ctx.fillStyle = '#FEF3C7';
         ctx.strokeStyle = '#78350F';
-        ctx.lineWidth = 1.2;
+        ctx.lineWidth = 1.3;
         ctx.beginPath();
-        ctx.ellipse(-4, 0, 3.5, 2.5, 0, 0, Math.PI * 2);
-        ctx.ellipse(4, 0, 3.5, 2.5, 0, 0, Math.PI * 2);
+        ctx.ellipse(-4.2 + legSwing * 0.65, 0.4 - legLiftL, 3.6, 2.5, 0, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
+        ctx.beginPath();
+        ctx.ellipse(4.2 - legSwing * 0.65, 0.4 - legLiftR, 3.6, 2.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Far Stubby Arm
+        const armSwing = isWalking ? Math.sin(stride) * 0.35 : Math.sin(t * 2.0) * 0.1;
+        ctx.save();
+        ctx.translate(7.5, -6.5);
+        ctx.rotate(-0.3 - armSwing);
+        ctx.fillStyle = '#FFFBEB';
+        ctx.strokeStyle = '#78350F';
+        ctx.lineWidth = 1.3;
+        ctx.beginPath();
+        ctx.ellipse(1.5, 0, 2.8, 1.9, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
 
         // Chubby Pear Body
         ctx.fillStyle = '#FFFBEB';
@@ -1305,6 +1571,19 @@
         ctx.ellipse(0, -7, 9, 8, 0, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
+
+        // Near Stubby Arm
+        ctx.save();
+        ctx.translate(-7.5, -6.5);
+        ctx.rotate(0.3 + armSwing);
+        ctx.fillStyle = '#FFFBEB';
+        ctx.strokeStyle = '#78350F';
+        ctx.lineWidth = 1.3;
+        ctx.beginPath();
+        ctx.ellipse(-1.5, 0, 2.8, 1.9, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
 
         // Face features on body
         ctx.fillStyle = '#292524';
@@ -1329,7 +1608,9 @@
 
         // Huge Vibrant Scarlet Mushroom Cap
         ctx.save();
-        ctx.translate(0, -14);
+        const capSquish = isWalking ? Math.sin(stride * 2) * 0.04 : Math.sin(t * 2.2) * 0.02;
+        ctx.translate(0, -14 + headBob * 0.6);
+        ctx.scale(1 + capSquish, 1 - capSquish);
 
         // Gills underneath
         ctx.fillStyle = '#FEF08A';
@@ -1362,14 +1643,15 @@
         ctx.restore();
     }
 
-    // 8. ☁️ CLOUD SPIRIT (Fluffy Cumulus with Mini Rainbow)
-    function drawCloudSpirit(ctx, a, now) {
-        const floatBob = Math.sin(now * 3) * 4;
+    // 8. ☁️ CLOUD SPIRIT (Fluffy Cumulus with Billowing Lobes & Mini Rainbow)
+    function drawCloudSpirit(ctx, a, anim) {
+        const { t } = anim;
+        const floatBob = Math.sin(t * 1.8) * 3.4;
         ctx.translate(0, -12 + floatBob);
 
         // Mini Rainbow Arch overhead
         ctx.save();
-        ctx.translate(0, -18);
+        ctx.translate(0, -18 + Math.sin(t * 2.2) * 0.8);
         const rainbowColors = ['#F87171', '#FBBF24', '#34D399', '#60A5FA', '#A78BFA'];
         rainbowColors.forEach((rc, idx) => {
             ctx.strokeStyle = rc;
@@ -1380,8 +1662,18 @@
         });
         ctx.restore();
 
-        // Multi-lobed Puffy Cloud Body
-        const outline = '#0284C7';
+        // Little trailing cloud puff feet underneath
+        const puffSwing = Math.sin(t * 2.6) * 2.0;
+        ctx.fillStyle = '#E0F2FE';
+        ctx.strokeStyle = '#BAE6FD';
+        ctx.lineWidth = 1.3;
+        ctx.beginPath();
+        ctx.arc(-4.5 + puffSwing, 7.5, 3.2, 0, Math.PI * 2);
+        ctx.arc(4.5 - puffSwing, 7.5, 3.2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Multi-lobed Puffy Cloud Body (each lobe breathes gently out of phase)
         ctx.fillStyle = 'rgba(255, 255, 255, 0.96)';
         ctx.strokeStyle = '#BAE6FD';
         ctx.lineWidth = 2;
@@ -1394,9 +1686,10 @@
             [5, 4, 7]
         ];
 
-        lobes.forEach(([lx, ly, lr]) => {
+        lobes.forEach(([lx, ly, lr], idx) => {
+            const rPulse = lr + Math.sin(t * 2.1 + idx * 1.1) * 0.55;
             ctx.beginPath();
-            ctx.arc(lx, ly, lr, 0, Math.PI * 2);
+            ctx.arc(lx, ly, rPulse, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
         });
@@ -1410,7 +1703,6 @@
         // Cute Smiling Face
         ctx.strokeStyle = '#0369A1';
         ctx.lineWidth = 1.5;
-        // Happy Arc Eyes (^^)
         ctx.beginPath();
         ctx.arc(-4, -2, 2.5, Math.PI, 0);
         ctx.arc(4, -2, 2.5, Math.PI, 0);
@@ -1429,30 +1721,42 @@
         ctx.stroke();
     }
 
-    // 9. 🪼 STAR JELLYFISH (Bioluminescent Cosmic Bell)
-    function drawStarJellyfish(ctx, a, now) {
-        const floatBob = Math.sin(now * 2.5) * 4;
-        const pulse = 1.0 + Math.sin(now * 3.5) * 0.12;
+    // 9. 🪼 STAR JELLYFISH (Bioluminescent Cosmic Bell with Calm Hypnotic Ocean Pulse)
+    function drawStarJellyfish(ctx, a, anim) {
+        const { t } = anim;
+        const floatBob = Math.sin(t * 1.5) * 3.5;
+        const pulse = 1.0 + Math.sin(t * 1.8) * 0.085;
         ctx.translate(0, -10 + floatBob);
         ctx.scale(1 / pulse, pulse);
 
-        // Flowing Ribbon Tentacles (4 tentacles swaying)
-        for (let i = 0; i < 4; i++) {
-            const spread = (i - 1.5) * 4.5;
-            const wave = Math.sin(now * 4 + i) * 3;
-            ctx.strokeStyle = (i % 2 === 0) ? 'rgba(56, 189, 248, 0.75)' : 'rgba(192, 132, 252, 0.75)';
-            ctx.lineWidth = 2.0;
+        // Flowing Ribbon Tentacles (5 tentacles swaying in a slow travelling wave)
+        for (let i = 0; i < 5; i++) {
+            const spread = (i - 2) * 3.6;
+            const wave1 = Math.sin(t * 2.0 + i * 0.65) * 2.6;
+            const wave2 = Math.cos(t * 1.8 + i * 0.85) * 3.2;
+            ctx.strokeStyle = (i % 2 === 0) ? 'rgba(56, 189, 248, 0.78)' : 'rgba(192, 132, 252, 0.78)';
+            ctx.lineWidth = (i === 2) ? 2.2 : 1.8;
             ctx.beginPath();
             ctx.moveTo(spread, 4);
-            ctx.bezierCurveTo(spread + wave, 12, spread - wave, 18, spread + wave * 0.5, 24);
+            ctx.bezierCurveTo(
+                spread + wave1, 11,
+                spread - wave1 * 0.8, 17,
+                spread + wave2, 23
+            );
             ctx.stroke();
+
+            // Tiny bioluminescent bead at tentacle tip
+            ctx.fillStyle = '#FEF08A';
+            ctx.beginPath();
+            ctx.arc(spread + wave2, 23, 1.1, 0, Math.PI * 2);
+            ctx.fill();
         }
 
         // Bioluminescent Bell Cap
         const bellGrad = ctx.createRadialGradient(0, -6, 2, 0, -4, 15);
         bellGrad.addColorStop(0, '#E0F2FE');
-        bellGrad.addColorStop(0.5, 'rgba(56, 189, 248, 0.85)');
-        bellGrad.addColorStop(1, 'rgba(168, 85, 247, 0.7)');
+        bellGrad.addColorStop(0.5, 'rgba(56, 189, 248, 0.88)');
+        bellGrad.addColorStop(1, 'rgba(168, 85, 247, 0.75)');
 
         ctx.fillStyle = bellGrad;
         ctx.strokeStyle = '#0284C7';
@@ -1460,15 +1764,16 @@
         ctx.beginPath();
         ctx.moveTo(-13, 4);
         ctx.bezierCurveTo(-14, -15, 14, -15, 13, 4);
-        ctx.bezierCurveTo(7, 6, -7, 6, -13, 4);
+        ctx.bezierCurveTo(7, 6.5, -7, 6.5, -13, 4);
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
 
         // Inner glowing star core
+        const starScale = 1.0 + Math.sin(t * 2.4) * 0.12;
         ctx.fillStyle = '#FEF08A';
         ctx.beginPath();
-        ctx.arc(0, -3, 3, 0, Math.PI * 2);
+        ctx.arc(0, -3, 3.0 * starScale, 0, Math.PI * 2);
         ctx.fill();
 
         // Sparkle points on cap
@@ -1480,8 +1785,9 @@
         });
     }
 
-    // 10. 🦎 AXOLOTL SPIRIT (Sweet Pink Aquatic Salamander)
-    function drawAxolotlSpirit(ctx, a, now) {
+    // 10. 🦎 AXOLOTL SPIRIT (Sweet Pink Aquatic Salamander with Waddling Feet & Fluttering Gills)
+    function drawAxolotlSpirit(ctx, a, anim) {
+        const { t, legSwing, legLiftL, legLiftR, headBob, tailDynamic, isBlinking } = anim;
         const bodyPink = '#FBCFE8';
         const darkPink = '#F472B6';
         const gillCyan = '#22D3EE';
@@ -1489,45 +1795,64 @@
 
         // Flat swimming tail
         ctx.save();
-        const tailWag = Math.sin(now * 4) * 0.2;
+        const tailWag = Math.sin(tailDynamic * 1.1) * 0.22;
         ctx.translate(-8, -4);
         ctx.rotate(tailWag);
         ctx.fillStyle = '#F472B6';
         ctx.strokeStyle = outline;
         ctx.lineWidth = 1.2;
         ctx.beginPath();
-        ctx.moveTo(0, -3);
-        ctx.quadraticCurveTo(-10, -7, -16, 0);
-        ctx.quadraticCurveTo(-10, 7, 0, 3);
+        ctx.moveTo(0, -3.5);
+        ctx.quadraticCurveTo(-10, -7.5, -17, Math.sin(t * 2.5) * 1.5);
+        ctx.quadraticCurveTo(-10, 7.5, 0, 3.5);
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
         ctx.restore();
 
-        // Paws
+        // Far-side Paws
         ctx.fillStyle = darkPink;
+        ctx.strokeStyle = outline;
+        ctx.lineWidth = 1.2;
         ctx.beginPath();
-        ctx.ellipse(-5, 0, 3.5, 2.2, 0, 0, Math.PI * 2);
-        ctx.ellipse(5, 0, 3.5, 2.2, 0, 0, Math.PI * 2);
+        ctx.ellipse(-6 - legSwing * 0.75, -0.3 - legLiftR, 3.3, 2.1, 0, 0, Math.PI * 2);
         ctx.fill();
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.ellipse(4 + legSwing * 0.75, -0.3 - legLiftL, 3.3, 2.1, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
 
         // Chubby Body
         ctx.fillStyle = bodyPink;
         ctx.strokeStyle = outline;
         ctx.lineWidth = 1.8;
         ctx.beginPath();
-        ctx.ellipse(0, -6, 12, 8.5, 0, 0, Math.PI * 2);
+        ctx.ellipse(0, -6.5, 12, 8.2, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Near-side Paws
+        ctx.fillStyle = darkPink;
+        ctx.strokeStyle = outline;
+        ctx.lineWidth = 1.3;
+        ctx.beginPath();
+        ctx.ellipse(-4 + legSwing * 0.85, 0.7 - legLiftL, 3.6, 2.3, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.ellipse(6 - legSwing * 0.85, 0.7 - legLiftR, 3.6, 2.3, 0, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
 
         // Axolotl Wide Head
         ctx.save();
-        ctx.translate(5, -13);
+        ctx.translate(5, -13 + headBob * 0.8);
 
-        // 6 Branching Feathery External Gills (3 each side with cyan tips)
-        [-1, 1].forEach((side, sIdx) => {
+        // 6 Branching Feathery External Gills
+        [-1, 1].forEach((side) => {
             for (let g = 0; g < 3; g++) {
-                const wave = Math.sin(now * 3 + g) * 0.15;
+                const wave = Math.sin(t * 2.1 + g * 0.7) * 0.11;
                 ctx.save();
                 ctx.translate(side * 8, -4 + g * 3.5);
                 ctx.rotate(side * (0.3 + g * 0.2) + wave);
@@ -1537,7 +1862,6 @@
                 ctx.moveTo(0, 0);
                 ctx.lineTo(side * 6, -1);
                 ctx.stroke();
-                // Cyan feather tips
                 ctx.fillStyle = gillCyan;
                 ctx.beginPath();
                 ctx.arc(side * 6, -1, 1.8, 0, Math.PI * 2);
@@ -1556,17 +1880,22 @@
         ctx.stroke();
 
         // Sweet Round Bead Eyes
-        ctx.fillStyle = '#831843';
-        ctx.beginPath();
-        ctx.arc(-4, -1, 2.2, 0, Math.PI * 2);
-        ctx.arc(4, -1, 2.2, 0, Math.PI * 2);
-        ctx.fill();
+        if (isBlinking) {
+            drawClosedEyeArc(ctx, -4, -0.8, 2.0, outline, 1.4);
+            drawClosedEyeArc(ctx, 4, -0.8, 2.0, outline, 1.4);
+        } else {
+            ctx.fillStyle = '#831843';
+            ctx.beginPath();
+            ctx.arc(-4, -1, 2.2, 0, Math.PI * 2);
+            ctx.arc(4, -1, 2.2, 0, Math.PI * 2);
+            ctx.fill();
 
-        ctx.fillStyle = '#FFFFFF';
-        ctx.beginPath();
-        ctx.arc(-4.6, -1.6, 0.9, 0, Math.PI * 2);
-        ctx.arc(3.4, -1.6, 0.9, 0, Math.PI * 2);
-        ctx.fill();
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.arc(-4.6, -1.6, 0.9, 0, Math.PI * 2);
+            ctx.arc(3.4, -1.6, 0.9, 0, Math.PI * 2);
+            ctx.fill();
+        }
 
         // Axolotl Wide Happy Smile :D
         ctx.strokeStyle = outline;
@@ -1578,8 +1907,9 @@
         ctx.restore();
     }
 
-    // 11. 🐾 TANUKI SPIRIT (Japanese Raccoon with Magic Leaf)
-    function drawTanukiSpirit(ctx, a, now) {
+    // 11. 🐾 TANUKI SPIRIT (Japanese Raccoon with Stepping Feet, Paws & Magic Leaf)
+    function drawTanukiSpirit(ctx, a, anim) {
+        const { t, isWalking, stride, legSwing, legLiftL, legLiftR, headBob, tailDynamic, isBlinking } = anim;
         const bodyBrown = '#78350F';
         const tanBelly = '#FEF3C7';
         const darkMask = '#292524';
@@ -1587,7 +1917,7 @@
 
         // Striped Fluffy Tail
         ctx.save();
-        const tailWag = Math.sin(now * 3.5) * 0.25;
+        const tailWag = Math.sin(tailDynamic * 1.15) * 0.24;
         ctx.translate(-9, -6);
         ctx.rotate(-0.3 + tailWag);
         ctx.fillStyle = bodyBrown;
@@ -1604,12 +1934,25 @@
         ctx.fill();
         ctx.restore();
 
+        // Dark Stubby Feet (stepping left and right)
+        ctx.fillStyle = darkMask;
+        ctx.strokeStyle = outline;
+        ctx.lineWidth = 1.3;
+        ctx.beginPath();
+        ctx.ellipse(-4.5 + legSwing * 0.75, 0.6 - legLiftL, 3.8, 2.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.ellipse(4.5 - legSwing * 0.75, 0.6 - legLiftR, 3.8, 2.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
         // Round Chubby Body
         ctx.fillStyle = bodyBrown;
         ctx.strokeStyle = outline;
         ctx.lineWidth = 1.8;
         ctx.beginPath();
-        ctx.ellipse(0, -8, 12, 10.5, 0, 0, Math.PI * 2);
+        ctx.ellipse(0, -8, 12, 10.2, 0, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
 
@@ -1619,9 +1962,23 @@
         ctx.ellipse(2, -6, 7.5, 7, 0, 0, Math.PI * 2);
         ctx.fill();
 
+        // Cute Little Front Paws (swinging gently with step)
+        const armSwing = isWalking ? Math.sin(stride) * 1.8 : Math.sin(t * 2.0) * 0.5;
+        ctx.fillStyle = darkMask;
+        ctx.strokeStyle = outline;
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.ellipse(-7.5, -6.5 + armSwing, 2.8, 2.2, 0.3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.ellipse(8.5, -6.5 - armSwing, 2.8, 2.2, -0.3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
         // Head
         ctx.save();
-        ctx.translate(4, -17);
+        ctx.translate(4, -17 + headBob);
 
         // Rounded Ears
         [-5, 5].forEach(ex => {
@@ -1655,17 +2012,22 @@
         ctx.fill();
 
         // Eyes
-        ctx.fillStyle = '#FFFFFF';
-        ctx.beginPath();
-        ctx.arc(-3.5, 0, 1.6, 0, Math.PI * 2);
-        ctx.arc(3.5, 0, 1.6, 0, Math.PI * 2);
-        ctx.fill();
+        if (isBlinking) {
+            drawClosedEyeArc(ctx, -3.5, 0.2, 2.0, '#FEF3C7', 1.3);
+            drawClosedEyeArc(ctx, 3.5, 0.2, 2.0, '#FEF3C7', 1.3);
+        } else {
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.arc(-3.5, 0, 1.6, 0, Math.PI * 2);
+            ctx.arc(3.5, 0, 1.6, 0, Math.PI * 2);
+            ctx.fill();
 
-        ctx.fillStyle = '#000000';
-        ctx.beginPath();
-        ctx.arc(-3.2, 0, 1.0, 0, Math.PI * 2);
-        ctx.arc(3.8, 0, 1.0, 0, Math.PI * 2);
-        ctx.fill();
+            ctx.fillStyle = '#000000';
+            ctx.beginPath();
+            ctx.arc(-3.2, 0, 1.0, 0, Math.PI * 2);
+            ctx.arc(3.8, 0, 1.0, 0, Math.PI * 2);
+            ctx.fill();
+        }
 
         // Button Nose
         ctx.fillStyle = '#000000';
@@ -1676,7 +2038,7 @@
         // Signature Magic Green Leaf perched atop head!
         ctx.save();
         ctx.translate(0, -9);
-        const leafWobble = Math.sin(now * 5) * 0.15;
+        const leafWobble = Math.sin(t * 2.4) * 0.14;
         ctx.rotate(leafWobble);
         ctx.fillStyle = '#22C55E';
         ctx.strokeStyle = '#15803D';
@@ -1693,21 +2055,41 @@
         ctx.restore();
     }
 
-    // 12. 🌿 MANDRAGORA (Root Sprite with 3 Sprout Leaves)
-    function drawMandragora(ctx, a, now) {
+    // 12. 🌿 MANDRAGORA (Root Sprite with Marching Root Feet, Arms & 3 Sprout Leaves)
+    function drawMandragora(ctx, a, anim) {
+        const { t, isWalking, stride, legSwing, legLiftL, legLiftR, headBob } = anim;
         const rootWood = '#B45309';
         const lightBark = '#D97706';
         const outline = '#451A03';
 
-        // Root Feet
+        // Root Feet (marching left and right)
         ctx.fillStyle = rootWood;
         ctx.strokeStyle = outline;
-        ctx.lineWidth = 1.2;
+        ctx.lineWidth = 1.3;
         ctx.beginPath();
-        ctx.ellipse(-4, 1, 3, 2, -0.2, 0, Math.PI * 2);
-        ctx.ellipse(4, 1, 3, 2, 0.2, 0, Math.PI * 2);
+        ctx.ellipse(-4 + legSwing * 0.7, 0.8 - legLiftL, 3.2, 2.2, -0.15, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
+        ctx.beginPath();
+        ctx.ellipse(4 - legSwing * 0.7, 0.8 - legLiftR, 3.2, 2.2, 0.15, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Little Root Arms waving on sides
+        const armWave = isWalking ? Math.sin(stride) * 0.35 : Math.sin(t * 2.0) * 0.12;
+        [-1, 1].forEach(side => {
+            ctx.save();
+            ctx.translate(side * 8.5, -7);
+            ctx.rotate(side * 0.4 + armWave);
+            ctx.fillStyle = rootWood;
+            ctx.strokeStyle = outline;
+            ctx.lineWidth = 1.2;
+            ctx.beginPath();
+            ctx.ellipse(side * 2, 0, 2.8, 1.7, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.restore();
+        });
 
         // Mandrake Root Body
         const bodyGrad = ctx.createRadialGradient(0, -8, 2, 0, -8, 11);
@@ -1721,11 +2103,11 @@
         ctx.fill();
         ctx.stroke();
 
-        // 3 Fresh Sprouting Leaves on top
+        // 3 Fresh Sprouting Leaves on top (smooth gentle sway)
         [-4, 0, 4].forEach((lx, idx) => {
             ctx.save();
-            ctx.translate(lx, -18);
-            const leafSway = Math.sin(now * 3.5 + idx) * 0.2;
+            ctx.translate(lx, -18 + headBob * 0.5);
+            const leafSway = Math.sin(t * 2.2 + idx * 0.85) * 0.16;
             ctx.rotate((idx - 1) * 0.35 + leafSway);
             ctx.fillStyle = '#4ADE80';
             ctx.strokeStyle = '#166534';
@@ -1762,18 +2144,22 @@
         ctx.fill();
     }
 
-    // 13. 🐌 RAINBOW SNAIL (Iridescent Pastel Spiral Shell)
-    function drawRainbowSnail(ctx, a, now) {
+    // 13. 🐌 RAINBOW SNAIL (Iridescent Pastel Spiral Shell with Rippling Foot & Swaying Eyestalks)
+    function drawRainbowSnail(ctx, a, anim) {
+        const { t, isWalking, stride, isBlinking } = anim;
         const bodyCream = '#FEF9C3';
         const outline = '#78350F';
 
-        // Soft Snail Body
+        // Soft Snail Body with rippling muscular foot wave along the bottom
+        const waveSpeed = isWalking ? 4.2 : 2.0;
+        const w1 = Math.sin(t * waveSpeed) * 1.1;
+        const w2 = Math.cos(t * waveSpeed) * 1.1;
         ctx.fillStyle = bodyCream;
         ctx.strokeStyle = outline;
         ctx.lineWidth = 1.6;
         ctx.beginPath();
         ctx.moveTo(-12, 1);
-        ctx.quadraticCurveTo(0, 3, 14, 1);
+        ctx.bezierCurveTo(-4, 2.8 + w1, 5, 2.8 + w2, 14, 1);
         ctx.quadraticCurveTo(16, -6, 12, -7);
         ctx.quadraticCurveTo(8, -4, 0, -3);
         ctx.quadraticCurveTo(-10, -2, -12, 1);
@@ -1781,30 +2167,37 @@
         ctx.fill();
         ctx.stroke();
 
-        // Eyestalks with blinking eyes
+        // Eyestalks with swaying & blinking eyes
         ctx.save();
         ctx.translate(12, -7);
-        [[-2, -5], [2, -5]].forEach(([ex, ey]) => {
+        [[-2, -5, 0], [2, -5, 1]].forEach(([ex, ey, idx]) => {
+            const swayX = ex + Math.sin(t * 2.2 + idx * 1.2) * 0.9;
+            const swayY = ey + Math.cos(t * 2.0 + idx) * 0.5;
             ctx.strokeStyle = outline;
             ctx.lineWidth = 1.4;
             ctx.beginPath();
             ctx.moveTo(ex * 0.5, 0);
-            ctx.lineTo(ex, ey);
+            ctx.lineTo(swayX, swayY);
             ctx.stroke();
             ctx.fillStyle = '#FFFFFF';
             ctx.beginPath();
-            ctx.arc(ex, ey, 2, 0, Math.PI * 2);
+            ctx.arc(swayX, swayY, 2, 0, Math.PI * 2);
             ctx.fill();
-            ctx.fillStyle = '#000000';
-            ctx.beginPath();
-            ctx.arc(ex, ey, 1, 0, Math.PI * 2);
-            ctx.fill();
+            ctx.stroke();
+            if (!isBlinking) {
+                ctx.fillStyle = '#000000';
+                ctx.beginPath();
+                ctx.arc(swayX + 0.3, swayY, 1, 0, Math.PI * 2);
+                ctx.fill();
+            }
         });
         ctx.restore();
 
-        // Large Rainbow Spiral Shell
+        // Large Rainbow Spiral Shell (rocking gently as snail glides)
         ctx.save();
+        const shellRock = Math.sin(t * 2.0 + (isWalking ? stride * 0.3 : 0)) * 0.06;
         ctx.translate(-2, -9);
+        ctx.rotate(shellRock);
         const rainbowTiers = ['#FCA5A5', '#FDE047', '#86EFAC', '#93C5FD', '#D8B4FE'];
         rainbowTiers.forEach((col, idx) => {
             const rad = 10 - idx * 1.8;
@@ -1825,16 +2218,18 @@
         ctx.restore();
     }
 
-    // 14. 🦔 STARLIGHT HEDGEHOG (Golden Starry Quills)
-    function drawStarlightHedgehog(ctx, a, now) {
+    // 14. 🦔 STARLIGHT HEDGEHOG (Golden Starry Quills & Scurrying Paws)
+    function drawStarlightHedgehog(ctx, a, anim) {
+        const { t, legSwing, legLiftL, legLiftR, isBlinking } = anim;
         const creamBody = '#FFFBEB';
         const quillBrown = '#78350F';
         const starGold = '#FDE047';
         const outline = '#451A03';
 
-        // Radiating Starry Quills Mantle
+        // Radiating Starry Quills Mantle (ruffling gently)
         for (let i = 0; i < 9; i++) {
-            const ang = Math.PI * 0.9 + (i / 8) * Math.PI * 1.1;
+            const ruffle = Math.sin(t * 2.0 + i * 0.45) * 0.05;
+            const ang = Math.PI * 0.9 + (i / 8) * Math.PI * 1.1 + ruffle;
             ctx.save();
             ctx.translate(-2, -7);
             ctx.rotate(ang);
@@ -1845,19 +2240,26 @@
             ctx.lineTo(13, 0);
             ctx.stroke();
             // Golden Star Glint at tip
+            const glintRadius = 1.6 + Math.sin(t * 2.8 + i) * 0.35;
             ctx.fillStyle = starGold;
             ctx.beginPath();
-            ctx.arc(13, 0, 1.8, 0, Math.PI * 2);
+            ctx.arc(13, 0, glintRadius, 0, Math.PI * 2);
             ctx.fill();
             ctx.restore();
         }
 
-        // Paws
-        ctx.fillStyle = '#FDE68A';
+        // Far-side Paws
+        ctx.fillStyle = '#FCD34D';
+        ctx.strokeStyle = outline;
+        ctx.lineWidth = 1.1;
         ctx.beginPath();
-        ctx.ellipse(-4, 0, 3, 2, 0, 0, Math.PI * 2);
-        ctx.ellipse(4, 0, 3, 2, 0, 0, Math.PI * 2);
+        ctx.ellipse(-5.2 - legSwing * 0.7, -0.2 - legLiftR, 2.8, 1.9, 0, 0, Math.PI * 2);
         ctx.fill();
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.ellipse(3.0 + legSwing * 0.7, -0.2 - legLiftL, 2.8, 1.9, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
 
         // Chubby Face & Body
         ctx.fillStyle = creamBody;
@@ -1868,44 +2270,64 @@
         ctx.fill();
         ctx.stroke();
 
-        // Snout
+        // Near-side Scurrying Paws
+        ctx.fillStyle = '#FDE68A';
+        ctx.strokeStyle = outline;
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.ellipse(-3.5 + legSwing * 0.8, 0.6 - legLiftL, 3.1, 2.1, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.ellipse(4.8 - legSwing * 0.8, 0.6 - legLiftR, 3.1, 2.1, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Snout & Sniffing Nose
+        const sniff = Math.sin(t * 3.5) * 0.5;
         ctx.fillStyle = '#FEF3C7';
         ctx.beginPath();
-        ctx.ellipse(6, -4, 4.5, 3.5, 0, 0, Math.PI * 2);
+        ctx.ellipse(6, -4 + sniff * 0.4, 4.5, 3.5, 0, 0, Math.PI * 2);
         ctx.fill();
 
         // Button Nose
         ctx.fillStyle = '#000000';
         ctx.beginPath();
-        ctx.ellipse(9.5, -4.5, 1.3, 1.0, 0, 0, Math.PI * 2);
+        ctx.ellipse(9.5, -4.5 + sniff, 1.3, 1.0, 0, 0, Math.PI * 2);
         ctx.fill();
 
         // Round Shiny Eye
-        ctx.fillStyle = '#000000';
-        ctx.beginPath();
-        ctx.arc(3.5, -6.5, 2, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = '#FFFFFF';
-        ctx.beginPath();
-        ctx.arc(3.0, -7.2, 0.9, 0, Math.PI * 2);
-        ctx.fill();
+        if (isBlinking) {
+            drawClosedEyeArc(ctx, 3.5, -6.3, 1.9, outline, 1.4);
+        } else {
+            ctx.fillStyle = '#000000';
+            ctx.beginPath();
+            ctx.arc(3.5, -6.5, 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.arc(3.0, -7.2, 0.9, 0, Math.PI * 2);
+            ctx.fill();
+        }
     }
 
-    // 15. 🐸 JADE FROG (Polished Emerald Gem Frog)
-    function drawJadeFrog(ctx, a, now) {
-        const jadeDark = '#064E3B';
+    // 15. 🐸 JADE FROG (Polished Emerald Gem Frog with Springy Hind Legs & Calm Throat Sac)
+    function drawJadeFrog(ctx, a, anim) {
+        const { t, walkHop, legSwing, legLiftL, legLiftR, isBlinking } = anim;
         const jadeMain = '#059669';
         const jadeLight = '#34D399';
         const bellyCream = '#D1FAE5';
         const outline = '#022C22';
 
-        // Webbed Back Feet
+        // Webbed Back Legs (extend downward when hopping in the air, fold neatly on ground)
+        const hopExtend = walkHop * 0.9;
         ctx.fillStyle = jadeMain;
         ctx.strokeStyle = outline;
-        ctx.lineWidth = 1.2;
-        [-9, 9].forEach(fx => {
+        ctx.lineWidth = 1.3;
+        [-9, 9].forEach((fx, idx) => {
+            const side = idx === 0 ? -1 : 1;
             ctx.beginPath();
-            ctx.ellipse(fx, 1, 4.5, 2.5, 0, 0, Math.PI * 2);
+            ctx.ellipse(fx + side * 0.5, 1 + hopExtend, 4.8, 2.6, side * (0.1 + hopExtend * 0.08), 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
         });
@@ -1922,15 +2344,28 @@
         ctx.fill();
         ctx.stroke();
 
-        // Cream Throat Sac (pulsing with breath)
-        const sacPulse = 1.0 + Math.sin(now * 4) * 0.12;
+        // Cream Throat Sac (pulsing calmly with breath)
+        const sacPulse = 1.0 + Math.sin(t * 2.1) * 0.09;
         ctx.fillStyle = bellyCream;
         ctx.beginPath();
         ctx.ellipse(0, -5, 6 * sacPulse, 5 * sacPulse, 0, 0, Math.PI * 2);
         ctx.fill();
 
+        // Front Frog Hands (stepping / bracing)
+        ctx.fillStyle = jadeLight;
+        ctx.strokeStyle = outline;
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.ellipse(-4.5 + legSwing * 0.4, 1.0 - legLiftL * 0.6 + hopExtend * 0.5, 3.0, 2.0, -0.15, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.ellipse(4.5 - legSwing * 0.4, 1.0 - legLiftR * 0.6 + hopExtend * 0.5, 3.0, 2.0, 0.15, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
         // Giant Gemstone Eyes sitting atop head
-        [-5, 5].forEach((ex, idx) => {
+        [-5, 5].forEach((ex) => {
             ctx.fillStyle = bodyGrad;
             ctx.strokeStyle = outline;
             ctx.lineWidth = 1.4;
@@ -1939,23 +2374,27 @@
             ctx.fill();
             ctx.stroke();
 
-            // Golden Gem Iris
-            ctx.fillStyle = '#F59E0B';
-            ctx.beginPath();
-            ctx.arc(ex, -16, 2.8, 0, Math.PI * 2);
-            ctx.fill();
+            if (isBlinking) {
+                drawClosedEyeArc(ctx, ex, -16, 2.4, outline, 1.4);
+            } else {
+                // Golden Gem Iris
+                ctx.fillStyle = '#F59E0B';
+                ctx.beginPath();
+                ctx.arc(ex, -16, 2.8, 0, Math.PI * 2);
+                ctx.fill();
 
-            // Horizontal Slit Pupil
-            ctx.fillStyle = '#000000';
-            ctx.beginPath();
-            ctx.ellipse(ex, -16, 2.2, 0.9, 0, 0, Math.PI * 2);
-            ctx.fill();
+                // Horizontal Slit Pupil
+                ctx.fillStyle = '#000000';
+                ctx.beginPath();
+                ctx.ellipse(ex, -16, 2.2, 0.9, 0, 0, Math.PI * 2);
+                ctx.fill();
 
-            // Specular Glint
-            ctx.fillStyle = '#FFFFFF';
-            ctx.beginPath();
-            ctx.arc(ex - 1.2, -17.5, 1.0, 0, Math.PI * 2);
-            ctx.fill();
+                // Specular Glint
+                ctx.fillStyle = '#FFFFFF';
+                ctx.beginPath();
+                ctx.arc(ex - 1.2, -17.5, 1.0, 0, Math.PI * 2);
+                ctx.fill();
+            }
         });
 
         // Wide Froggy Smile
@@ -1967,7 +2406,7 @@
     }
 
     // 6. RENDER PET PREVIEW ON CANVAS (For Gallery & Cards)
-    function renderPetPreviewToCanvas(canvas, petId) {
+    function renderPetPreviewToCanvas(canvas, petId, customNow) {
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
@@ -1975,6 +2414,7 @@
         const h = canvas.height;
         ctx.clearRect(0, 0, w, h);
 
+        const nowMs = typeof customNow === 'number' ? customNow : performance.now();
         const fakeAnimal = {
             variant: petId,
             petId: petId,
@@ -1982,10 +2422,10 @@
             x: 0,
             y: 0,
             facingLeft: false,
-            state: 'idle',
-            hopPhase: 0,
-            tailPhase: 0,
-            wingPhase: 0,
+            state: 'walking',
+            hopPhase: nowMs * 0.0055,
+            tailPhase: nowMs * 0.002,
+            wingPhase: nowMs * 0.004,
             petAnim: 0
         };
 
@@ -1994,7 +2434,7 @@
         const scaleFactor = Math.min(w, h) / 54;
         ctx.scale(scaleFactor, scaleFactor);
 
-        drawExclusivePet(ctx, fakeAnimal, 0);
+        drawExclusivePet(ctx, fakeAnimal, nowMs);
         ctx.restore();
     }
 
@@ -2023,6 +2463,26 @@
 
     // 8. TEMPORARY EXCLUSIVE PET SPAWNER / PREVIEW TOOL
     var currentSpawnerFilter = 'all';
+    var spawnerPreviewRafId = null;
+
+    function startSpawnerPreviewLoop() {
+        if (spawnerPreviewRafId) cancelAnimationFrame(spawnerPreviewRafId);
+        function step(nowMs) {
+            const modal = document.getElementById('exclusivePetSpawnerModal');
+            if (!modal || modal.classList.contains('hidden')) {
+                spawnerPreviewRafId = null;
+                return;
+            }
+            EXCLUSIVE_PET_LIST.forEach((p, idx) => {
+                const cvs = document.getElementById('spawner_canvas_' + p.id);
+                if (cvs && typeof renderPetPreviewToCanvas === 'function') {
+                    renderPetPreviewToCanvas(cvs, p.id, nowMs + idx * 230);
+                }
+            });
+            spawnerPreviewRafId = requestAnimationFrame(step);
+        }
+        spawnerPreviewRafId = requestAnimationFrame(step);
+    }
 
     function openExclusivePetSpawnerModal() {
         const modal = document.getElementById('exclusivePetSpawnerModal');
@@ -2030,6 +2490,7 @@
         modal.classList.remove('hidden');
         modal.classList.add('flex');
         renderExclusivePetSpawnerGrid(currentSpawnerFilter);
+        startSpawnerPreviewLoop();
     }
 
     function closeExclusivePetSpawnerModal() {
@@ -2037,6 +2498,10 @@
         if (modal) {
             modal.classList.add('hidden');
             modal.classList.remove('flex');
+        }
+        if (spawnerPreviewRafId) {
+            cancelAnimationFrame(spawnerPreviewRafId);
+            spawnerPreviewRafId = null;
         }
     }
 
