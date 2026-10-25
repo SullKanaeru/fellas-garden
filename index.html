@@ -1025,36 +1025,37 @@
         <!-- Painter Gameplay Bar: Animal Art Commission & Daily Challenge -->
         <div
           id="studioPainterBanner"
-          class="px-3 sm:px-5 py-1.5 bg-[#f2f8ec] border-b border-[#d7e2ce] flex flex-wrap items-center justify-between gap-2 text-[11px] sm:text-xs text-[#2B5B35]"
+          class="px-2.5 sm:px-5 py-1 sm:py-1.5 bg-[#f2f8ec] border-b border-[#d7e2ce] flex items-center justify-between gap-1.5 sm:gap-2 text-[10px] sm:text-xs text-[#2B5B35] flex-nowrap shrink-0 overflow-hidden"
         >
-          <div class="flex items-center gap-1.5 min-w-0">
+          <div class="flex items-center gap-1 min-w-0 flex-1 truncate">
             <span
               id="studioCommissionBannerText"
-              class="truncate max-w-[230px] sm:max-w-[360px]"
+              class="truncate font-medium"
               >📜 Pesanan Hewan: Memuat...</span
             >
             <button
               type="button"
               onclick="cycleAnimalCommission()"
-              class="px-1.5 py-0.5 rounded-md bg-white hover:bg-emerald-50 border border-[#c5d9b7] text-[10px] font-bold text-[#2B5B35] shrink-0 transition cursor-pointer"
+              class="px-1.5 py-0.5 rounded-md bg-white hover:bg-emerald-50 border border-[#c5d9b7] text-[9px] sm:text-[10px] font-bold text-[#2B5B35] shrink-0 transition cursor-pointer shadow-2xs"
               title="Ganti Pesanan Lukisan Hewan"
             >
-              🔄 Ganti
+              🔄
             </button>
           </div>
-          <div class="flex items-center gap-1.5 min-w-0">
+          <div class="w-px h-3.5 bg-[#c5d9b7] mx-0.5 shrink-0"></div>
+          <div class="flex items-center gap-1 min-w-0 flex-1 justify-end truncate">
             <span
               id="studioDailyChallengeText"
-              class="truncate max-w-[220px] sm:max-w-[320px]"
+              class="truncate font-medium text-amber-900"
               >🎯 Tantangan: Memuat...</span
             >
             <button
               type="button"
               onclick="nextDailyPainterChallenge()"
-              class="px-1.5 py-0.5 rounded-md bg-white hover:bg-amber-50 border border-amber-300 text-[10px] font-bold text-amber-800 shrink-0 transition cursor-pointer"
+              class="px-1.5 py-0.5 rounded-md bg-white hover:bg-amber-50 border border-amber-300 text-[9px] sm:text-[10px] font-bold text-amber-800 shrink-0 transition cursor-pointer shadow-2xs"
               title="Tantangan Melukis Berikutnya"
             >
-              🎲 Tantangan
+              🎲
             </button>
           </div>
         </div>
@@ -1225,25 +1226,36 @@
             <div
               class="relative w-[280px] h-[280px] sm:w-[380px] sm:h-[380px] md:w-[420px] md:h-[420px] bg-white rounded-2xl border-2 border-dashed border-[#8eb477] shadow-inner overflow-hidden flex items-center justify-center"
             >
-              <!-- Floating Timelapse Replay Button -->
-              <button
-                type="button"
-                onclick="replayStudioTimelapse()"
-                class="absolute top-2 left-2 z-20 inline-flex items-center gap-1 bg-white/90 hover:bg-emerald-50 backdrop-blur-md px-2.5 py-1 rounded-full border border-[#c5d9b7] shadow-sm text-[11px] font-bold text-[#2B5B35] transition active:scale-95 cursor-pointer select-none"
-                title="Putar Ulang Animasi Goresan Lukisan (Timelapse)"
-              >
-                <span>▶</span><span>Timelapse</span>
-              </button>
-
-              <!-- Floating Zoom & Pan Controls -->
-              <div class="absolute top-2 right-2 z-20 flex items-center gap-1 bg-white/90 backdrop-blur-md px-2 py-1 rounded-full border border-[#c5d9b7] shadow-sm select-none">
-                <button type="button" onclick="zoomFlowerCanvas(-0.25)" class="w-6 h-6 flex items-center justify-center rounded-full hover:bg-emerald-100 text-[#2B5B35] font-bold text-sm transition active:scale-90" title="Zoom Out (-)">−</button>
-                <button type="button" onclick="resetFlowerZoom()" id="flowerZoomLevelText" class="px-1.5 py-0.5 text-[11px] font-mono font-bold text-[#2B5B35] hover:bg-emerald-50 rounded transition" title="Reset Zoom (100%)">100%</button>
-                <button type="button" onclick="zoomFlowerCanvas(0.25)" class="w-6 h-6 flex items-center justify-center rounded-full hover:bg-emerald-100 text-[#2B5B35] font-bold text-sm transition active:scale-90" title="Zoom In (+)">+</button>
-                <div class="w-px h-3.5 bg-gray-200 mx-0.5"></div>
-                <button type="button" id="studioPanToggleBtn" onclick="toggleStudioPanMode()" class="w-6 h-6 flex items-center justify-center rounded-full hover:bg-emerald-100 text-gray-700 transition active:scale-90" title="Alat Geser Kanvas (Pan / Geser)">
-                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 11V6a2 2 0 0 0-4 0v4"/><path d="M14 10V4a2 2 0 0 0-4 0v7"/><path d="M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>
+              <!-- Floating Top Pill: Timelapse + Zoom & Pan Controls -->
+              <div class="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 z-20 flex items-center gap-0.5 bg-white/90 backdrop-blur-md px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full border border-[#c5d9b7] shadow-2xs select-none">
+                <button
+                  type="button"
+                  onclick="replayStudioTimelapse()"
+                  class="px-1.5 py-0.5 flex items-center gap-0.5 rounded-full hover:bg-emerald-100 text-[#2B5B35] font-bold text-[10px] sm:text-[11px] transition active:scale-90 cursor-pointer"
+                  title="Putar Ulang Goresan Lukisan (Timelapse)"
+                >
+                  <span>▶</span><span class="hidden md:inline">Timelapse</span>
                 </button>
+                <div class="w-px h-3 bg-gray-200 mx-0.5"></div>
+                <button type="button" onclick="zoomFlowerCanvas(-0.25)" class="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-full hover:bg-emerald-100 text-[#2B5B35] font-bold text-xs sm:text-sm transition active:scale-90 cursor-pointer" title="Zoom Out (-)">−</button>
+                <button type="button" onclick="resetFlowerZoom()" id="flowerZoomLevelText" class="px-1 py-0.5 text-[10px] sm:text-[11px] font-mono font-bold text-[#2B5B35] hover:bg-emerald-50 rounded transition cursor-pointer" title="Reset Zoom (100%)">100%</button>
+                <button type="button" onclick="zoomFlowerCanvas(0.25)" class="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-full hover:bg-emerald-100 text-[#2B5B35] font-bold text-xs sm:text-sm transition active:scale-90 cursor-pointer" title="Zoom In (+)">+</button>
+                <div class="w-px h-3 bg-gray-200 mx-0.5"></div>
+                <button type="button" id="studioPanToggleBtn" onclick="toggleStudioPanMode()" class="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-full hover:bg-emerald-100 text-gray-700 transition active:scale-90 cursor-pointer" title="Alat Geser Kanvas (Pan / Geser)">
+                  <svg class="w-3 h-3 sm:w-3.5 sm:h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 11V6a2 2 0 0 0-4 0v4"/><path d="M14 10V4a2 2 0 0 0-4 0v7"/><path d="M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>
+                </button>
+              </div>
+
+              <!-- Floating Conditional Stamp Sub-Bar (Inside Canvas Bottom, Overlaid) -->
+              <div
+                id="studioStampSubBar"
+                class="hidden absolute bottom-2 left-1/2 -translate-x-1/2 z-20 items-center justify-center gap-1 bg-amber-50/95 backdrop-blur-sm px-2 sm:px-2.5 py-1 rounded-full border border-amber-300 shadow-md text-[10px] sm:text-[11px] whitespace-nowrap"
+              >
+                <button type="button" id="stampShapeBtn-petal" onclick="setStudioStampShape('petal')" class="px-1.5 sm:px-2 py-0.5 rounded-full font-bold transition bg-[#2B5B35] text-white cursor-pointer">🌸 Kelopak</button>
+                <button type="button" id="stampShapeBtn-leaf" onclick="setStudioStampShape('leaf')" class="px-1.5 sm:px-2 py-0.5 rounded-full font-bold transition bg-white/80 text-[#2B5B35] border border-[#c5d9b7] cursor-pointer">🍃 Daun</button>
+                <button type="button" id="stampShapeBtn-star" onclick="setStudioStampShape('star')" class="px-1.5 sm:px-2 py-0.5 rounded-full font-bold transition bg-white/80 text-[#2B5B35] border border-[#c5d9b7] cursor-pointer">⭐ Bintang</button>
+                <button type="button" id="stampShapeBtn-heart" onclick="setStudioStampShape('heart')" class="px-1.5 sm:px-2 py-0.5 rounded-full font-bold transition bg-white/80 text-[#2B5B35] border border-[#c5d9b7] cursor-pointer">💖 Hati</button>
+                <button type="button" id="stampShapeBtn-bud" onclick="setStudioStampShape('bud')" class="px-1.5 sm:px-2 py-0.5 rounded-full font-bold transition bg-white/80 text-[#2B5B35] border border-[#c5d9b7] cursor-pointer">🌷 Kuncup</button>
               </div>
 
               <div
@@ -1251,10 +1263,10 @@
                 class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center opacity-40 transition-opacity z-10"
               >
                 <span
-                  class="text-sm sm:text-base text-center text-[#477431] px-4 font-hand font-bold tracking-wide"
+                  class="text-xs sm:text-base text-center text-[#477431] px-4 font-hand font-bold tracking-wide"
                 >
                   Gambar bungamu di sini<br />
-                  <span class="text-xs font-normal opacity-75"
+                  <span class="text-[10px] sm:text-xs font-normal opacity-75"
                     >Tersedia pipet eyedropper, undo/redo & warna bebas</span
                   >
                 </span>
@@ -1267,163 +1279,111 @@
               ></canvas>
             </div>
 
-            <!-- Special Brush Selector Pills -->
+            <!-- Single Unified Control Bar (Special Brush Selector + Brush Size) -->
             <div
-              class="mt-2 flex flex-wrap items-center justify-center gap-1 bg-white/85 px-2.5 py-1 rounded-2xl border border-[#d7e2ce] max-w-[420px]"
+              id="studioUnifiedControls"
+              class="mt-1.5 sm:mt-2 flex items-center justify-between gap-1 sm:gap-2 bg-white/90 backdrop-blur-xs px-2 sm:px-3 py-1 rounded-2xl border border-[#d7e2ce] shadow-2xs max-w-[420px] w-full"
             >
-              <button
-                type="button"
-                id="brushTypeBtn-pencil"
-                onclick="setStudioBrushType('pencil')"
-                class="px-2 py-0.5 rounded-full text-[11px] font-bold transition bg-[#2B5B35] text-white shadow-sm ring-2 ring-[#7DB852] cursor-pointer"
-                title="Pensil Klasik (Tajam & Rapi)"
-              >
-                ✏️ Pensil
-              </button>
-              <button
-                type="button"
-                id="brushTypeBtn-watercolor"
-                onclick="setStudioBrushType('watercolor')"
-                class="px-2 py-0.5 rounded-full text-[11px] font-bold transition bg-white/80 text-[#2B5B35] hover:bg-[#eef5e6] border border-[#c5d9b7] cursor-pointer"
-                title="Kuas Cat Air (Lembut, Transparan & Hidup Saat Hujan)"
-              >
-                💧 Cat Air
-              </button>
-              <button
-                type="button"
-                id="brushTypeBtn-crayon"
-                onclick="setStudioBrushType('crayon')"
-                class="px-2 py-0.5 rounded-full text-[11px] font-bold transition bg-white/80 text-[#2B5B35] hover:bg-[#eef5e6] border border-[#c5d9b7] cursor-pointer"
-                title="Krayon Kapur (Tekstur Berbintik Artistik)"
-              >
-                🖍️ Krayon
-              </button>
-              <button
-                type="button"
-                id="brushTypeBtn-glitter"
-                onclick="setStudioBrushType('glitter')"
-                class="px-2 py-0.5 rounded-full text-[11px] font-bold transition bg-white/80 text-[#2B5B35] hover:bg-[#eef5e6] border border-[#c5d9b7] cursor-pointer"
-                title="Kuas Glitter Bintang (Berkilau Saat Ditanam)"
-              >
-                ✨ Glitter
-              </button>
-              <button
-                type="button"
-                id="brushTypeBtn-glow"
-                onclick="setStudioBrushType('glow')"
-                class="px-2 py-0.5 rounded-full text-[11px] font-bold transition bg-white/80 text-[#2B5B35] hover:bg-[#eef5e6] border border-[#c5d9b7] cursor-pointer"
-                title="Kuas Cahaya Malam (Berpendar Neon Saat Malam Hari)"
-              >
-                🌙 Cahaya
-              </button>
-              <button
-                type="button"
-                id="brushTypeBtn-stamp"
-                onclick="setStudioBrushType('stamp')"
-                class="px-2 py-0.5 rounded-full text-[11px] font-bold transition bg-white/80 text-[#2B5B35] hover:bg-[#eef5e6] border border-[#c5d9b7] cursor-pointer"
-                title="Stempel Bentuk Instan (Kelopak, Daun, Bintang, Hati, Kuncup)"
-              >
-                🌸 Stempel
-              </button>
-            </div>
-
-            <!-- Conditional Stamp Shape Sub-Toolbar -->
-            <div
-              id="studioStampSubBar"
-              class="hidden mt-1.5 flex-wrap items-center justify-center gap-1 bg-amber-50/90 px-2.5 py-1 rounded-full border border-amber-200 text-[11px]"
-            >
-              <span class="text-amber-800 font-bold mr-1">Bentuk:</span>
-              <button
-                type="button"
-                id="stampShapeBtn-petal"
-                onclick="setStudioStampShape('petal')"
-                class="px-2 py-0.5 rounded-full text-[11px] font-bold transition bg-[#2B5B35] text-white cursor-pointer"
-              >
-                🌸 Kelopak
-              </button>
-              <button
-                type="button"
-                id="stampShapeBtn-leaf"
-                onclick="setStudioStampShape('leaf')"
-                class="px-2 py-0.5 rounded-full text-[11px] font-bold transition bg-white/80 text-[#2B5B35] border border-[#c5d9b7] cursor-pointer"
-              >
-                🍃 Daun
-              </button>
-              <button
-                type="button"
-                id="stampShapeBtn-star"
-                onclick="setStudioStampShape('star')"
-                class="px-2 py-0.5 rounded-full text-[11px] font-bold transition bg-white/80 text-[#2B5B35] border border-[#c5d9b7] cursor-pointer"
-              >
-                ⭐ Bintang
-              </button>
-              <button
-                type="button"
-                id="stampShapeBtn-heart"
-                onclick="setStudioStampShape('heart')"
-                class="px-2 py-0.5 rounded-full text-[11px] font-bold transition bg-white/80 text-[#2B5B35] border border-[#c5d9b7] cursor-pointer"
-              >
-                💖 Hati
-              </button>
-              <button
-                type="button"
-                id="stampShapeBtn-bud"
-                onclick="setStudioStampShape('bud')"
-                class="px-2 py-0.5 rounded-full text-[11px] font-bold transition bg-white/80 text-[#2B5B35] border border-[#c5d9b7] cursor-pointer"
-              >
-                🌷 Kuncup
-              </button>
-            </div>
-
-            <!-- Under-Canvas Quick Size Selector -->
-            <div
-              class="mt-2.5 flex items-center gap-3 bg-white/80 px-3.5 py-1 rounded-full border border-[#d7e2ce] text-xs text-[#2B5B35]"
-            >
-              <span class="font-medium">Ukuran:</span>
-              <div class="flex items-center gap-1.5">
+              <!-- Brush Type Pills -->
+              <div class="flex items-center gap-0.5 sm:gap-1 shrink-0">
                 <button
-                  onclick="setFlowerBrushSize(3, this)"
-                  class="flower-size-btn w-6 h-6 flex items-center justify-center rounded-full hover:bg-gray-100"
-                  title="Pensil 3px"
+                  type="button"
+                  id="brushTypeBtn-pencil"
+                  onclick="setStudioBrushType('pencil')"
+                  class="px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold transition bg-[#2B5B35] text-white shadow-2xs ring-1 sm:ring-2 ring-[#7DB852] cursor-pointer inline-flex items-center gap-0.5"
+                  title="Pensil Klasik"
                 >
-                  <span class="w-1.5 h-1.5 bg-gray-800 rounded-full"></span>
+                  <span>✏️</span><span class="hidden md:inline">Pensil</span>
                 </button>
                 <button
-                  onclick="setFlowerBrushSize(7, this)"
-                  class="flower-size-btn w-6 h-6 flex items-center justify-center rounded-full bg-emerald-100 ring-1 ring-emerald-700"
-                  title="Pensil Sedang 7px"
+                  type="button"
+                  id="brushTypeBtn-watercolor"
+                  onclick="setStudioBrushType('watercolor')"
+                  class="px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold transition bg-white/80 text-[#2B5B35] hover:bg-[#eef5e6] border border-[#c5d9b7] cursor-pointer inline-flex items-center gap-0.5"
+                  title="Cat Air"
                 >
-                  <span class="w-2.5 h-2.5 bg-gray-800 rounded-full"></span>
+                  <span>💧</span><span class="hidden md:inline">Cat Air</span>
                 </button>
                 <button
-                  onclick="setFlowerBrushSize(14, this)"
-                  class="flower-size-btn w-6 h-6 flex items-center justify-center rounded-full hover:bg-gray-100"
-                  title="Kuas 14px"
+                  type="button"
+                  id="brushTypeBtn-crayon"
+                  onclick="setStudioBrushType('crayon')"
+                  class="px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold transition bg-white/80 text-[#2B5B35] hover:bg-[#eef5e6] border border-[#c5d9b7] cursor-pointer inline-flex items-center gap-0.5"
+                  title="Krayon"
                 >
-                  <span class="w-3.5 h-3.5 bg-gray-800 rounded-full"></span>
+                  <span>🖍️</span><span class="hidden md:inline">Krayon</span>
                 </button>
                 <button
-                  onclick="setFlowerBrushSize(26, this)"
-                  class="flower-size-btn w-6 h-6 flex items-center justify-center rounded-full hover:bg-gray-100"
-                  title="Kuas Tebal 26px"
+                  type="button"
+                  id="brushTypeBtn-glitter"
+                  onclick="setStudioBrushType('glitter')"
+                  class="px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold transition bg-white/80 text-[#2B5B35] hover:bg-[#eef5e6] border border-[#c5d9b7] cursor-pointer inline-flex items-center gap-0.5"
+                  title="Glitter"
                 >
-                  <span class="w-5 h-5 bg-gray-800 rounded-full"></span>
+                  <span>✨</span><span class="hidden md:inline">Glitter</span>
+                </button>
+                <button
+                  type="button"
+                  id="brushTypeBtn-glow"
+                  onclick="setStudioBrushType('glow')"
+                  class="px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold transition bg-white/80 text-[#2B5B35] hover:bg-[#eef5e6] border border-[#c5d9b7] cursor-pointer inline-flex items-center gap-0.5"
+                  title="Cahaya Malam"
+                >
+                  <span>🌙</span><span class="hidden md:inline">Cahaya</span>
+                </button>
+                <button
+                  type="button"
+                  id="brushTypeBtn-stamp"
+                  onclick="setStudioBrushType('stamp')"
+                  class="px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold transition bg-white/80 text-[#2B5B35] hover:bg-[#eef5e6] border border-[#c5d9b7] cursor-pointer inline-flex items-center gap-0.5"
+                  title="Stempel Bentuk"
+                >
+                  <span>🌸</span><span class="hidden md:inline">Stempel</span>
                 </button>
               </div>
-              <input
-                id="flowerBrushSlider"
-                type="range"
-                min="1"
-                max="45"
-                value="7"
-                class="w-20 sm:w-24 accent-[#477431] cursor-pointer"
-                oninput="setFlowerBrushSizeFromSlider(this.value)"
-              />
-              <span
-                id="flowerBrushValText"
-                class="w-7 text-right font-mono text-[11px]"
-                >7px</span
-              >
+
+              <div class="w-px h-3.5 bg-gray-200 mx-0.5 shrink-0"></div>
+
+              <!-- Quick Size Selector -->
+              <div class="flex items-center gap-1 shrink-0 text-xs text-[#2B5B35]">
+                <div class="flex items-center gap-0.5 sm:gap-1">
+                  <button
+                    onclick="setFlowerBrushSize(3, this)"
+                    class="flower-size-btn w-5 h-5 flex items-center justify-center rounded-full hover:bg-gray-100"
+                    title="Kecil 3px"
+                  >
+                    <span class="w-1.5 h-1.5 bg-gray-800 rounded-full"></span>
+                  </button>
+                  <button
+                    onclick="setFlowerBrushSize(7, this)"
+                    class="flower-size-btn w-5 h-5 flex items-center justify-center rounded-full bg-emerald-100 ring-1 ring-emerald-700"
+                    title="Sedang 7px"
+                  >
+                    <span class="w-2.5 h-2.5 bg-gray-800 rounded-full"></span>
+                  </button>
+                  <button
+                    onclick="setFlowerBrushSize(14, this)"
+                    class="flower-size-btn w-5 h-5 flex items-center justify-center rounded-full hover:bg-gray-100"
+                    title="Besar 14px"
+                  >
+                    <span class="w-3.5 h-3.5 bg-gray-800 rounded-full"></span>
+                  </button>
+                </div>
+                <input
+                  id="flowerBrushSlider"
+                  type="range"
+                  min="1"
+                  max="45"
+                  value="7"
+                  class="w-12 sm:w-16 accent-[#477431] cursor-pointer"
+                  oninput="setFlowerBrushSizeFromSlider(this.value)"
+                />
+                <span
+                  id="flowerBrushValText"
+                  class="w-5 text-right font-mono text-[10px] hidden xs:inline"
+                  >7px</span
+                >
+              </div>
             </div>
           </div>
 
