@@ -1180,9 +1180,20 @@
             <div
               class="relative w-[280px] h-[280px] sm:w-[380px] sm:h-[380px] md:w-[420px] md:h-[420px] bg-white rounded-2xl border-2 border-dashed border-[#8eb477] shadow-inner overflow-hidden flex items-center justify-center"
             >
+              <!-- Floating Zoom & Pan Controls -->
+              <div class="absolute top-2 right-2 z-20 flex items-center gap-1 bg-white/90 backdrop-blur-md px-2 py-1 rounded-full border border-[#c5d9b7] shadow-sm select-none">
+                <button type="button" onclick="zoomFlowerCanvas(-0.25)" class="w-6 h-6 flex items-center justify-center rounded-full hover:bg-emerald-100 text-[#2B5B35] font-bold text-sm transition active:scale-90" title="Zoom Out (-)">−</button>
+                <button type="button" onclick="resetFlowerZoom()" id="flowerZoomLevelText" class="px-1.5 py-0.5 text-[11px] font-mono font-bold text-[#2B5B35] hover:bg-emerald-50 rounded transition" title="Reset Zoom (100%)">100%</button>
+                <button type="button" onclick="zoomFlowerCanvas(0.25)" class="w-6 h-6 flex items-center justify-center rounded-full hover:bg-emerald-100 text-[#2B5B35] font-bold text-sm transition active:scale-90" title="Zoom In (+)">+</button>
+                <div class="w-px h-3.5 bg-gray-200 mx-0.5"></div>
+                <button type="button" id="studioPanToggleBtn" onclick="toggleStudioPanMode()" class="w-6 h-6 flex items-center justify-center rounded-full hover:bg-emerald-100 text-gray-700 transition active:scale-90" title="Alat Geser Kanvas (Pan / Geser)">
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 11V6a2 2 0 0 0-4 0v4"/><path d="M14 10V4a2 2 0 0 0-4 0v7"/><path d="M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>
+                </button>
+              </div>
+
               <div
                 id="drawBoxHint"
-                class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center opacity-40 transition-opacity"
+                class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center opacity-40 transition-opacity z-10"
               >
                 <span
                   class="text-sm sm:text-base text-center text-[#477431] px-4 font-hand font-bold tracking-wide"
@@ -1197,7 +1208,7 @@
                 id="flowerPadCanvas"
                 width="500"
                 height="500"
-                class="w-full h-full cursor-crosshair touch-none"
+                class="w-full h-full cursor-crosshair touch-none transition-transform duration-75"
               ></canvas>
             </div>
 
@@ -1268,12 +1279,6 @@
             ></button>
             <button
               class="color-dot"
-              style="background-color: #f29b4b"
-              onclick="selectFlowerColor('#F29B4B', this)"
-              title="Oranye Marigold"
-            ></button>
-            <button
-              class="color-dot"
               style="background-color: #f7ce68"
               onclick="selectFlowerColor('#F7CE68', this)"
               title="Kuning Mentega"
@@ -1292,33 +1297,9 @@
             ></button>
             <button
               class="color-dot"
-              style="background-color: #2b5b35"
-              onclick="selectFlowerColor('#2B5B35', this)"
-              title="Hijau Tua Hutan"
-            ></button>
-            <button
-              class="color-dot"
-              style="background-color: #84b4e8"
-              onclick="selectFlowerColor('#84B4E8', this)"
-              title="Biru Langit"
-            ></button>
-            <button
-              class="color-dot"
-              style="background-color: #9e82dc"
-              onclick="selectFlowerColor('#9E82DC', this)"
-              title="Ungu Lavender"
-            ></button>
-            <button
-              class="color-dot"
               style="background-color: #5c4033"
               onclick="selectFlowerColor('#5C4033', this)"
               title="Cokelat Tanah"
-            ></button>
-            <button
-              class="color-dot"
-              style="background-color: #ffffff; border: 1.5px solid #d1d5db"
-              onclick="selectFlowerColor('#FFFFFF', this)"
-              title="Putih Bersih"
             ></button>
 
             <!-- Custom Color Picker -->
@@ -1840,26 +1821,6 @@
                 <line x1="5" y1="12" x2="19" y2="12" />
               </svg>
               <span>Buat Kebun Baru</span>
-            </button>
-            <button
-              onclick="triggerImportWorldFile()"
-              class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white hover:bg-[#eff5e8] text-[#2B5B35] border border-[#b5cca3] text-xs font-bold transition shadow-sm active:scale-95"
-              title="Impor file kebun .json"
-            >
-              <svg
-                class="w-3.5 h-3.5 text-emerald-700"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
-              </svg>
-              <span>Impor (.json)</span>
             </button>
             <button
               onclick="closeWorldManagerModal()"
@@ -3008,9 +2969,20 @@
               <div
                 class="relative w-[280px] h-[280px] sm:w-[350px] sm:h-[350px] md:w-[380px] md:h-[380px] bg-white rounded-2xl border-2 border-dashed border-[#8eb477] shadow-inner overflow-hidden flex items-center justify-center"
               >
+                <!-- Floating Zoom & Pan Controls -->
+                <div class="absolute top-2 right-2 z-20 flex items-center gap-1 bg-white/90 backdrop-blur-md px-2 py-1 rounded-full border border-[#c5d9b7] shadow-sm select-none">
+                  <button type="button" onclick="zoomAnimalCanvas(-0.25)" class="w-6 h-6 flex items-center justify-center rounded-full hover:bg-emerald-100 text-[#2B5B35] font-bold text-sm transition active:scale-90" title="Zoom Out (-)">−</button>
+                  <button type="button" onclick="resetAnimalZoom()" id="animalZoomLevelText" class="px-1.5 py-0.5 text-[11px] font-mono font-bold text-[#2B5B35] hover:bg-emerald-50 rounded transition" title="Reset Zoom (100%)">100%</button>
+                  <button type="button" onclick="zoomAnimalCanvas(0.25)" class="w-6 h-6 flex items-center justify-center rounded-full hover:bg-emerald-100 text-[#2B5B35] font-bold text-sm transition active:scale-90" title="Zoom In (+)">+</button>
+                  <div class="w-px h-3.5 bg-gray-200 mx-0.5"></div>
+                  <button type="button" id="animalPanToggleBtn" onclick="toggleAnimalPanMode()" class="w-6 h-6 flex items-center justify-center rounded-full hover:bg-emerald-100 text-gray-700 transition active:scale-90" title="Alat Geser Kanvas (Pan / Geser)">
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 11V6a2 2 0 0 0-4 0v4"/><path d="M14 10V4a2 2 0 0 0-4 0v7"/><path d="M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>
+                  </button>
+                </div>
+
                 <div
                   id="drawAnimalBoxHint"
-                  class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center opacity-40 transition-opacity"
+                  class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center opacity-40 transition-opacity z-10"
                 >
                   <span
                     class="text-sm sm:text-base text-center text-[#477431] px-4 font-hand font-bold tracking-wide"
@@ -3025,7 +2997,7 @@
                   id="animalPadCanvas"
                   width="450"
                   height="450"
-                  class="w-full h-full cursor-crosshair touch-none"
+                  class="w-full h-full cursor-crosshair touch-none transition-transform duration-75"
                 ></canvas>
               </div>
 
@@ -3121,36 +3093,6 @@
                 style="background-color: #ffffff; border: 1.5px solid #d1d5db"
                 onclick="selectAnimalColor('#FFFFFF', this)"
                 title="Putih Bersih"
-              ></button>
-              <button
-                class="color-dot"
-                style="background-color: #eda4bd"
-                onclick="selectAnimalColor('#EDA4BD', this)"
-                title="Pink Pastel"
-              ></button>
-              <button
-                class="color-dot"
-                style="background-color: #df5645"
-                onclick="selectAnimalColor('#DF5645', this)"
-                title="Merah Karang"
-              ></button>
-              <button
-                class="color-dot"
-                style="background-color: #3b82f6"
-                onclick="selectAnimalColor('#3B82F6', this)"
-                title="Biru Cerah"
-              ></button>
-              <button
-                class="color-dot"
-                style="background-color: #a855f7"
-                onclick="selectAnimalColor('#A855F7', this)"
-                title="Ungu"
-              ></button>
-              <button
-                class="color-dot"
-                style="background-color: #2b5b35"
-                onclick="selectAnimalColor('#2B5B35', this)"
-                title="Hijau Hutan"
               ></button>
 
               <!-- Custom Color Picker -->

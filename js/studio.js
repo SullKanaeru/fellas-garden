@@ -19,9 +19,68 @@
         let flowerHistory = [];
         let flowerRedoHistory = [];
 
+        // ==========================================
+        // FLOWER STUDIO ZOOM & PAN STATE
+        // ==========================================
+        let flowerZoom = 1.0;
+        let flowerPanX = 0;
+        let flowerPanY = 0;
+        let isStudioPanMode = false;
+        let isStudioPanning = false;
+        let panStartX = 0;
+        let panStartY = 0;
+
+        function applyFlowerTransform() {
+            if (!flowerPadCanvas) return;
+            flowerPadCanvas.style.transformOrigin = 'center center';
+            flowerPadCanvas.style.transform = `translate(${flowerPanX}px, ${flowerPanY}px) scale(${flowerZoom})`;
+            const txt = document.getElementById('flowerZoomLevelText');
+            if (txt) txt.textContent = `${Math.round(flowerZoom * 100)}%`;
+        }
+
+        function zoomFlowerCanvas(delta) {
+            const next = Math.min(3.0, Math.max(0.75, Math.round((flowerZoom + delta) * 100) / 100));
+            flowerZoom = next;
+            if (flowerZoom === 1.0) {
+                flowerPanX = 0;
+                flowerPanY = 0;
+            }
+            applyFlowerTransform();
+        }
+
+        function resetFlowerZoom() {
+            flowerZoom = 1.0;
+            flowerPanX = 0;
+            flowerPanY = 0;
+            isStudioPanMode = false;
+            updatePanButtonUI();
+            applyFlowerTransform();
+        }
+
+        function toggleStudioPanMode() {
+            isStudioPanMode = !isStudioPanMode;
+            updatePanButtonUI();
+        }
+
+        function updatePanButtonUI() {
+            const panBtn = document.getElementById('studioPanToggleBtn');
+            if (!panBtn) return;
+            if (isStudioPanMode) {
+                panBtn.className = 'w-6 h-6 flex items-center justify-center rounded-full bg-[#2B5B35] text-white shadow-sm ring-2 ring-[#7DB852] transition active:scale-90';
+                if (flowerPadCanvas) flowerPadCanvas.style.cursor = 'grab';
+            } else {
+                panBtn.className = 'w-6 h-6 flex items-center justify-center rounded-full hover:bg-emerald-100 text-gray-700 transition active:scale-90';
+                if (flowerPadCanvas) {
+                    flowerPadCanvas.style.cursor = (studioTool === 'eyedropper') ? 'crosshair' : (studioTool === 'eraser' ? 'cell' : 'crosshair');
+                }
+            }
+        }
+
         function setStudioTool(tool) {
             studioTool = tool;
             isFlowerErasing = (tool === 'eraser');
+            isStudioPanMode = false;
+            updatePanButtonUI();
 
             const pencilBtn = document.getElementById('studioToolPencil');
             const eraserBtn = document.getElementById('studioToolEraser');
@@ -223,6 +282,16 @@
         flowerPadCanvas.addEventListener('pointerdown', (e) => {
             e.stopPropagation();
             initAudio();
+
+            // Panning trigger: either Pan Mode active, middle mouse button, or Shift key
+            if (isStudioPanMode || e.button === 1 || e.shiftKey) {
+                isStudioPanning = true;
+                panStartX = e.clientX - flowerPanX;
+                panStartY = e.clientY - flowerPanY;
+                if (flowerPadCanvas) flowerPadCanvas.style.cursor = 'grabbing';
+                return;
+            }
+
             const pos = getPadCoords(e);
 
             if (studioTool === 'eyedropper') {
@@ -248,6 +317,16 @@
         });
 
         flowerPadCanvas.addEventListener('pointermove', (e) => {
+            if (isStudioPanning) {
+                flowerPanX = e.clientX - panStartX;
+                flowerPanY = e.clientY - panStartY;
+                const maxPan = 260 * flowerZoom;
+                flowerPanX = Math.max(-maxPan, Math.min(maxPan, flowerPanX));
+                flowerPanY = Math.max(-maxPan, Math.min(maxPan, flowerPanY));
+                applyFlowerTransform();
+                return;
+            }
+
             if (!isDrawingFlower) return;
             e.stopPropagation();
             const pos = getPadCoords(e);
@@ -270,12 +349,52 @@
         });
 
         window.addEventListener('pointerup', () => {
+            if (isStudioPanning) {
+                isStudioPanning = false;
+                if (flowerPadCanvas) flowerPadCanvas.style.cursor = isStudioPanMode ? 'grab' : 'crosshair';
+            }
             if (isDrawingFlower) {
                 isDrawingFlower = false;
                 updatePendingSpriteFromPad();
                 updateDraftBadge();
             }
         });
+
+        // Wheel Zoom on Canvas
+        flowerPadCanvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const delta = e.deltaY < 0 ? 0.2 : -0.2;
+            zoomFlowerCanvas(delta);
+        }, { passive: false });
+
+        // Touch Pinch Zoom on Canvas
+        let flowerPinchDist = 0;
+        let flowerPinchStartZoom = 1.0;
+        flowerPadCanvas.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 2) {
+                isDrawingFlower = false;
+                isStudioPanning = false;
+                flowerPinchDist = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+                flowerPinchStartZoom = flowerZoom;
+            }
+        }, { passive: true });
+
+        flowerPadCanvas.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 2 && flowerPinchDist > 0) {
+                e.preventDefault();
+                const dist = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+                const scale = dist / flowerPinchDist;
+                flowerZoom = Math.min(3.0, Math.max(0.75, Math.round(flowerPinchStartZoom * scale * 100) / 100));
+                applyFlowerTransform();
+            }
+        }, { passive: false });
 
         /**
          * Crops the non-empty bounding box of the user's flower drawing on flowerPadCanvas
@@ -347,6 +466,7 @@
         function openFlowerStudioModal() {
             const modal = document.getElementById('flowerStudioModal');
             if (modal) modal.classList.remove('hidden');
+            resetFlowerZoom();
             const trimmed = extractTrimmedFlowerCanvas();
             const hint = document.getElementById('drawBoxHint');
             if (hint) {
@@ -436,3 +556,6 @@
         window.finishDrawingAndPlantDirectly = finishDrawingAndPlantDirectly;
         window.stampStarterFlower = stampStarterFlower;
         window.extractTrimmedFlowerCanvas = extractTrimmedFlowerCanvas;
+        window.zoomFlowerCanvas = zoomFlowerCanvas;
+        window.resetFlowerZoom = resetFlowerZoom;
+        window.toggleStudioPanMode = toggleStudioPanMode;

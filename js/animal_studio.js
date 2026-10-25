@@ -14,6 +14,59 @@ var isDrawingAnimalStudio = false;
 var animalStudioStrokes = [];
 var animalStudioRedoStack = [];
 var selectedAnimalHabitat = 'land';
+var animalZoom = 1.0;
+var animalPanX = 0;
+var animalPanY = 0;
+var isAnimalPanMode = false;
+var isAnimalPanning = false;
+var animalPanStartX = 0;
+var animalPanStartY = 0;
+
+function applyAnimalTransform() {
+    if (!animalPadCanvas) return;
+    animalPadCanvas.style.transformOrigin = 'center center';
+    animalPadCanvas.style.transform = `translate(${animalPanX}px, ${animalPanY}px) scale(${animalZoom})`;
+    const txt = document.getElementById('animalZoomLevelText');
+    if (txt) txt.textContent = `${Math.round(animalZoom * 100)}%`;
+}
+
+function zoomAnimalCanvas(delta) {
+    const next = Math.min(3.0, Math.max(0.75, Math.round((animalZoom + delta) * 100) / 100));
+    animalZoom = next;
+    if (animalZoom === 1.0) {
+        animalPanX = 0;
+        animalPanY = 0;
+    }
+    applyAnimalTransform();
+}
+
+function resetAnimalZoom() {
+    animalZoom = 1.0;
+    animalPanX = 0;
+    animalPanY = 0;
+    isAnimalPanMode = false;
+    updateAnimalPanButtonUI();
+    applyAnimalTransform();
+}
+
+function toggleAnimalPanMode() {
+    isAnimalPanMode = !isAnimalPanMode;
+    updateAnimalPanButtonUI();
+}
+
+function updateAnimalPanButtonUI() {
+    const panBtn = document.getElementById('animalPanToggleBtn');
+    if (!panBtn) return;
+    if (isAnimalPanMode) {
+        panBtn.className = 'w-6 h-6 flex items-center justify-center rounded-full bg-[#2B5B35] text-white shadow-sm ring-2 ring-[#7DB852] transition active:scale-90';
+        if (animalPadCanvas) animalPadCanvas.style.cursor = 'grab';
+    } else {
+        panBtn.className = 'w-6 h-6 flex items-center justify-center rounded-full hover:bg-emerald-100 text-gray-700 transition active:scale-90';
+        if (animalPadCanvas) {
+            animalPadCanvas.style.cursor = (animalStudioTool === 'eyedropper') ? 'crosshair' : (animalStudioTool === 'eraser' ? 'cell' : 'crosshair');
+        }
+    }
+}
 
 function initAnimalStudioCanvas() {
     if (!animalPadCanvas) {
@@ -32,6 +85,7 @@ function openAnimalStudioModal() {
         modal.classList.remove('hidden');
         modal.classList.add('flex');
     }
+    resetAnimalZoom();
     clearAnimalPad();
     setAnimalStudioTool('pencil');
     selectAnimalColor('#2c2c2c');
@@ -58,6 +112,8 @@ function clearAnimalPad() {
 
 function setAnimalStudioTool(toolName) {
     animalStudioTool = toolName;
+    isAnimalPanMode = false;
+    updateAnimalPanButtonUI();
     const pencilBtn = document.getElementById('animalStudioToolPencil');
     const eraserBtn = document.getElementById('animalStudioToolEraser');
     const eyedropBtn = document.getElementById('animalStudioToolEyedrop');
@@ -208,6 +264,15 @@ function initAnimalStudioEventListeners() {
 
     animalPadCanvas.addEventListener('pointerdown', (e) => {
         try { animalPadCanvas.setPointerCapture(e.pointerId); } catch (err) {}
+
+        if (isAnimalPanMode || e.button === 1 || e.shiftKey) {
+            isAnimalPanning = true;
+            animalPanStartX = e.clientX - animalPanX;
+            animalPanStartY = e.clientY - animalPanY;
+            if (animalPadCanvas) animalPadCanvas.style.cursor = 'grabbing';
+            return;
+        }
+
         const pos = getPos(e);
 
         if (animalStudioTool === 'eyedropper') {
@@ -247,6 +312,16 @@ function initAnimalStudioEventListeners() {
     });
 
     animalPadCanvas.addEventListener('pointermove', (e) => {
+        if (isAnimalPanning) {
+            animalPanX = e.clientX - animalPanStartX;
+            animalPanY = e.clientY - animalPanStartY;
+            const maxPan = 260 * animalZoom;
+            animalPanX = Math.max(-maxPan, Math.min(maxPan, animalPanX));
+            animalPanY = Math.max(-maxPan, Math.min(maxPan, animalPanY));
+            applyAnimalTransform();
+            return;
+        }
+
         if (!isDrawingAnimalStudio || !currentStroke) return;
         const pos = getPos(e);
         currentStroke.points.push(pos);
@@ -255,6 +330,10 @@ function initAnimalStudioEventListeners() {
     });
 
     function endDrawing() {
+        if (isAnimalPanning) {
+            isAnimalPanning = false;
+            if (animalPadCanvas) animalPadCanvas.style.cursor = isAnimalPanMode ? 'grab' : 'crosshair';
+        }
         if (!isDrawingAnimalStudio) return;
         isDrawingAnimalStudio = false;
         if (currentStroke && currentStroke.points.length > 0) {
@@ -267,6 +346,40 @@ function initAnimalStudioEventListeners() {
 
     window.addEventListener('pointerup', endDrawing);
     window.addEventListener('pointercancel', endDrawing);
+
+    animalPadCanvas.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const delta = e.deltaY < 0 ? 0.2 : -0.2;
+        zoomAnimalCanvas(delta);
+    }, { passive: false });
+
+    let animalPinchDist = 0;
+    let animalPinchStartZoom = 1.0;
+    animalPadCanvas.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 2) {
+            isDrawingAnimalStudio = false;
+            isAnimalPanning = false;
+            animalPinchDist = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+            animalPinchStartZoom = animalZoom;
+        }
+    }, { passive: true });
+
+    animalPadCanvas.addEventListener('touchmove', (e) => {
+        if (e.touches.length === 2 && animalPinchDist > 0) {
+            e.preventDefault();
+            const dist = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+            const scale = dist / animalPinchDist;
+            animalZoom = Math.min(3.0, Math.max(0.75, Math.round(animalPinchStartZoom * scale * 100) / 100));
+            applyAnimalTransform();
+        }
+    }, { passive: false });
 }
 
 /**
@@ -405,3 +518,6 @@ window.undoAnimalStroke = undoAnimalStroke;
 window.redoAnimalStroke = redoAnimalStroke;
 window.extractTrimmedAnimalCanvas = extractTrimmedAnimalCanvas;
 window.finishDrawingAndSpawnAnimal = finishDrawingAndSpawnAnimal;
+window.zoomAnimalCanvas = zoomAnimalCanvas;
+window.resetAnimalZoom = resetAnimalZoom;
+window.toggleAnimalPanMode = toggleAnimalPanMode;

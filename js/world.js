@@ -1089,7 +1089,7 @@ function renderWorldsGrid(filterText = "") {
     }
 
     container.innerHTML = `
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4">
                         ${filtered
                           .map((w) => {
                             const isActive = w.id === currentWorldId;
@@ -1104,10 +1104,10 @@ function renderWorldsGrid(filterText = "") {
                                   : 0;
                             const thumb = w.thumbnail || "";
                             return `
-                                <div class="group relative bg-white rounded-2xl border-2 ${isActive ? "border-[#2B5B35] ring-2 ring-[#7DB852]/50 shadow-md" : "border-[#d2e0cb] hover:border-[#7DB852]"} overflow-hidden transition-all duration-200 flex flex-col">
+                                <div class="world-card group relative bg-white rounded-2xl border-2 ${isActive ? "border-[#2B5B35] ring-2 ring-[#7DB852]/50 shadow-md" : "border-[#d2e0cb] hover:border-[#7DB852] hover:shadow-sm"} overflow-hidden transition-all duration-200 flex flex-row items-stretch">
                                     
-                                    <!-- Thumbnail Area -->
-                                    <div class="relative w-full h-36 bg-[#E3EFE4] overflow-hidden flex items-center justify-center border-b border-[#e2edd9]">
+                                    <!-- Thumbnail Area (Left Side) -->
+                                    <div class="relative w-36 sm:w-44 flex-shrink-0 bg-[#E3EFE4] overflow-hidden flex items-center justify-center border-r border-[#e2edd9]">
                                         ${
                                           thumb
                                             ? `
@@ -1124,25 +1124,25 @@ function renderWorldsGrid(filterText = "") {
                                         ${
                                           isActive
                                             ? `
-                                            <div class="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full bg-[#2B5B35] text-white text-[11px] font-bold shadow-md flex items-center gap-1.5">
-                                                <span class="w-2 h-2 rounded-full bg-emerald-300 animate-pulse"></span>
-                                                <span>Sedang Aktif</span>
+                                            <div class="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-[#2B5B35] text-white text-[10px] font-bold shadow-md flex items-center gap-1">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse"></span>
+                                                <span>Aktif</span>
                                             </div>
                                         `
                                             : ""
                                         }
 
-                                        <div class="absolute bottom-2 right-2 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-sm text-white text-[10px] font-medium flex items-center gap-1">
-                                            <svg class="w-3 h-3 text-pink-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 3a9 9 0 0 0-9 9 9 9 0 0 0 9 9 9 9 0 0 0 9-9 9 9 0 0 0-9-9z"/></svg>
+                                        <div class="absolute bottom-1.5 right-1.5 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-sm text-white text-[9px] font-medium flex items-center gap-1">
+                                            <svg class="w-2.5 h-2.5 text-pink-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 3a9 9 0 0 0-9 9 9 9 0 0 0 9 9 9 9 0 0 0 9-9 9 9 0 0 0-9-9z"/></svg>
                                             <span>${flowerCount} Bunga</span>
                                         </div>
                                     </div>
 
-                                    <!-- Card Body -->
-                                    <div class="p-3.5 flex flex-col flex-1 justify-between gap-3">
+                                    <!-- Card Body (Right Side) -->
+                                    <div class="p-3 sm:p-3.5 flex flex-col flex-1 justify-between gap-2 min-w-0">
                                         <div>
                                             <div class="flex items-start justify-between gap-2">
-                                                <h3 class="font-hand font-bold text-lg text-[#2B5B35] leading-snug line-clamp-1" title="${escapeHtml(w.name)}">
+                                                <h3 class="font-hand font-bold text-base sm:text-lg text-[#2B5B35] leading-snug line-clamp-1" title="${escapeHtml(w.name)}">
                                                     ${escapeHtml(w.name || "Kebun Tanpa Nama")}
                                                 </h3>
                                             </div>
