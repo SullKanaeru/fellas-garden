@@ -1010,6 +1010,61 @@ body {
         width: 13px !important;
         height: 13px !important;
     }
+
+    /* -------------------------------------------------------------
+       8. CONSTELLATION PAINTER MODAL (#constellationModal)
+       ------------------------------------------------------------- */
+    #constellationModal > div {
+        max-height: 96vh !important;
+        max-width: 540px !important;
+    }
+    #constellationModal > div > div:first-child {
+        padding: 5px 12px !important;
+        min-height: 36px !important;
+    }
+    #constellationModal > div > div:first-child h3 {
+        font-size: 14px !important;
+        line-height: 1.15 !important;
+    }
+    #constellationModal > div > div:first-child p {
+        display: none !important;
+    }
+    #constellationModal > div > div:first-child span.w-9.h-9 {
+        width: 24px !important;
+        height: 24px !important;
+        font-size: 13px !important;
+        border-radius: 6px !important;
+    }
+    #constellationModal > div > div:first-child button {
+        width: 24px !important;
+        height: 24px !important;
+        font-size: 12px !important;
+    }
+    #constellationModal .p-4.sm\:p-5 {
+        padding: 6px 12px !important;
+        gap: 6px !important;
+        overflow-y: auto !important;
+    }
+    #constellationModal #constellationPadCanvas {
+        height: min(44vh, 165px) !important;
+    }
+    #constellationModal #constellationNameInput {
+        height: 28px !important;
+        padding: 2px 8px !important;
+        font-size: 10.5px !important;
+    }
+    #constellationModal button[onclick="clearConstellationDraft()"],
+    #constellationModal button[onclick="saveConstellationDraft()"] {
+        padding: 3px 10px !important;
+        font-size: 11px !important;
+        height: 28px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+    }
+    #savedConstellationsList {
+        max-height: 48px !important;
+        overflow-y: auto !important;
+    }
 }
 
 /* ========================================================

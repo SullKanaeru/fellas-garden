@@ -1160,11 +1160,25 @@
         constellationBgStars = [];
         for (let i = 0; i < 28; i++) {
             constellationBgStars.push({
-                x: 45 + Math.random() * 410,
-                y: 35 + Math.random() * 210,
-                r: 2.5 + Math.random() * 2.5,
+                nx: Number((0.06 + Math.random() * 0.88).toFixed(3)),
+                ny: Number((0.10 + Math.random() * 0.80).toFixed(3)),
+                r: Number((3 + Math.random() * 2.2).toFixed(1)),
                 phase: Math.random() * Math.PI * 2
             });
+        }
+    }
+
+    function resizeConstellationPad() {
+        const canvas = document.getElementById('constellationPadCanvas');
+        if (!canvas) return;
+        const rect = canvas.getBoundingClientRect();
+        if (!rect.width || !rect.height) return;
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const targetW = Math.round(rect.width * dpr);
+        const targetH = Math.round(rect.height * dpr);
+        if (canvas.width !== targetW || canvas.height !== targetH) {
+            canvas.width = targetW;
+            canvas.height = targetH;
         }
     }
 
@@ -1182,8 +1196,11 @@
 
         modal.classList.remove('hidden');
         modal.classList.add('flex');
-        renderConstellationPad();
-        renderSavedConstellationsList();
+        requestAnimationFrame(() => {
+            resizeConstellationPad();
+            renderConstellationPad();
+            renderSavedConstellationsList();
+        });
     }
 
     function closeConstellationModal() {
@@ -1201,24 +1218,34 @@
     function renderConstellationPad() {
         const canvas = document.getElementById('constellationPadCanvas');
         if (!canvas) return;
+        resizeConstellationPad();
+        const rect = canvas.getBoundingClientRect();
+        const cssW = rect.width;
+        const cssH = rect.height;
+        if (!cssW || !cssH) return;
+
         const ctx = canvas.getContext('2d');
-        const w = canvas.width;
-        const h = canvas.height;
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
         // Deep night sky gradient
-        const grad = ctx.createLinearGradient(0, 0, 0, h);
+        const grad = ctx.createLinearGradient(0, 0, 0, cssH);
         grad.addColorStop(0, '#090D16');
         grad.addColorStop(0.6, '#131C31');
         grad.addColorStop(1, '#1E293B');
         ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, w, h);
+        ctx.fillRect(0, 0, cssW, cssH);
 
-        // Background selectable stars
+        // Background selectable stars (1:1 aspect ratio, perfectly round stars)
         constellationBgStars.forEach(st => {
+            const sx = (st.nx !== undefined ? st.nx : st.x / 500) * cssW;
+            const sy = (st.ny !== undefined ? st.ny : st.y / 260) * cssH;
             ctx.save();
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+            ctx.shadowColor = 'rgba(255, 255, 255, 0.85)';
+            ctx.shadowBlur = 6;
             ctx.beginPath();
-            ctx.arc(st.x, st.y, st.r, 0, Math.PI * 2);
+            ctx.arc(sx, sy, st.r || 3, 0, Math.PI * 2);
             ctx.fill();
             ctx.restore();
         });
@@ -1231,9 +1258,15 @@
             ctx.shadowColor = '#FDE047';
             ctx.shadowBlur = 10;
             ctx.beginPath();
-            ctx.moveTo(constellationDraftNodes[0].x, constellationDraftNodes[0].y);
+            const f = constellationDraftNodes[0];
+            const fx = (f.nx !== undefined ? f.nx : f.x / 500) * cssW;
+            const fy = (f.ny !== undefined ? f.ny : f.y / 260) * cssH;
+            ctx.moveTo(fx, fy);
             for (let i = 1; i < constellationDraftNodes.length; i++) {
-                ctx.lineTo(constellationDraftNodes[i].x, constellationDraftNodes[i].y);
+                const pt = constellationDraftNodes[i];
+                const px = (pt.nx !== undefined ? pt.nx : pt.x / 500) * cssW;
+                const py = (pt.ny !== undefined ? pt.ny : pt.y / 260) * cssH;
+                ctx.lineTo(px, py);
             }
             ctx.stroke();
             ctx.restore();
@@ -1241,16 +1274,18 @@
 
         // Selected star nodes
         constellationDraftNodes.forEach((pt, idx) => {
+            const sx = (pt.nx !== undefined ? pt.nx : pt.x / 500) * cssW;
+            const sy = (pt.ny !== undefined ? pt.ny : pt.y / 260) * cssH;
             ctx.save();
             ctx.fillStyle = '#FEF08A';
             ctx.shadowColor = '#FACC15';
             ctx.shadowBlur = 12;
             ctx.beginPath();
-            ctx.arc(pt.x, pt.y, 5, 0, Math.PI * 2);
+            ctx.arc(sx, sy, 5.5, 0, Math.PI * 2);
             ctx.fill();
             ctx.fillStyle = '#FFFFFF';
-            ctx.font = 'bold 9px monospace';
-            ctx.fillText(String(idx + 1), pt.x + 7, pt.y - 5);
+            ctx.font = 'bold 10px monospace';
+            ctx.fillText(String(idx + 1), sx + 8, sy - 5);
             ctx.restore();
         });
     }
@@ -1265,10 +1300,10 @@
         const nameInput = document.getElementById('constellationNameInput');
         const name = (nameInput && nameInput.value.trim()) ? nameInput.value.trim() : `Rasi Bintang #${gardenConstellations.length + 1}`;
 
-        // Normalize coordinates to 0..1 relative to canvas (500x260)
+        // Normalize coordinates to 0..1
         const normalized = constellationDraftNodes.map(pt => ({
-            nx: Number((pt.x / 500).toFixed(3)),
-            ny: Number((pt.y / 260).toFixed(3))
+            nx: Number(((pt.nx !== undefined ? pt.nx : pt.x / 500)).toFixed(3)),
+            ny: Number(((pt.ny !== undefined ? pt.ny : pt.y / 260)).toFixed(3))
         }));
 
         gardenConstellations.push({
@@ -1480,23 +1515,41 @@
             constCanvas._bound = true;
             constCanvas.addEventListener('pointerdown', (e) => {
                 const rect = constCanvas.getBoundingClientRect();
-                const x = (e.clientX - rect.left) * (constCanvas.width / rect.width);
-                const y = (e.clientY - rect.top) * (constCanvas.height / rect.height);
+                const cssW = rect.width;
+                const cssH = rect.height;
+                if (!cssW || !cssH) return;
 
-                // Snap to nearest background star if close
-                let chosenX = x, chosenY = y;
+                const clickX = e.clientX - rect.left;
+                const clickY = e.clientY - rect.top;
+
+                // Snap to nearest background star if close (24px snap radius)
+                let chosenNx = clickX / cssW;
+                let chosenNy = clickY / cssH;
+                let minDist = 24;
+
                 for (let st of constellationBgStars) {
-                    if (Math.hypot(st.x - x, st.y - y) < 18) {
-                        chosenX = st.x;
-                        chosenY = st.y;
-                        break;
+                    const sx = (st.nx !== undefined ? st.nx : st.x / 500) * cssW;
+                    const sy = (st.ny !== undefined ? st.ny : st.y / 260) * cssH;
+                    const dist = Math.hypot(sx - clickX, sy - clickY);
+                    if (dist < minDist) {
+                        minDist = dist;
+                        chosenNx = (st.nx !== undefined ? st.nx : st.x / 500);
+                        chosenNy = (st.ny !== undefined ? st.ny : st.y / 260);
                     }
                 }
-                constellationDraftNodes.push({ x: chosenX, y: chosenY });
+
+                constellationDraftNodes.push({ nx: chosenNx, ny: chosenNy });
                 if (typeof playPencilSound === 'function') playPencilSound();
                 renderConstellationPad();
             });
         }
+
+        window.addEventListener('resize', () => {
+            const modal = document.getElementById('constellationModal');
+            if (modal && !modal.classList.contains('hidden')) {
+                renderConstellationPad();
+            }
+        });
 
         renderStudioPainterBanner();
     }
