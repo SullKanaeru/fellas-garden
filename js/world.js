@@ -254,6 +254,17 @@ function generateWorldThumbnail() {
             { ...a, x: 0, y: 0, petAnim: 0, state: "idle" },
             0,
           );
+        else if (
+          (a.type === "exclusive" ||
+            (typeof isExclusivePetType === "function" &&
+              isExclusivePetType(a.variant || a.type))) &&
+          typeof drawExclusivePet === "function"
+        )
+          drawExclusivePet(
+            tctx,
+            { ...a, x: 0, y: 0, petAnim: 0, state: "idle" },
+            0,
+          );
         tctx.restore();
       }
     }

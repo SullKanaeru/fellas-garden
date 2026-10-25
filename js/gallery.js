@@ -120,6 +120,7 @@ function initGallery() {
 function updateGalleryBadge() {
     const fCount = galleryFlowers.length;
     const aCount = galleryAnimals.length;
+    const exDiscovered = (typeof getDiscoveredPets === 'function') ? getDiscoveredPets().length : 0;
     const totalCount = fCount + aCount;
 
     // Badge in the sidebar button
@@ -131,13 +132,19 @@ function updateGalleryBadge() {
     if (fTabBadge) fTabBadge.textContent = fCount;
     const aTabBadge = document.getElementById('galAnimalsCount');
     if (aTabBadge) aTabBadge.textContent = aCount;
+    const exTabBadge = document.getElementById('galExclusiveCount');
+    if (exTabBadge) exTabBadge.textContent = `${exDiscovered}/15`;
 
     // Modal subtitle pill
     const pill = document.getElementById('galleryCounterPill');
     if (pill) {
-        pill.textContent = (currentGalleryTab === 'flowers') 
-            ? `${fCount} Bunga` 
-            : `${aCount} Hewan`;
+        if (currentGalleryTab === 'flowers') {
+            pill.textContent = `${fCount} Bunga`;
+        } else if (currentGalleryTab === 'animals') {
+            pill.textContent = `${aCount} Hewan`;
+        } else if (currentGalleryTab === 'exclusive') {
+            pill.textContent = `${exDiscovered}/15 Pet Misterius`;
+        }
     }
 }
 
@@ -146,7 +153,7 @@ function openGalleryModal(initialTab = null) {
     if (modal) {
         modal.classList.remove('hidden');
         modal.classList.add('flex');
-        if (initialTab && (initialTab === 'flowers' || initialTab === 'animals')) {
+        if (initialTab && (initialTab === 'flowers' || initialTab === 'animals' || initialTab === 'exclusive')) {
             switchGalleryTab(initialTab);
         } else {
             renderGalleryGrid();
@@ -168,17 +175,21 @@ function switchGalleryTab(tabName) {
 
     const flowerTabBtn = document.getElementById('galTabFlowers');
     const animalTabBtn = document.getElementById('galTabAnimals');
+    const exTabBtn = document.getElementById('galTabExclusive');
     const searchInput = document.getElementById('gallerySearchInput');
     const tipText = document.getElementById('galleryTipText');
     const headerActionBtn = document.getElementById('galleryHeaderActionBtn');
 
+    // Reset all tabs to inactive first
+    const inactiveClass = 'px-4 py-2 rounded-t-xl font-hand font-bold text-xs sm:text-sm flex items-center gap-2 transition bg-[#e1ecd9] text-gray-600 hover:text-[#2B5B35] border-t-2 border-x-2 border-transparent';
+    const activeClass = 'px-4 py-2 rounded-t-xl font-hand font-bold text-xs sm:text-sm flex items-center gap-2 transition bg-white text-[#2B5B35] border-t-2 border-x-2 border-[#2B5B35] shadow-xs active';
+
+    if (flowerTabBtn) flowerTabBtn.className = inactiveClass;
+    if (animalTabBtn) animalTabBtn.className = inactiveClass;
+    if (exTabBtn) exTabBtn.className = inactiveClass;
+
     if (tabName === 'flowers') {
-        if (flowerTabBtn) {
-            flowerTabBtn.className = 'px-4 py-2 rounded-t-xl font-hand font-bold text-xs sm:text-sm flex items-center gap-2 transition bg-white text-[#2B5B35] border-t-2 border-x-2 border-[#2B5B35] shadow-xs active';
-        }
-        if (animalTabBtn) {
-            animalTabBtn.className = 'px-4 py-2 rounded-t-xl font-hand font-bold text-xs sm:text-sm flex items-center gap-2 transition bg-[#e1ecd9] text-gray-600 hover:text-[#2B5B35] border-t-2 border-x-2 border-transparent';
-        }
+        if (flowerTabBtn) flowerTabBtn.className = activeClass;
         if (searchInput) {
             searchInput.placeholder = 'Cari nama bunga...';
             searchInput.value = '';
@@ -193,13 +204,8 @@ function switchGalleryTab(tabName) {
             `;
             headerActionBtn.onclick = () => { closeGalleryModal(); openFlowerStudioModal(); };
         }
-    } else {
-        if (animalTabBtn) {
-            animalTabBtn.className = 'px-4 py-2 rounded-t-xl font-hand font-bold text-xs sm:text-sm flex items-center gap-2 transition bg-white text-[#2B5B35] border-t-2 border-x-2 border-[#2B5B35] shadow-xs active';
-        }
-        if (flowerTabBtn) {
-            flowerTabBtn.className = 'px-4 py-2 rounded-t-xl font-hand font-bold text-xs sm:text-sm flex items-center gap-2 transition bg-[#e1ecd9] text-gray-600 hover:text-[#2B5B35] border-t-2 border-x-2 border-transparent';
-        }
+    } else if (tabName === 'animals') {
+        if (animalTabBtn) animalTabBtn.className = activeClass;
         if (searchInput) {
             searchInput.placeholder = 'Cari nama sahabat hewan...';
             searchInput.value = '';
@@ -214,6 +220,27 @@ function switchGalleryTab(tabName) {
             `;
             headerActionBtn.onclick = () => { closeGalleryModal(); openAnimalStudioModal(); };
         }
+    } else if (tabName === 'exclusive') {
+        if (exTabBtn) exTabBtn.className = activeClass;
+        if (searchInput) {
+            searchInput.placeholder = 'Cari pet misterius...';
+            searchInput.value = '';
+        }
+        if (tipText) {
+            tipText.innerHTML = 'Tips: Pecahkan <b>Telur Misterius 🥚✨</b> saat cuaca pelangi atau badai untuk membuka pet langka!';
+        }
+        if (headerActionBtn) {
+            headerActionBtn.innerHTML = `
+                <span class="text-xs">🥚</span>
+                <span>Telur Misterius</span>
+            `;
+            headerActionBtn.onclick = () => {
+                closeGalleryModal();
+                if (typeof spawnMysteryEgg === 'function') {
+                    spawnMysteryEgg();
+                }
+            };
+        }
     }
 
     updateGalleryBadge();
@@ -226,8 +253,10 @@ function renderGalleryGrid(filterQuery = '') {
 
     if (currentGalleryTab === 'flowers') {
         renderFlowersGrid(container, filterQuery);
-    } else {
+    } else if (currentGalleryTab === 'animals') {
         renderAnimalsGrid(container, filterQuery);
+    } else if (currentGalleryTab === 'exclusive') {
+        renderExclusivePetsGrid(container, filterQuery);
     }
 }
 
@@ -299,6 +328,194 @@ function renderFlowersGrid(container, filterQuery = '') {
             `).join('')}
         </div>
     `;
+}
+
+function renderExclusivePetsGrid(container, filterQuery = '') {
+    if (typeof EXCLUSIVE_PET_LIST === 'undefined') {
+        container.innerHTML = `
+            <div class="py-12 flex flex-col items-center justify-center text-center">
+                <p class="font-hand font-bold text-lg text-gray-500">Memuat pet misterius...</p>
+            </div>
+        `;
+        return;
+    }
+
+    const q = filterQuery.toLowerCase().trim();
+    const discoveredList = (typeof getDiscoveredPets === 'function') ? getDiscoveredPets() : [];
+    const list = q ? EXCLUSIVE_PET_LIST.filter(p => {
+        const isDiscovered = discoveredList.includes(p.id);
+        if (!isDiscovered) return '???'.includes(q) || p.tierLabel.toLowerCase().includes(q);
+        return p.name.toLowerCase().includes(q) || p.title.toLowerCase().includes(q) || p.tierLabel.toLowerCase().includes(q);
+    }) : EXCLUSIVE_PET_LIST;
+
+    const totalCount = EXCLUSIVE_PET_LIST.length;
+    const foundCount = discoveredList.length;
+
+    container.innerHTML = `
+        <!-- Discovered Summary Banner -->
+        <div class="mb-3.5 p-3 rounded-2xl bg-gradient-to-r from-amber-50 via-purple-50 to-emerald-50 border-2 border-[#d7e2ce] flex flex-wrap items-center justify-between gap-2 shadow-xs">
+            <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-xl bg-purple-600 text-white flex items-center justify-center text-lg shadow-sm">
+                    🥚
+                </div>
+                <div>
+                    <h4 class="font-hand font-bold text-sm sm:text-base text-[#2B5B35] leading-tight">
+                        Koleksi Pet Misterius Langka
+                    </h4>
+                    <p class="text-[11px] text-[#477431]">
+                        Ditemukan: <b class="text-purple-700">${foundCount} / ${totalCount}</b> Makhluk Unik & Eksklusif
+                    </p>
+                </div>
+            </div>
+            <div class="flex items-center gap-1.5 text-[10px] font-bold">
+                <span class="px-2 py-0.5 rounded-full bg-orange-100 text-orange-800 border border-orange-200">🔥 Legendaris</span>
+                <span class="px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 border border-purple-200">⭐ Epic</span>
+                <span class="px-2 py-0.5 rounded-full bg-sky-100 text-sky-800 border border-sky-200">💎 Rare</span>
+                <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">🌱 Uncommon</span>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
+            ${list.map(p => {
+                const isDiscovered = discoveredList.includes(p.id);
+                const isCurrentlyInGarden = (typeof animals !== 'undefined' && Array.isArray(animals)) 
+                    ? animals.some(a => (a.variant === p.id || a.petId === p.id)) 
+                    : false;
+
+                if (!isDiscovered) {
+                    // UNDISCOVERED MYSTERY PET (???)
+                    return `
+                        <div class="bg-white/90 rounded-2xl border-2 border-dashed border-[#cbd5e1] p-2.5 sm:p-3 flex flex-col items-center justify-between shadow-xs transition duration-200 group">
+                            <!-- Mysterious Dark Silhouette Box -->
+                            <div class="w-full aspect-square rounded-xl bg-gradient-to-b from-slate-900 via-indigo-950 to-slate-900 border border-slate-800 flex flex-col items-center justify-center p-2 relative overflow-hidden shadow-inner">
+                                <div class="relative w-14 h-14 flex items-center justify-center">
+                                    <div class="absolute inset-0 rounded-full bg-purple-500/20 blur-md animate-pulse"></div>
+                                    <span class="text-3xl opacity-30 select-none">🥚</span>
+                                    <span class="absolute font-hand font-bold text-3xl text-purple-300 drop-shadow">?</span>
+                                </div>
+                                <span class="absolute top-1.5 left-2 text-[10px] px-1.5 py-0.2 rounded-md bg-black/60 text-stone-300 font-mono border border-white/10">
+                                    ${p.tierLabel}
+                                </span>
+                                <span class="absolute bottom-1.5 right-2 text-[10px] text-purple-300/80 font-mono">
+                                    Terkunci 🔒
+                                </span>
+                            </div>
+
+                            <!-- Name & Lore Placeholder -->
+                            <div class="w-full mt-2 text-center">
+                                <h4 class="font-hand font-bold text-base sm:text-lg text-gray-400">???</h4>
+                                <p class="text-[10px] text-gray-400 line-clamp-2 mt-0.5">Pet misterius ini belum pernah ditetaskan di kebunmu.</p>
+                            </div>
+
+                            <!-- Disabled Locked Button -->
+                            <div class="w-full mt-2.5">
+                                <button disabled class="w-full py-1.5 px-2 rounded-xl bg-gray-100 text-gray-400 font-bold text-xs border border-gray-200 cursor-not-allowed flex items-center justify-center gap-1 shadow-none">
+                                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                    <span>Belum Terbuka</span>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // DISCOVERED EXCLUSIVE PET
+                let borderClass = 'border-emerald-300 hover:border-emerald-500';
+                let bgGradient = 'from-emerald-50/80 to-white';
+                if (p.tier === 'legendary') {
+                    borderClass = 'border-amber-400 hover:border-amber-500 shadow-amber-100';
+                    bgGradient = 'from-amber-50/90 via-orange-50/40 to-white';
+                } else if (p.tier === 'epic') {
+                    borderClass = 'border-purple-300 hover:border-purple-500 shadow-purple-100';
+                    bgGradient = 'from-purple-50/90 via-pink-50/40 to-white';
+                } else if (p.tier === 'rare') {
+                    borderClass = 'border-sky-300 hover:border-sky-500 shadow-sky-100';
+                    bgGradient = 'from-sky-50/90 via-blue-50/40 to-white';
+                }
+
+                return `
+                    <div class="bg-white/95 rounded-2xl border-2 ${borderClass} p-2.5 sm:p-3 flex flex-col items-center justify-between shadow-sm hover:shadow-md transition duration-200 group">
+                        <!-- Preview Box with Dynamic Canvas Drawing -->
+                        <div class="w-full aspect-square rounded-xl bg-gradient-to-b ${bgGradient} border border-[#e3ecdc] flex flex-col items-center justify-center p-1.5 relative overflow-hidden group-hover:scale-[1.02] transition">
+                            <canvas id="ex_prev_canvas_${p.id}" width="96" height="96" class="w-full h-full object-contain drop-shadow-md"></canvas>
+                            <span class="absolute top-1.5 left-2 text-[10px] px-1.5 py-0.2 rounded-full font-bold shadow-xs" style="background-color: ${p.tierBg}; color: ${p.tierColor}; border: 1px solid ${p.tierBorder};">
+                                ${p.tierEmoji} ${p.tierLabel}
+                            </span>
+                            <span class="absolute bottom-1.5 right-2 text-[10px] px-1.5 py-0.2 rounded-md bg-white/80 text-[#2B5B35] font-mono border border-[#d2e0cb]">
+                                ${p.habitat === 'flying' ? '☁️ Terbang' : (p.habitat === 'water' ? '🌊 Air' : '🌿 Darat')}
+                            </span>
+                        </div>
+
+                        <!-- Name & Lore -->
+                        <div class="w-full mt-2 text-center">
+                            <h4 class="font-hand font-bold text-base sm:text-lg text-[#2B5B35] leading-tight truncate" title="${p.fullName}">
+                                ${p.name}
+                            </h4>
+                            <p class="text-[10px] text-[#477431] font-semibold truncate mt-0.5">${p.title}</p>
+                            <p class="text-[10px] text-gray-500 line-clamp-2 mt-1 leading-snug">${p.desc}</p>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="w-full mt-2.5 flex items-center gap-1.5">
+                            ${isCurrentlyInGarden ? `
+                                <button onclick="focusExclusivePetInGarden('${p.id}')" class="flex-1 py-1.5 px-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm flex items-center justify-center gap-1 transition active:scale-95" title="Fokus Kamera ke Pet Ini di Kebun">
+                                    <svg class="w-3.5 h-3.5 text-emerald-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+                                    <span>Ada di Kebun</span>
+                                </button>
+                            ` : `
+                                <button onclick="summonExclusivePetFromGallery('${p.id}')" class="flex-1 py-1.5 px-2 rounded-xl bg-[#2B5B35] hover:bg-[#1f4627] text-white font-bold text-xs shadow-sm flex items-center justify-center gap-1 transition active:scale-95" title="Panggil Pet Langka Ini ke Kebun">
+                                    <svg class="w-3.5 h-3.5 text-emerald-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                                    <span>Panggil</span>
+                                </button>
+                            `}
+                        </div>
+                    </div>
+                `;
+            }).join('')}
+        </div>
+    `;
+
+    // Render high quality previews for discovered pets into their preview canvases
+    setTimeout(() => {
+        list.forEach(p => {
+            if (discoveredList.includes(p.id)) {
+                const cvs = document.getElementById(`ex_prev_canvas_${p.id}`);
+                if (cvs && typeof renderPetPreviewToCanvas === 'function') {
+                    renderPetPreviewToCanvas(cvs, p.id);
+                }
+            }
+        });
+    }, 20);
+}
+
+// Summon an exclusive unlocked pet from the gallery to the garden
+function summonExclusivePetFromGallery(petId) {
+    if (typeof spawnExclusivePet === 'function') {
+        const spawned = spawnExclusivePet(petId);
+        if (spawned) {
+            const def = (typeof getExclusivePetDef === 'function') ? getExclusivePetDef(petId) : null;
+            const name = def ? def.name : 'Pet Misterius';
+            if (typeof showGardenNotice === 'function') {
+                showGardenNotice(`✨ "${name}" telah hadir dengan anggun di kebunmu!`);
+            }
+            if (typeof playChimeSound === 'function') playChimeSound();
+            renderGalleryGrid();
+            updateGalleryBadge();
+        }
+    }
+}
+
+// Focus camera on an active exclusive pet in the garden
+function focusExclusivePetInGarden(petId) {
+    if (typeof animals !== 'undefined' && Array.isArray(animals)) {
+        const target = animals.find(a => (a.variant === petId || a.petId === petId));
+        if (target && typeof startFollowingAnimalById === 'function') {
+            startFollowingAnimalById(target.id);
+            closeGalleryModal();
+            if (typeof showGardenNotice === 'function') {
+                showGardenNotice(`Mengikuti pandangan ${target.name} 🐾`);
+            }
+        }
+    }
 }
 
 function renderAnimalsGrid(container, filterQuery = '') {
@@ -736,4 +953,7 @@ window.closeSaveToGalleryDialog = closeSaveToGalleryDialog;
 window.confirmSaveToGallery = confirmSaveToGallery;
 window.activatePlantingMode = activatePlantingMode;
 window.exitPlantingMode = exitPlantingMode;
+window.renderExclusivePetsGrid = renderExclusivePetsGrid;
+window.summonExclusivePetFromGallery = summonExclusivePetFromGallery;
+window.focusExclusivePetInGarden = focusExclusivePetInGarden;
 window.updateGalleryBadge = updateGalleryBadge;

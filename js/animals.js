@@ -141,6 +141,15 @@ function renderActiveAnimalsList() {
         if (a.type === 'custom') {
             label = 'Hewan Ciptaanmu';
             emoji = '✨';
+        } else if (a.type === 'exclusive' || (typeof isExclusivePetType === 'function' && isExclusivePetType(a.variant || a.type))) {
+            const exInfo = (typeof getExclusivePetDef === 'function') ? getExclusivePetDef(a.variant || a.type) : null;
+            if (exInfo) {
+                label = `${exInfo.tierEmoji} ${exInfo.fullName}`;
+                emoji = exInfo.emoji;
+            } else {
+                label = 'Pet Misterius Eksklusif';
+                emoji = '🥚';
+            }
         } else if (animalVariants[a.type]) {
             const vInfo = animalVariants[a.type].find(v => v.id === a.variant) || animalVariants[a.type][0];
             label = vInfo.fullName || vInfo.name;
@@ -330,6 +339,9 @@ function playAnimalSoundEffect(a) {
     else if (a.type === 'rabbit' && typeof playRabbitSound === 'function') playRabbitSound();
     else if (a.type === 'butterfly' && typeof playButterflySound === 'function') playButterflySound();
     else if (a.type === 'fish' && typeof playFishSound === 'function') playFishSound();
+    else if (a.type === 'exclusive' || (typeof isExclusivePetType === 'function' && isExclusivePetType(a.variant || a.type))) {
+        if (typeof playChimeSound === 'function') playChimeSound();
+    }
     else if (a.type === 'custom') {
         if (a.sound === 'cat' && typeof playCatMeowSound === 'function') playCatMeowSound();
         else if (a.sound === 'dog' && typeof playDogBarkSound === 'function') playDogBarkSound();

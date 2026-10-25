@@ -382,14 +382,10 @@
             }
             if (!found) return;
 
-            const candidates = [
-                { type: 'cat', variant: 'sakura', name: 'Kucing Sakura' },
-                { type: 'dog', variant: 'starry', name: 'Anjing Bintang' },
-                { type: 'rabbit', variant: 'sakura_rabbit', name: 'Kelinci Sakura' },
-                { type: 'butterfly', variant: 'aurora', name: 'Kupu-kupu Aurora' },
-                { type: 'fish', variant: 'golden_dragon', name: 'Ikan Naga Emas' }
-            ];
-            const pick = candidates[Math.floor(Math.random() * candidates.length)];
+            // Pick candidate from Exclusive Pets system!
+            const pick = (typeof pickRandomExclusivePet === 'function')
+                ? pickRandomExclusivePet()
+                : { id: 'kurama', name: 'Chibi Kurama', tier: 'legendary', tierColor: '#EA580C', stars: 5 };
 
             mysteryEgg = {
                 id: 'egg_' + Date.now(),
@@ -399,14 +395,17 @@
                 maxTaps: 4,
                 wobble: 0,
                 wobbleTimer: 0,
-                species: pick.type,
-                variant: pick.variant,
+                species: 'exclusive',
+                variant: pick.id,
+                tier: pick.tier || 'legendary',
+                tierColor: pick.tierColor || '#EA580C',
                 animalName: pick.name,
+                stars: pick.stars || 4,
                 createdTime: Date.now()
             };
 
             if (typeof showGardenNotice === 'function') {
-                showGardenNotice('✨ Sesuatu berkilau di rumput... Telur misterius muncul! Ketuk atau siram untuk melihat isinya! 🥚');
+                showGardenNotice('✨ Sesuatu berkilau di rumput... Telur misterius muncul! Ketuk atau siram untuk menetaskan pet eksklusif! 🥚✨');
             }
             if (typeof playChimeSound === 'function') {
                 playChimeSound();
@@ -419,6 +418,7 @@
             mysteryEgg.wobble = 1.0;
             mysteryEgg.wobbleTimer = 0.45;
 
+            const tierColor = mysteryEgg.tierColor || '#FDE047';
             for (let i = 0; i < 6; i++) {
                 particles.push({
                     type: 'sparkle',
@@ -427,7 +427,7 @@
                     vx: (Math.random() - 0.5) * 2,
                     vy: -1.2 - Math.random() * 1.5,
                     size: 3.5,
-                    color: '#FDE047',
+                    color: tierColor,
                     alpha: 1.0
                 });
             }
@@ -458,20 +458,24 @@
             const egg = mysteryEgg;
             mysteryEgg = null;
 
-            for (let i = 0; i < 20; i++) {
-                const ang = (i / 20) * Math.PI * 2;
+            const starsCount = egg.stars || (egg.tier === 'legendary' ? 5 : (egg.tier === 'epic' ? 4 : 3));
+            const tierColor = egg.tierColor || '#F472B6';
+
+            // Celebration burst particles
+            for (let i = 0; i < 28; i++) {
+                const ang = (i / 28) * Math.PI * 2;
                 particles.push({
                     type: 'petal',
                     x: egg.x,
                     y: egg.y - 12,
-                    vx: Math.cos(ang) * (50 + Math.random() * 60),
-                    vy: Math.sin(ang) * (50 + Math.random() * 60) - 20,
-                    size: 6,
-                    color: ['#F472B6', '#FBBF24', '#60A5FA', '#34D399'][i % 4],
+                    vx: Math.cos(ang) * (60 + Math.random() * 70),
+                    vy: Math.sin(ang) * (60 + Math.random() * 70) - 25,
+                    size: 6.5,
+                    color: [tierColor, '#FBBF24', '#A855F7', '#38BDF8', '#34D399'][i % 5],
                     rotation: Math.random() * Math.PI,
-                    vRot: 4,
+                    vRot: 5,
                     alpha: 1.0,
-                    decay: 0.6
+                    decay: 0.55
                 });
             }
 
@@ -479,21 +483,33 @@
                 type: 'floatingText',
                 x: egg.x,
                 y: egg.y - 36,
-                text: '✨ Menetas! Varian Langka! (+3⭐) ✨',
+                text: `✨ Menetas! ${egg.animalName} (+${starsCount}⭐) ✨`,
                 color: '#FACC15',
                 fontSize: 18,
-                alpha: 1.2,
+                alpha: 1.3,
                 decay: 0.45
             });
 
             if (typeof awardStars === 'function') {
-                awardStars(3);
+                awardStars(starsCount);
             }
             if (typeof playChimeSound === 'function') {
                 playChimeSound();
             }
 
-            if (typeof spawnAnimal === 'function') {
+            // Spawn exclusive pet instance into garden & mark as discovered
+            if (typeof markPetDiscovered === 'function') {
+                markPetDiscovered(egg.variant);
+            }
+            if (typeof spawnExclusivePet === 'function') {
+                const spawned = spawnExclusivePet(egg.variant, egg.animalName, egg.x, egg.y);
+                if (spawned) {
+                    spawned.x = egg.x;
+                    spawned.y = egg.y;
+                    spawned.targetX = egg.x;
+                    spawned.targetY = egg.y;
+                }
+            } else if (typeof spawnAnimal === 'function') {
                 const spawned = spawnAnimal(egg.species, egg.animalName, egg.variant);
                 if (spawned && egg.species !== 'fish') {
                     spawned.x = egg.x;
@@ -510,8 +526,13 @@
                 incrementQuestProgress('pet_animals', 1);
             }
 
+            const tierLabel = egg.tier ? egg.tier.toUpperCase() : 'LANGKA';
             if (typeof showGardenNotice === 'function') {
-                showGardenNotice(`🥚 Telur menetas! Kamu menyambut ${egg.animalName} langka ke kebunmu! 🎉 (+3⭐)`);
+                showGardenNotice(`🥚 Telur menetas! Kamu menemukan ${egg.animalName} [${tierLabel}]! 🎉 (+${starsCount}⭐)`);
+            }
+
+            if (typeof updateGalleryBadge === 'function') {
+                updateGalleryBadge();
             }
 
             if (typeof scheduleAutoSave === 'function') {
@@ -536,17 +557,22 @@
             targetCtx.ellipse(0, 4, 16, 7, 0, 0, Math.PI * 2);
             targetCtx.fill();
 
-            // Golden glow aura
+            // Rarity Aura Pulsing Glow
             const glowPulse = 0.7 + Math.sin(now * 0.005) * 0.3;
-            const gradGlow = targetCtx.createRadialGradient(0, -14, 4, 0, -14, 28);
-            gradGlow.addColorStop(0, `rgba(253, 224, 71, ${0.45 * glowPulse})`);
-            gradGlow.addColorStop(1, 'rgba(253, 224, 71, 0)');
+            const auraColor = (egg.tier === 'legendary') ? '249, 115, 22' // Warm fiery orange
+                : (egg.tier === 'epic') ? '168, 85, 247'                 // Radiant violet
+                : (egg.tier === 'rare') ? '56, 189, 248'                 // Cyan blue
+                : '74, 222, 128';                                        // Emerald green
+
+            const gradGlow = targetCtx.createRadialGradient(0, -14, 4, 0, -14, 30);
+            gradGlow.addColorStop(0, `rgba(${auraColor}, ${0.5 * glowPulse})`);
+            gradGlow.addColorStop(1, `rgba(${auraColor}, 0)`);
             targetCtx.fillStyle = gradGlow;
             targetCtx.beginPath();
-            targetCtx.arc(0, -14, 28, 0, Math.PI * 2);
+            targetCtx.arc(0, -14, 30, 0, Math.PI * 2);
             targetCtx.fill();
 
-            // Egg body
+            // Egg body shape
             targetCtx.save();
             targetCtx.beginPath();
             targetCtx.moveTo(0, -32);
@@ -556,23 +582,57 @@
             targetCtx.closePath();
 
             const eggGrad = targetCtx.createLinearGradient(-12, -30, 12, 4);
-            eggGrad.addColorStop(0, '#FEF08A');
-            eggGrad.addColorStop(0.5, '#F472B6');
-            eggGrad.addColorStop(1, '#A78BFA');
+            if (egg.tier === 'legendary') {
+                eggGrad.addColorStop(0, '#FEF08A');
+                eggGrad.addColorStop(0.5, '#F97316');
+                eggGrad.addColorStop(1, '#DC2626');
+            } else if (egg.tier === 'epic') {
+                eggGrad.addColorStop(0, '#FDF4FF');
+                eggGrad.addColorStop(0.5, '#C084FC');
+                eggGrad.addColorStop(1, '#7E22CE');
+            } else if (egg.tier === 'rare') {
+                eggGrad.addColorStop(0, '#F0F9FF');
+                eggGrad.addColorStop(0.5, '#38BDF8');
+                eggGrad.addColorStop(1, '#0284C7');
+            } else {
+                eggGrad.addColorStop(0, '#FEF08A');
+                eggGrad.addColorStop(0.5, '#4ADE80');
+                eggGrad.addColorStop(1, '#15803D');
+            }
             targetCtx.fillStyle = eggGrad;
             targetCtx.fill();
 
-            targetCtx.strokeStyle = '#6D28D9';
-            targetCtx.lineWidth = 1.6;
+            targetCtx.strokeStyle = (egg.tier === 'legendary') ? '#7C2D12' : '#4C1D95';
+            targetCtx.lineWidth = 1.8;
             targetCtx.stroke();
 
-            // Decorative stars on egg shell
+            // Decorative stars & spots on egg shell
             targetCtx.fillStyle = '#FFFFFF';
             targetCtx.beginPath();
             targetCtx.arc(-4, -12, 2.5, 0, Math.PI * 2);
             targetCtx.arc(5, -18, 2, 0, Math.PI * 2);
             targetCtx.arc(2, -6, 2.8, 0, Math.PI * 2);
             targetCtx.fill();
+
+            // Dynamic Egg Cracks when tapped!
+            if (egg.taps >= 1) {
+                targetCtx.strokeStyle = '#FFFFFF';
+                targetCtx.lineWidth = 1.4;
+                targetCtx.beginPath();
+                targetCtx.moveTo(-2, -26);
+                targetCtx.lineTo(2, -21);
+                targetCtx.lineTo(-1, -16);
+                if (egg.taps >= 2) {
+                    targetCtx.lineTo(3, -12);
+                    targetCtx.lineTo(0, -7);
+                }
+                if (egg.taps >= 3) {
+                    targetCtx.moveTo(2, -21);
+                    targetCtx.lineTo(7, -19);
+                    targetCtx.lineTo(6, -14);
+                }
+                targetCtx.stroke();
+            }
 
             // Shiny egg highlight
             targetCtx.fillStyle = 'rgba(255, 255, 255, 0.65)';
@@ -581,7 +641,7 @@
             targetCtx.fill();
             targetCtx.restore();
 
-            // Small progress indicators (dots)
+            // Progress indicators (dots)
             const totalDots = egg.maxTaps;
             const filledDots = Math.floor(egg.taps);
             const startX = -((totalDots - 1) * 7) / 2;
@@ -3057,6 +3117,9 @@
                             else if (a.type === 'rabbit' && typeof drawRabbit === 'function') drawRabbit(targetCtx, fakeAnim, now);
                             else if (a.type === 'custom' && typeof drawCustomAnimal === 'function') drawCustomAnimal(targetCtx, fakeAnim, now);
                             else if (a.type === 'fish' && typeof drawFish === 'function') drawFish(targetCtx, fakeAnim, now);
+                            else if ((a.type === 'exclusive' || (typeof isExclusivePetType === 'function' && isExclusivePetType(a.variant || a.type))) && typeof drawExclusivePet === 'function') {
+                                drawExclusivePet(targetCtx, fakeAnim, now);
+                            }
 
                             targetCtx.font = 'bold 13px system-ui, sans-serif';
                             targetCtx.fillStyle = '#E11D48';
@@ -4026,6 +4089,9 @@
                     else if (a.type === 'butterfly') drawButterfly(ctx, a, now);
                     else if (a.type === 'fish') drawFish(ctx, a, now);
                     else if (a.type === 'custom') drawCustomAnimal(ctx, a, now);
+                    else if ((a.type === 'exclusive' || (typeof isExclusivePetType === 'function' && isExclusivePetType(a.variant || a.type))) && typeof drawExclusivePet === 'function') {
+                        drawExclusivePet(ctx, a, now);
+                    }
                     if (typeof drawAnimalAccessory === 'function') {
                         drawAnimalAccessory(ctx, a, now);
                     }
