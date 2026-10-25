@@ -436,7 +436,6 @@ async function saveCurrentWorld(silent = false) {
     waterBounce: 0,
     hasWatercolor: !!f.hasWatercolor,
     hasCrayon: !!f.hasCrayon,
-    hasGlitter: !!f.hasGlitter,
     hasGlowBrush: !!f.hasGlowBrush,
     glowColor: f.glowColor || null,
     spriteDataUrl: f.imgCanvas ? f.imgCanvas.toDataURL("image/png") : "",
@@ -666,7 +665,6 @@ async function loadWorldById(worldId) {
           waterBounce: 0,
           hasWatercolor: !!sf.hasWatercolor,
           hasCrayon: !!sf.hasCrayon,
-          hasGlitter: !!sf.hasGlitter,
           hasGlowBrush: !!sf.hasGlowBrush,
           glowColor: sf.glowColor || null,
         });

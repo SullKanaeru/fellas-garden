@@ -5294,7 +5294,7 @@ function drawFlowerInstance(targetCtx, f, now) {
         targetCtx.drawImage(f.wiltedCanvas, drawX, drawY, f.width, f.height);
       }
 
-      // Draw Living Paint Weather Effects, Night Glow & Glitter
+      // Draw Living Paint Weather Effects, Night Glow
       if (typeof drawFlowerPainterEffects === "function") {
         targetCtx.globalAlpha = 1.0;
         drawFlowerPainterEffects(targetCtx, f, now, 0.016);

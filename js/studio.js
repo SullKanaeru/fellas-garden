@@ -87,7 +87,7 @@
             const eyedropBtn = document.getElementById('studioToolEyedrop');
 
             if (tool === 'eraser' || tool === 'eyedropper') {
-                const types = ['pencil', 'watercolor', 'crayon', 'glitter', 'glow', 'stamp'];
+                const types = ['pencil', 'watercolor', 'crayon', 'glow'];
                 types.forEach(t => {
                     const b = document.getElementById('brushTypeBtn-' + t);
                     if (b) {

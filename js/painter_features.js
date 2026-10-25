@@ -2,7 +2,7 @@
  * FELLA'S GARDEN - PAINTER GAMEPLAY FEATURES (js/painter_features.js)
  *
  * Implements the 7 Approved Painter Features:
- * 1. Kuas Spesial (Pencil, Watercolor, Crayon, Glitter, Glow, Stamp)
+ * 1. Kuas Spesial (Pencil, Watercolor, Crayon, Glow)
  * 2. Pesanan Lukisan dari Hewan (Art Commissions + Live Animal Reaction)
  * 3. Timelapse Goresan saat Ditanam & Replay di Studio
  * 4. Pameran Lukisan di Kebun (Easel Decoration + Kritikus Profesor Hoot)
@@ -15,10 +15,9 @@
     'use strict';
 
     // =========================================================================
-    // 1. SPECIAL BRUSHES & STAMP ENGINE + STROKE TIMELAPSE RECORDING
+    // 1. SPECIAL BRUSHES ENGINE + STROKE TIMELAPSE RECORDING
     // =========================================================================
-    var studioBrushType = 'pencil'; // 'pencil' | 'watercolor' | 'crayon' | 'glitter' | 'glow' | 'stamp'
-    var studioStampShape = 'petal'; // 'petal' | 'leaf' | 'star' | 'heart' | 'bud'
+    var studioBrushType = 'pencil'; // 'pencil' | 'watercolor' | 'crayon' | 'glow'
     var recordedFlowerStrokes = [];
     var currentRecordingStroke = null;
     var isReplayingTimelapse = false;
@@ -26,10 +25,8 @@
     var currentPadEffects = {
         hasWatercolor: false,
         hasCrayon: false,
-        hasGlitter: false,
         hasGlowBrush: false,
-        glowColor: '#F7CE68',
-        stampCount: 0
+        glowColor: '#F7CE68'
     };
 
     function resetPadPainterMetadata() {
@@ -38,11 +35,10 @@
         currentPadEffects = {
             hasWatercolor: false,
             hasCrayon: false,
-            hasGlitter: false,
             hasGlowBrush: false,
-            glowColor: '#F7CE68',
-            stampCount: 0
+            glowColor: '#F7CE68'
         };
+        liveStroke = null;
     }
 
     function setStudioBrushType(type) {
@@ -54,7 +50,7 @@
         }
 
         // Update UI buttons
-        const types = ['pencil', 'watercolor', 'crayon', 'glitter', 'glow', 'stamp'];
+        const types = ['pencil', 'watercolor', 'crayon', 'glow'];
         types.forEach(t => {
             const btn = document.getElementById('brushTypeBtn-' + t);
             if (btn) {
@@ -65,105 +61,197 @@
                 }
             }
         });
+    }
 
-        const stampSubBar = document.getElementById('studioStampSubBar');
-        if (stampSubBar) {
-            if (type === 'stamp') {
-                stampSubBar.classList.remove('hidden');
-                stampSubBar.classList.add('flex');
-            } else {
-                stampSubBar.classList.add('hidden');
-                stampSubBar.classList.remove('flex');
-            }
+    // =========================================================================
+    // SMOOTH STROKE ENGINE (Cat Air & Kuas Cahaya)
+    // Each stroke is re-rendered from its full point list on a temporary layer
+    // and then composited once over the pad snapshot taken at pointer-down.
+    // This avoids the beads / dark joints that appear when semi-transparent
+    // segments are stamped one after another.
+    // =========================================================================
+    var liveStroke = null;
+
+    function hexToRgb(hex) {
+        let h = String(hex || '#000000').replace('#', '');
+        if (h.length === 3) h = h.split('').map(c => c + c).join('');
+        const n = parseInt(h, 16);
+        if (isNaN(n)) return { r: 0, g: 0, b: 0 };
+        return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+    }
+
+    function rgba(c, a) {
+        return 'rgba(' + c.r + ',' + c.g + ',' + c.b + ',' + a + ')';
+    }
+
+    function mixWithWhite(c, amt) {
+        return {
+            r: Math.round(c.r + (255 - c.r) * amt),
+            g: Math.round(c.g + (255 - c.g) * amt),
+            b: Math.round(c.b + (255 - c.b) * amt)
+        };
+    }
+
+    function darken(c, amt) {
+        return {
+            r: Math.round(c.r * (1 - amt)),
+            g: Math.round(c.g * (1 - amt)),
+            b: Math.round(c.b * (1 - amt))
+        };
+    }
+
+    // Trace a smooth curve through the points (midpoint quadratic smoothing)
+    function traceSmoothPath(ctx, pts) {
+        ctx.beginPath();
+        if (pts.length === 1) {
+            ctx.moveTo(pts[0].x, pts[0].y);
+            ctx.lineTo(pts[0].x + 0.01, pts[0].y);
+            return;
         }
+        ctx.moveTo(pts[0].x, pts[0].y);
+        if (pts.length === 2) {
+            ctx.lineTo(pts[1].x, pts[1].y);
+            return;
+        }
+        for (let i = 1; i < pts.length - 1; i++) {
+            const mx = (pts[i].x + pts[i + 1].x) / 2;
+            const my = (pts[i].y + pts[i + 1].y) / 2;
+            ctx.quadraticCurveTo(pts[i].x, pts[i].y, mx, my);
+        }
+        const last = pts[pts.length - 1];
+        ctx.lineTo(last.x, last.y);
     }
 
-    function setStudioStampShape(shape) {
-        studioStampShape = shape;
-        const shapes = ['petal', 'leaf', 'star', 'heart', 'bud'];
-        shapes.forEach(s => {
-            const btn = document.getElementById('stampShapeBtn-' + s);
-            if (btn) {
-                if (s === shape) {
-                    btn.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500 text-white shadow-2xs transition cursor-pointer';
-                } else {
-                    btn.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold bg-white hover:bg-amber-50 text-amber-900 border border-amber-200 transition cursor-pointer';
-                }
-            }
-        });
+    // Light low-pass filter so shaky pointer input becomes a flowing line
+    function relaxPoints(pts) {
+        if (pts.length < 3) return pts;
+        const out = [pts[0]];
+        for (let i = 1; i < pts.length - 1; i++) {
+            out.push({
+                x: pts[i - 1].x * 0.25 + pts[i].x * 0.5 + pts[i + 1].x * 0.25,
+                y: pts[i - 1].y * 0.25 + pts[i].y * 0.5 + pts[i + 1].y * 0.25
+            });
+        }
+        out.push(pts[pts.length - 1]);
+        return out;
     }
 
-    // Draw a stamp shape at (x, y)
-    function drawStampOnCtx(ctx, x, y, shape, color, size) {
-        const r = Math.max(12, size * 2.2);
+    function paintWatercolorLayer(lctx, pts, color, size) {
+        const c = hexToRgb(color);
+        const W = Math.max(6, size * 1.7);
+        lctx.lineCap = 'round';
+        lctx.lineJoin = 'round';
+
+        // 1. Feathered wash: concentric soft strokes (alpha builds up toward the middle)
+        const rings = 8;
+        for (let i = 0; i < rings; i++) {
+            const k = i / (rings - 1);
+            lctx.lineWidth = W * (1.35 - k * 0.7);
+            lctx.strokeStyle = rgba(c, 0.085);
+            traceSmoothPath(lctx, pts);
+            lctx.stroke();
+        }
+
+        // 2. Pigment body
+        lctx.lineWidth = W * 0.66;
+        lctx.strokeStyle = rgba(c, 0.26);
+        traceSmoothPath(lctx, pts);
+        lctx.stroke();
+    }
+
+    function paintGlowLayer(lctx, pts, color, size) {
+        const c = hexToRgb(color);
+        const core = Math.max(2.5, size * 0.95);
+        lctx.lineCap = 'round';
+        lctx.lineJoin = 'round';
+
+        // 1. Soft halo: many wide, very faint strokes => smooth radial falloff
+        const halo = 9;
+        for (let i = 0; i < halo; i++) {
+            const k = i / (halo - 1);
+            lctx.lineWidth = core * (4.2 - k * 3.0);
+            lctx.strokeStyle = rgba(c, 0.045);
+            traceSmoothPath(lctx, pts);
+            lctx.stroke();
+        }
+
+        // 2. Saturated colour core
+        lctx.lineWidth = core * 1.15;
+        lctx.strokeStyle = rgba(c, 0.85);
+        traceSmoothPath(lctx, pts);
+        lctx.stroke();
+
+        // 3. Hot white-ish centre line
+        lctx.lineWidth = Math.max(1.2, core * 0.5);
+        lctx.strokeStyle = rgba(mixWithWhite(c, 0.82), 0.95);
+        traceSmoothPath(lctx, pts);
+        lctx.stroke();
+    }
+
+    function renderLiveStroke() {
+        const s = liveStroke;
+        if (!s) return;
+        const ctx = s.ctx;
+        const lctx = s.layerCtx;
+        lctx.clearRect(0, 0, s.layer.width, s.layer.height);
+        const pts = relaxPoints(s.points);
+        if (s.type === 'watercolor') {
+            paintWatercolorLayer(lctx, pts, s.color, s.size);
+        } else {
+            paintGlowLayer(lctx, pts, s.color, s.size);
+        }
         ctx.save();
-        ctx.translate(x, y);
-        ctx.fillStyle = color;
-        ctx.strokeStyle = 'rgba(0,0,0,0.12)';
-        ctx.lineWidth = 1.2;
-
-        if (shape === 'petal') {
-            // 5-petal cute flower head
-            for (let i = 0; i < 5; i++) {
-                ctx.save();
-                ctx.rotate((i * Math.PI * 2) / 5);
-                ctx.beginPath();
-                ctx.ellipse(0, -r * 0.55, r * 0.36, r * 0.52, 0, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.restore();
-            }
-            ctx.fillStyle = '#F7CE68';
-            ctx.beginPath();
-            ctx.arc(0, 0, r * 0.28, 0, Math.PI * 2);
-            ctx.fill();
-        } else if (shape === 'leaf') {
-            ctx.beginPath();
-            ctx.moveTo(0, r * 0.7);
-            ctx.quadraticCurveTo(r * 0.8, 0, 0, -r * 0.8);
-            ctx.quadraticCurveTo(-r * 0.8, 0, 0, r * 0.7);
-            ctx.fill();
-            ctx.strokeStyle = 'rgba(255,255,255,0.45)';
-            ctx.lineWidth = 1.5;
-            ctx.beginPath();
-            ctx.moveTo(0, r * 0.55);
-            ctx.lineTo(0, -r * 0.55);
-            ctx.stroke();
-        } else if (shape === 'star') {
-            ctx.beginPath();
-            for (let i = 0; i < 10; i++) {
-                const rad = i % 2 === 0 ? r * 0.75 : r * 0.35;
-                const ang = (i * Math.PI) / 5 - Math.PI / 2;
-                if (i === 0) ctx.moveTo(Math.cos(ang) * rad, Math.sin(ang) * rad);
-                else ctx.lineTo(Math.cos(ang) * rad, Math.sin(ang) * rad);
-            }
-            ctx.closePath();
-            ctx.fill();
-        } else if (shape === 'heart') {
-            const s = r * 0.045;
-            ctx.beginPath();
-            ctx.moveTo(0, 4 * s);
-            ctx.bezierCurveTo(0, 0, -12 * s, 0, -12 * s, 7 * s);
-            ctx.bezierCurveTo(-12 * s, 14 * s, 0, 18 * s, 0, 22 * s);
-            ctx.bezierCurveTo(0, 18 * s, 12 * s, 14 * s, 12 * s, 7 * s);
-            ctx.bezierCurveTo(12 * s, 0, 0, 0, 0, 4 * s);
-            ctx.fill();
-        } else if (shape === 'bud') {
-            // Tulip bud
-            ctx.beginPath();
-            ctx.arc(0, 0, r * 0.55, 0, Math.PI, false);
-            ctx.lineTo(-r * 0.55, -r * 0.45);
-            ctx.lineTo(-r * 0.2, -r * 0.15);
-            ctx.lineTo(0, -r * 0.55);
-            ctx.lineTo(r * 0.2, -r * 0.15);
-            ctx.lineTo(r * 0.55, -r * 0.45);
-            ctx.closePath();
-            ctx.fill();
-        }
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.globalAlpha = 1;
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        ctx.drawImage(s.base, 0, 0);
+        ctx.drawImage(s.layer, 0, 0);
         ctx.restore();
     }
 
+    function beginLiveStroke(ctx, pos, brushType, color, size) {
+        const cv = ctx.canvas;
+        const base = document.createElement('canvas');
+        base.width = cv.width;
+        base.height = cv.height;
+        base.getContext('2d').drawImage(cv, 0, 0);
+        const layer = document.createElement('canvas');
+        layer.width = cv.width;
+        layer.height = cv.height;
+        liveStroke = {
+            ctx: ctx,
+            type: brushType,
+            color: color,
+            size: size,
+            base: base,
+            layer: layer,
+            layerCtx: layer.getContext('2d'),
+            points: [{ x: pos.x, y: pos.y }]
+        };
+        if (brushType === 'watercolor') currentPadEffects.hasWatercolor = true;
+        if (brushType === 'glow') {
+            currentPadEffects.hasGlowBrush = true;
+            currentPadEffects.glowColor = color;
+        }
+        renderLiveStroke();
+    }
+
+    function extendLiveStroke(ctx, fromPos, toPos, brushType, color, size) {
+        if (!liveStroke || liveStroke.ctx !== ctx || liveStroke.type !== brushType) {
+            beginLiveStroke(ctx, fromPos, brushType, color, size);
+        }
+        const pts = liveStroke.points;
+        const last = pts[pts.length - 1];
+        // Ignore sub-pixel jitter to keep the curve clean
+        if (Math.hypot(toPos.x - last.x, toPos.y - last.y) < 1.2) return;
+        pts.push({ x: toPos.x, y: toPos.y });
+        renderLiveStroke();
+    }
+
     // Specialized Brush Down Renderer
-    function renderBrushDownOnCtx(ctx, pos, tool, brushType, color, size, stampShape) {
+    function renderBrushDownOnCtx(ctx, pos, tool, brushType, color, size) {
+        liveStroke = null;
+
         if (tool === 'eraser') {
             ctx.save();
             ctx.globalCompositeOperation = 'destination-out';
@@ -174,25 +262,15 @@
             return;
         }
 
-        if (brushType === 'stamp') {
-            drawStampOnCtx(ctx, pos.x, pos.y, stampShape || studioStampShape, color, size);
-            currentPadEffects.stampCount++;
+        if (brushType === 'watercolor' || brushType === 'glow') {
+            beginLiveStroke(ctx, pos, brushType, color, size);
             return;
         }
 
         ctx.save();
         ctx.globalCompositeOperation = 'source-over';
 
-        if (brushType === 'watercolor') {
-            currentPadEffects.hasWatercolor = true;
-            ctx.globalAlpha = 0.22;
-            ctx.fillStyle = color;
-            ctx.shadowColor = color;
-            ctx.shadowBlur = size * 0.85;
-            ctx.beginPath();
-            ctx.arc(pos.x, pos.y, Math.max(2, size * 0.75), 0, Math.PI * 2);
-            ctx.fill();
-        } else if (brushType === 'crayon') {
+        if (brushType === 'crayon') {
             currentPadEffects.hasCrayon = true;
             ctx.fillStyle = color;
             const rad = Math.max(2, size * 0.65);
@@ -202,31 +280,6 @@
                 ctx.globalAlpha = 0.45 + Math.random() * 0.45;
                 ctx.fillRect(pos.x + ox, pos.y + oy, 2.2, 2.2);
             }
-        } else if (brushType === 'glitter') {
-            currentPadEffects.hasGlitter = true;
-            ctx.fillStyle = color;
-            ctx.beginPath();
-            ctx.arc(pos.x, pos.y, Math.max(1.5, size * 0.45), 0, Math.PI * 2);
-            ctx.fill();
-            // Sparkle dots
-            ctx.fillStyle = '#FFFBEB';
-            ctx.beginPath();
-            ctx.arc(pos.x + (Math.random() - 0.5) * size, pos.y + (Math.random() - 0.5) * size, 1.8, 0, Math.PI * 2);
-            ctx.fill();
-        } else if (brushType === 'glow') {
-            currentPadEffects.hasGlowBrush = true;
-            currentPadEffects.glowColor = color;
-            ctx.fillStyle = color;
-            ctx.shadowColor = color;
-            ctx.shadowBlur = Math.max(10, size * 1.4);
-            ctx.beginPath();
-            ctx.arc(pos.x, pos.y, Math.max(1.5, size * 0.5), 0, Math.PI * 2);
-            ctx.fill();
-            // Bright inner core
-            ctx.fillStyle = 'rgba(255,255,255,0.65)';
-            ctx.beginPath();
-            ctx.arc(pos.x, pos.y, Math.max(1, size * 0.22), 0, Math.PI * 2);
-            ctx.fill();
         } else {
             // Classic Pencil
             ctx.fillStyle = color;
@@ -253,8 +306,8 @@
             return;
         }
 
-        if (brushType === 'stamp') {
-            // Stamps only place on pointerdown (or spaced intervals)
+        if (brushType === 'watercolor' || brushType === 'glow') {
+            extendLiveStroke(ctx, fromPos, toPos, brushType, color, size);
             return;
         }
 
@@ -263,18 +316,7 @@
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
 
-        if (brushType === 'watercolor') {
-            currentPadEffects.hasWatercolor = true;
-            ctx.globalAlpha = 0.16;
-            ctx.strokeStyle = color;
-            ctx.lineWidth = size * 1.35;
-            ctx.shadowColor = color;
-            ctx.shadowBlur = size * 0.7;
-            ctx.beginPath();
-            ctx.moveTo(fromPos.x, fromPos.y);
-            ctx.lineTo(toPos.x, toPos.y);
-            ctx.stroke();
-        } else if (brushType === 'crayon') {
+        if (brushType === 'crayon') {
             currentPadEffects.hasCrayon = true;
             ctx.fillStyle = color;
             const dist = Math.hypot(toPos.x - fromPos.x, toPos.y - fromPos.y);
@@ -291,44 +333,6 @@
                     ctx.fillRect(cx + ox, cy + oy, 2.1, 2.1);
                 }
             }
-        } else if (brushType === 'glitter') {
-            currentPadEffects.hasGlitter = true;
-            ctx.strokeStyle = color;
-            ctx.lineWidth = size * 0.85;
-            ctx.beginPath();
-            ctx.moveTo(fromPos.x, fromPos.y);
-            ctx.lineTo(toPos.x, toPos.y);
-            ctx.stroke();
-
-            // Sprinkle glitter stars along path
-            if (Math.random() < 0.75) {
-                const gx = toPos.x + (Math.random() - 0.5) * size * 1.8;
-                const gy = toPos.y + (Math.random() - 0.5) * size * 1.8;
-                ctx.fillStyle = Math.random() < 0.5 ? '#FFFFFF' : '#FDE047';
-                ctx.beginPath();
-                ctx.arc(gx, gy, 1.5 + Math.random() * 1.8, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        } else if (brushType === 'glow') {
-            currentPadEffects.hasGlowBrush = true;
-            currentPadEffects.glowColor = color;
-            ctx.strokeStyle = color;
-            ctx.lineWidth = size;
-            ctx.shadowColor = color;
-            ctx.shadowBlur = Math.max(10, size * 1.4);
-            ctx.beginPath();
-            ctx.moveTo(fromPos.x, fromPos.y);
-            ctx.lineTo(toPos.x, toPos.y);
-            ctx.stroke();
-
-            // Inner bright core line
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
-            ctx.lineWidth = Math.max(1.5, size * 0.35);
-            ctx.shadowBlur = 0;
-            ctx.beginPath();
-            ctx.moveTo(fromPos.x, fromPos.y);
-            ctx.lineTo(toPos.x, toPos.y);
-            ctx.stroke();
         } else {
             // Classic Pencil
             ctx.strokeStyle = color;
@@ -342,14 +346,13 @@
     }
 
     // Record stroke start & move
-    function startRecordingStroke(pos, tool, brushType, color, size, stampShape) {
+    function startRecordingStroke(pos, tool, brushType, color, size) {
         if (isReplayingTimelapse) return;
         currentRecordingStroke = {
             tool: tool,
             brushType: brushType,
             color: color,
             size: size,
-            stampShape: stampShape || studioStampShape,
             points: [{ x: Math.round(pos.x), y: Math.round(pos.y) }]
         };
         recordedFlowerStrokes.push(currentRecordingStroke);
@@ -369,6 +372,7 @@
 
     function endRecordingStroke() {
         currentRecordingStroke = null;
+        liveStroke = null;
     }
 
     // =========================================================================
@@ -397,7 +401,7 @@
         for (let s = 0; s < strokesCopy.length; s++) {
             const st = strokesCopy[s];
             if (!st.points || st.points.length === 0) continue;
-            renderBrushDownOnCtx(ctx, st.points[0], st.tool, st.brushType, st.color, st.size, st.stampShape);
+            renderBrushDownOnCtx(ctx, st.points[0], st.tool, st.brushType, st.color, st.size);
             for (let p = 1; p < st.points.length; p++) {
                 renderBrushMoveOnCtx(ctx, st.points[p - 1], st.points[p], st.tool, st.brushType, st.color, st.size);
                 if (p % 2 === 0) {
@@ -418,7 +422,6 @@
         if (!newFlower) return;
         newFlower.hasWatercolor = !!currentPadEffects.hasWatercolor;
         newFlower.hasCrayon = !!currentPadEffects.hasCrayon;
-        newFlower.hasGlitter = !!currentPadEffects.hasGlitter;
         newFlower.hasGlowBrush = !!currentPadEffects.hasGlowBrush;
         newFlower.glowColor = currentPadEffects.glowColor || '#F7CE68';
 
@@ -518,9 +521,9 @@
         {
             id: 'comm_glow',
             title: 'Bunga Cahaya Kunang-Kunang',
-            desc: 'Lukis bunga menggunakan Kuas Cahaya (Glow) atau Glitter!',
+            desc: 'Lukis bunga menggunakan Kuas Cahaya (Glow)!',
             rewardStars: 4,
-            check: (analysis, flw) => !!(flw && (flw.hasGlowBrush || flw.hasGlitter))
+            check: (analysis, flw) => !!(flw && flw.hasGlowBrush)
         },
         {
             id: 'comm_watercolor',
@@ -631,16 +634,9 @@
         {
             id: 'dpc_special_brush',
             title: 'Eksperimen Kuas Seni',
-            desc: 'Gunakan Kuas Cat Air, Krayon, Glitter, atau Cahaya',
+            desc: 'Gunakan Kuas Cat Air, Krayon, atau Cahaya',
             rewardStars: 3,
-            check: (analysis, flw) => !!(flw && (flw.hasWatercolor || flw.hasCrayon || flw.hasGlitter || flw.hasGlowBrush))
-        },
-        {
-            id: 'dpc_stamp',
-            title: 'Master Stempel Bunga',
-            desc: 'Padukan Stempel Kelopak/Daun/Bintang di dalam lukisanmu',
-            rewardStars: 3,
-            check: () => currentPadEffects.stampCount > 0
+            check: (analysis, flw) => !!(flw && (flw.hasWatercolor || flw.hasCrayon || flw.hasGlowBrush))
         },
         {
             id: 'dpc_night_glow',
@@ -1458,24 +1454,6 @@
             targetCtx.restore();
         }
 
-        // C. Twinkling Glitter Stars for 'glitter' brush flowers
-        if (f.hasGlitter) {
-            targetCtx.save();
-            for (let i = 0; i < 3; i++) {
-                const phase = now * 0.005 + i * 2.1 + (f.swayPhase || 0);
-                const alpha = Math.max(0, Math.sin(phase));
-                if (alpha > 0.2) {
-                    const gx = Math.sin(i * 3.7 + (f.swayPhase || 0)) * (f.width * 0.3);
-                    const gy = drawY + (0.2 + (i * 0.22)) * f.height;
-                    targetCtx.fillStyle = `rgba(255, 251, 235, ${alpha * 0.9})`;
-                    targetCtx.beginPath();
-                    targetCtx.arc(gx, gy, 2.2 * alpha, 0, Math.PI * 2);
-                    targetCtx.fill();
-                }
-            }
-            targetCtx.restore();
-        }
-
         // D. Living Paint Weather Reactions
         const isRaining = (typeof isRainingShower !== 'undefined' && isRainingShower) ||
                           (typeof dynamicWeather !== 'undefined' && (dynamicWeather === 'rain' || dynamicWeather === 'thunderstorm'));
@@ -1565,7 +1543,6 @@
     // Export functions to global window scope
     window.studioBrushType = studioBrushType;
     window.setStudioBrushType = setStudioBrushType;
-    window.setStudioStampShape = setStudioStampShape;
     window.renderBrushDownOnCtx = renderBrushDownOnCtx;
     window.renderBrushMoveOnCtx = renderBrushMoveOnCtx;
     window.startRecordingStroke = startRecordingStroke;
