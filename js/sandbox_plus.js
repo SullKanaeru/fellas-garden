@@ -3892,7 +3892,8 @@ function toggleAsmrFocusMode() {
         '#bottomDockNav', 
         'nav', 
         '#animalFollowBanner', 
-        '#flowerCountBadgeContainer'
+        '#flowerCountBadgeContainer',
+        '#exclusiveSpawnerQuickContainer'
     ];
 
     uiSelectors.forEach(sel => {
@@ -3985,16 +3986,18 @@ function updatePomodoroUI() {
 
     if (modeEl) {
         if (pomodoroMode === 'focus') {
-            modeEl.className = 'px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold inline-flex items-center gap-1.5 shadow-xs';
+            modeEl.className = 'px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-emerald-100 text-emerald-800 text-[11px] sm:text-xs font-bold inline-flex items-center gap-1 sm:gap-1.5 shadow-xs shrink-0';
+            modeEl.title = `Fokus (${pomodoroFocusDurationMins}m)`;
             modeEl.innerHTML = `
                 <svg class="w-3.5 h-3.5 text-emerald-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
                     <circle cx="12" cy="12" r="9"/>
                     <polyline points="12 6 12 12 16 14"/>
                 </svg>
-                <span>Fokus (${pomodoroFocusDurationMins}m)</span>
+                <span class="hidden sm:inline">Fokus (${pomodoroFocusDurationMins}m)</span>
             `;
         } else {
-            modeEl.className = 'px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-bold inline-flex items-center gap-1.5 shadow-xs';
+            modeEl.className = 'px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-amber-100 text-amber-800 text-[11px] sm:text-xs font-bold inline-flex items-center gap-1 sm:gap-1.5 shadow-xs shrink-0';
+            modeEl.title = 'Istirahat (5m)';
             modeEl.innerHTML = `
                 <svg class="w-3.5 h-3.5 text-amber-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M17 8h1a4 4 0 1 1 0 8h-1"/>
@@ -4003,7 +4006,7 @@ function updatePomodoroUI() {
                     <line x1="10" y1="2" x2="10" y2="4"/>
                     <line x1="14" y1="2" x2="14" y2="4"/>
                 </svg>
-                <span>Istirahat (5m)</span>
+                <span class="hidden sm:inline">Istirahat (5m)</span>
             `;
         }
     }
@@ -4013,9 +4016,9 @@ function updatePomodoroUI() {
         const durBtn = document.getElementById(`pomodoroDurBtn-${m}`);
         if (durBtn) {
             if (m === pomodoroFocusDurationMins) {
-                durBtn.className = 'px-2 py-0.5 rounded-lg text-[11px] font-bold bg-[#2B5B35] text-white shadow-xs transition';
+                durBtn.className = 'px-1.5 sm:px-2 py-0.5 rounded-lg text-[10px] sm:text-[11px] font-bold bg-[#2B5B35] text-white shadow-xs transition';
             } else {
-                durBtn.className = 'px-2 py-0.5 rounded-lg text-[11px] font-bold bg-white/70 hover:bg-emerald-50 text-emerald-900 border border-emerald-200 transition';
+                durBtn.className = 'px-1.5 sm:px-2 py-0.5 rounded-lg text-[10px] sm:text-[11px] font-bold bg-white/70 hover:bg-emerald-50 text-emerald-900 border border-emerald-200 transition';
             }
         }
     });

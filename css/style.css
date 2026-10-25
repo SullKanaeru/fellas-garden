@@ -1175,13 +1175,16 @@ body.zen-mode #zenModeRestorePill {
         max-width: 88vw !important;
         padding: 6px 10px !important;
         border-radius: 14px !important;
-        top: 56px !important;
+        top: 80px !important;
     }
     #gardenNoticeToast {
         max-width: 90vw !important;
         padding: 5px 12px !important;
         font-size: 11px !important;
-        top: 56px !important;
+        top: 80px !important;
+    }
+    #exclusiveSpawnerQuickContainer {
+        top: 78px !important;
     }
 
     /* Sound Dropdown Widget */
@@ -1233,12 +1236,55 @@ body.zen-mode #zenModeRestorePill {
         font-size: 9px !important;
     }
 
-    /* ASMR Focus Capsule */
+    /* ASMR Focus Capsule Responsive */
     #asmrFocusBar {
-        bottom: 10px !important;
-        padding: 3px 8px !important;
+        bottom: 12px !important;
+        padding: 3px 6px !important;
         font-size: 11px !important;
-        gap: 5px !important;
+        gap: 3px !important;
+        max-width: calc(100vw - 12px) !important;
+        justify-content: center !important;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25), 0 8px 10px -6px rgba(0, 0, 0, 0.2) !important;
+    }
+    #pomodoroModeBadge {
+        padding: 4px 6px !important;
+    }
+    #pomodoroModeBadge span {
+        display: none !important;
+    }
+    #asmrFocusBar .pomodoro-dur-group {
+        padding: 1px !important;
+        gap: 1px !important;
+    }
+    #asmrFocusBar [id^="pomodoroDurBtn-"] {
+        padding: 2px 4.5px !important;
+        font-size: 10px !important;
+        line-height: 1 !important;
+    }
+    #pomodoroTimeText {
+        font-size: 13px !important;
+        letter-spacing: -0.5px !important;
+    }
+    #pomodoroToggleBtn {
+        padding: 3px 7px !important;
+        font-size: 11px !important;
+        gap: 3px !important;
+    }
+    #asmrFocusBar .pomodoro-reset-btn {
+        padding: 3px 6px !important;
+    }
+    #asmrFocusBar .pomodoro-reset-btn span {
+        display: none !important;
+    }
+    #asmrFocusBar .pomodoro-exit-btn {
+        padding: 3px 6px !important;
+    }
+    #asmrFocusBar .pomodoro-exit-btn span {
+        display: none !important;
+    }
+    #asmrFocusBar svg {
+        width: 13px !important;
+        height: 13px !important;
     }
 
     /* ========================================================

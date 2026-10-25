@@ -214,7 +214,7 @@
         <button
           id="asmrToggleBtn"
           onclick="toggleAsmrFocusMode()"
-          class="hidden sm:inline-flex items-center gap-1 text-xs bg-[#eef5e6] hover:bg-[#dfeed0] px-2.5 py-0.5 rounded-full border border-[#c5d9b7] text-[#2B5B35] transition cursor-pointer"
+          class="inline-flex items-center gap-1 text-xs bg-[#eef5e6] hover:bg-[#dfeed0] px-2 sm:px-2.5 py-0.5 rounded-full border border-[#c5d9b7] text-[#2B5B35] transition cursor-pointer"
           title="Mode ASMR & Pomodoro Timer (Sembunyikan UI untuk belajar/relaksasi)"
         >
           <svg
@@ -4739,11 +4739,12 @@
     <!-- ASMR FOCUS & POMODORO FLOATING CAPSULE -->
     <div
       id="asmrFocusBar"
-      class="hidden fixed bottom-3 sm:bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-auto items-center gap-1.5 sm:gap-2.5 px-2.5 sm:px-4 py-1 sm:py-2 rounded-full bg-[#FDFBF2]/95 border-2 border-[#3a5a40] shadow-2xl text-[#2B5B35] max-w-[94vw]"
+      class="hidden fixed bottom-3 sm:bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-auto items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1 sm:py-2 rounded-full bg-[#FDFBF2]/95 border-2 border-[#3a5a40] shadow-2xl text-[#2B5B35] max-w-[96vw]"
     >
       <span
         id="pomodoroModeBadge"
         class="px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-emerald-100 text-emerald-800 text-[11px] sm:text-xs font-bold inline-flex items-center gap-1 sm:gap-1.5 shadow-xs shrink-0"
+        title="Mode Fokus"
       >
         <svg
           class="w-3.5 h-3.5 text-emerald-700"
@@ -4755,38 +4756,38 @@
           <circle cx="12" cy="12" r="9" />
           <polyline points="12 6 12 12 16 14" />
         </svg>
-        <span>Fokus (25m)</span>
+        <span class="hidden sm:inline">Fokus (25m)</span>
       </span>
 
       <!-- Duration Selector Preset Pills -->
       <div
-        class="flex items-center gap-1 bg-[#f0f7ec] p-0.5 rounded-xl border border-[#c5d9b7]"
+        class="pomodoro-dur-group flex items-center gap-0.5 sm:gap-1 bg-[#f0f7ec] p-0.5 rounded-xl border border-[#c5d9b7] shrink-0"
       >
         <button
           id="pomodoroDurBtn-15"
           onclick="setPomodoroDuration(15)"
-          class="px-2 py-0.5 rounded-lg text-[11px] font-bold bg-white/70 hover:bg-emerald-50 text-emerald-900 border border-emerald-200 transition"
+          class="px-1.5 sm:px-2 py-0.5 rounded-lg text-[10px] sm:text-[11px] font-bold bg-white/70 hover:bg-emerald-50 text-emerald-900 border border-emerald-200 transition"
         >
           15m
         </button>
         <button
           id="pomodoroDurBtn-25"
           onclick="setPomodoroDuration(25)"
-          class="px-2 py-0.5 rounded-lg text-[11px] font-bold bg-[#2B5B35] text-white shadow-xs transition"
+          class="px-1.5 sm:px-2 py-0.5 rounded-lg text-[10px] sm:text-[11px] font-bold bg-[#2B5B35] text-white shadow-xs transition"
         >
           25m
         </button>
         <button
           id="pomodoroDurBtn-45"
           onclick="setPomodoroDuration(45)"
-          class="px-2 py-0.5 rounded-lg text-[11px] font-bold bg-white/70 hover:bg-emerald-50 text-emerald-900 border border-emerald-200 transition"
+          class="px-1.5 sm:px-2 py-0.5 rounded-lg text-[10px] sm:text-[11px] font-bold bg-white/70 hover:bg-emerald-50 text-emerald-900 border border-emerald-200 transition"
         >
           45m
         </button>
         <button
           id="pomodoroDurBtn-60"
           onclick="setPomodoroDuration(60)"
-          class="px-2 py-0.5 rounded-lg text-[11px] font-bold bg-white/70 hover:bg-emerald-50 text-emerald-900 border border-emerald-200 transition"
+          class="px-1.5 sm:px-2 py-0.5 rounded-lg text-[10px] sm:text-[11px] font-bold bg-white/70 hover:bg-emerald-50 text-emerald-900 border border-emerald-200 transition"
         >
           60m
         </button>
@@ -4794,13 +4795,13 @@
 
       <span
         id="pomodoroTimeText"
-        class="font-mono font-bold text-base sm:text-lg text-[#2B5B35]"
+        class="font-mono font-bold text-sm sm:text-lg text-[#2B5B35] shrink-0"
         >25:00</span
       >
       <button
         id="pomodoroToggleBtn"
         onclick="togglePomodoroTimer()"
-        class="px-3 py-1 rounded-full bg-[#2B5B35] hover:bg-[#1f4627] text-white text-xs font-bold transition inline-flex items-center gap-1.5 shadow-xs active:scale-95"
+        class="px-2.5 sm:px-3 py-1 rounded-full bg-[#2B5B35] hover:bg-[#1f4627] text-white text-xs font-bold transition inline-flex items-center gap-1 sm:gap-1.5 shadow-xs active:scale-95 shrink-0"
       >
         <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
           <polygon points="5 3 19 12 5 21 5 3" />
@@ -4809,7 +4810,8 @@
       </button>
       <button
         onclick="resetPomodoroTimer()"
-        class="px-2.5 py-1 rounded-full bg-white hover:bg-gray-100 border border-[#c5d9b7] text-xs font-bold transition inline-flex items-center gap-1 shadow-xs active:scale-95"
+        class="pomodoro-reset-btn px-2 sm:px-2.5 py-1 rounded-full bg-white hover:bg-gray-100 border border-[#c5d9b7] text-xs font-bold transition inline-flex items-center gap-1 shadow-xs active:scale-95 shrink-0"
+        title="Reset Timer"
       >
         <svg
           class="w-3.5 h-3.5"
@@ -4821,12 +4823,13 @@
           <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
           <path d="M3 3v5h5" />
         </svg>
-        <span>Reset</span>
+        <span class="hidden sm:inline">Reset</span>
       </button>
-      <div class="h-4 w-px bg-[#c5d9b7]"></div>
+      <div class="h-4 w-px bg-[#c5d9b7] shrink-0"></div>
       <button
         onclick="toggleAsmrFocusMode()"
-        class="px-3 py-1 rounded-full bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 text-xs font-bold transition inline-flex items-center gap-1 shadow-xs active:scale-95"
+        class="pomodoro-exit-btn px-2 sm:px-3 py-1 rounded-full bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 text-xs font-bold transition inline-flex items-center gap-1 shadow-xs active:scale-95 shrink-0"
+        title="Tampilkan UI / Keluar Mode Fokus"
       >
         <svg
           class="w-3.5 h-3.5"
@@ -4838,7 +4841,7 @@
           <line x1="18" y1="6" x2="6" y2="18" />
           <line x1="6" y1="6" x2="18" y2="18" />
         </svg>
-        <span>Tampilkan UI</span>
+        <span class="hidden sm:inline">Tampilkan UI</span>
       </button>
     </div>
 
