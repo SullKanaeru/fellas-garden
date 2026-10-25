@@ -83,21 +83,24 @@ function openAnimalStudioModal() {
     const modal = document.getElementById('animalStudioModal');
     if (modal) {
         modal.classList.remove('hidden');
-        modal.classList.add('flex');
     }
+    const configModal = document.getElementById('animalConfigModal');
+    if (configModal) configModal.classList.add('hidden');
     resetAnimalZoom();
     clearAnimalPad();
     setAnimalStudioTool('pencil');
     selectAnimalColor('#2c2c2c');
     updateAnimalHabitatUI('land');
+    updateAnimalInfoPillText();
 }
 
 function closeAnimalStudioModal() {
     const modal = document.getElementById('animalStudioModal');
     if (modal) {
         modal.classList.add('hidden');
-        modal.classList.remove('flex');
     }
+    const configModal = document.getElementById('animalConfigModal');
+    if (configModal) configModal.classList.add('hidden');
 }
 
 function clearAnimalPad() {
@@ -118,8 +121,8 @@ function setAnimalStudioTool(toolName) {
     const eraserBtn = document.getElementById('animalStudioToolEraser');
     const eyedropBtn = document.getElementById('animalStudioToolEyedrop');
 
-    const activeCls = 'w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-lg transition bg-[#2B5B35] text-white shadow-sm ring-2 ring-[#7DB852]';
-    const inactiveCls = 'w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-lg transition hover:bg-[#eef5e6] text-gray-700';
+    const activeCls = 'w-7 h-7 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center transition bg-[#2B5B35] text-white shadow-xs ring-2 ring-[#7DB852] cursor-pointer';
+    const inactiveCls = 'w-7 h-7 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center transition hover:bg-[#eef5e6] text-gray-700 cursor-pointer';
 
     if (pencilBtn) pencilBtn.className = (toolName === 'pencil') ? activeCls : inactiveCls;
     if (eraserBtn) eraserBtn.className = (toolName === 'eraser') ? activeCls : inactiveCls;
@@ -189,16 +192,39 @@ function updateAnimalHabitatUI(habitat) {
         const card = document.getElementById('animalHabitatCard-' + h);
         if (card) {
             if (h === habitat) {
-                card.className = 'relative flex items-start gap-2.5 p-2.5 rounded-xl border-2 border-[#2B5B35] bg-emerald-50/70 cursor-pointer transition shadow-xs';
+                card.className = 'relative flex items-center gap-2 p-2 rounded-xl border-2 border-[#2B5B35] bg-emerald-50/70 cursor-pointer transition shadow-2xs hover:border-[#2B5B35]';
                 const radio = card.querySelector('input[type="radio"]');
                 if (radio) radio.checked = true;
             } else {
-                card.className = 'relative flex items-start gap-2.5 p-2.5 rounded-xl border-2 border-gray-200 bg-white cursor-pointer transition shadow-xs hover:border-[#2B5B35]';
+                card.className = 'relative flex items-center gap-2 p-2 rounded-xl border-2 border-gray-200 bg-white cursor-pointer transition shadow-2xs hover:border-[#2B5B35]';
                 const radio = card.querySelector('input[type="radio"]');
                 if (radio) radio.checked = false;
             }
         }
     });
+    updateAnimalInfoPillText();
+}
+
+function toggleAnimalConfigModal() {
+    const modal = document.getElementById('animalConfigModal');
+    if (!modal) return;
+    if (modal.classList.contains('hidden')) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    } else {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        updateAnimalInfoPillText();
+    }
+}
+
+function updateAnimalInfoPillText() {
+    const txt = document.getElementById('animalInfoPillText');
+    const nameInput = document.getElementById('customAnimalNameInput');
+    const name = (nameInput && nameInput.value.trim()) ? nameInput.value.trim() : 'Pupu';
+    const habitat = selectedAnimalHabitat || 'land';
+    const habitatMap = { land: 'Darat', flying: 'Terbang', water: 'Air' };
+    if (txt) txt.textContent = `${name} (${habitatMap[habitat] || 'Darat'})`;
 }
 
 function undoAnimalStroke() {
@@ -289,6 +315,7 @@ function initAnimalStudioEventListeners() {
         if (hint) hint.style.opacity = '0';
 
         isDrawingAnimalStudio = true;
+        document.getElementById('animalStudioModal')?.classList.add('drawing-active');
         currentStroke = {
             tool: animalStudioTool,
             color: animalStudioCurrentColor,
@@ -336,6 +363,7 @@ function initAnimalStudioEventListeners() {
         }
         if (!isDrawingAnimalStudio) return;
         isDrawingAnimalStudio = false;
+        document.getElementById('animalStudioModal')?.classList.remove('drawing-active');
         if (currentStroke && currentStroke.points.length > 0) {
             animalStudioStrokes.push(currentStroke);
             animalStudioRedoStack = [];
@@ -521,3 +549,5 @@ window.finishDrawingAndSpawnAnimal = finishDrawingAndSpawnAnimal;
 window.zoomAnimalCanvas = zoomAnimalCanvas;
 window.resetAnimalZoom = resetAnimalZoom;
 window.toggleAnimalPanMode = toggleAnimalPanMode;
+window.toggleAnimalConfigModal = toggleAnimalConfigModal;
+window.updateAnimalInfoPillText = updateAnimalInfoPillText;

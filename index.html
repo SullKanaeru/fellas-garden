@@ -2866,450 +2866,535 @@
     </div>
 
 
-    <!-- CUSTOM ANIMAL STUDIO MODAL (Mirrored UI and Tools matching Flower Studio + Habitat Selector) -->
+        <!-- ============================================================== -->
+    <!-- CUSTOM ANIMAL STUDIO FULLSCREEN WORKSPACE (Ibis Paint Style)   -->
+    <!-- ============================================================== -->
     <div
       id="animalStudioModal"
-      class="hidden fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/50 backdrop-blur-sm pointer-events-auto transition-opacity duration-200"
+      class="hidden fixed inset-0 z-50 w-screen h-screen bg-[#F3EFE6] select-none pointer-events-auto overflow-hidden transition-opacity duration-200"
     >
+      <!-- Subtly textured canvas viewport with interactive pan & zoom -->
       <div
-        class="relative w-full max-w-3xl bg-[#FDFBF2] border-2 sm:border-[3px] border-[#3a5a40] rounded-3xl shadow-2xl flex flex-col max-h-[96vh] overflow-hidden"
+        id="animalStudioViewport"
+        class="absolute inset-0 flex items-center justify-center overflow-hidden touch-none"
       >
-        <!-- Header -->
+        <!-- The Main High-Resolution Paper Canvas -->
         <div
-          class="px-5 py-3 sm:py-3.5 bg-[#eef5e6] border-b border-[#c5d9b7] flex items-center justify-between"
+          id="animalCanvasPaper"
+          class="relative bg-white rounded-2xl sm:rounded-3xl shadow-2xl border-2 border-[#8eb477]/30 flex items-center justify-center transition-all duration-150 overflow-hidden"
         >
-          <div class="flex items-center gap-2.5">
-            <div
-              class="w-8 h-8 rounded-xl bg-[#2B5B35]/15 text-[#2B5B35] flex items-center justify-center"
+          <div
+            id="drawAnimalBoxHint"
+            class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center opacity-40 transition-opacity z-10"
+          >
+            <span
+              class="text-xs sm:text-base text-center text-[#477431] px-4 font-hand font-bold tracking-wide"
             >
-              <svg
-                class="w-4 h-4 text-[#2B5B35]"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
+              Gambar sahabat hewanmu di sini<br />
+              <span class="text-[10px] sm:text-xs font-normal opacity-75"
+                >Pipet warna, undo/redo & zoom bebas</span
               >
-                <circle cx="13.5" cy="6.5" r=".5" fill="currentColor" />
-                <circle cx="17.5" cy="10.5" r=".5" fill="currentColor" />
-                <circle cx="8.5" cy="7.5" r=".5" fill="currentColor" />
-                <circle cx="6.5" cy="12.5" r=".5" fill="currentColor" />
-                <path
-                  d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"
-                />
-              </svg>
-            </div>
-            <div>
-              <h2
-                class="font-hand font-bold text-lg sm:text-xl text-[#2B5B35] leading-tight"
-              >
-                Studio Gambar Hewan Custom
-              </h2>
-              <p class="text-[11px] sm:text-xs text-[#477431]">
-                Ciptakan sahabat hewan impianmu & tentukan sifat habitatnya
-                (darat, terbang, atau air)
-              </p>
-            </div>
+            </span>
           </div>
+          <canvas
+            id="animalPadCanvas"
+            width="600"
+            height="600"
+            class="w-full h-full cursor-crosshair touch-none transition-transform duration-75"
+          ></canvas>
+        </div>
+      </div>
 
+      <!-- ============================================================== -->
+      <!-- 1. FLOATING TOP BAR (Navigation, History, Habitat Info, Release) -->
+      <!-- ============================================================== -->
+      <header
+        id="animalStudioFullscreenTopBar"
+        class="absolute top-2 sm:top-3 left-2 right-2 sm:left-4 sm:right-4 z-30 pointer-events-none flex items-center justify-between gap-1.5 sm:gap-2 select-none transition-opacity duration-200"
+      >
+        <!-- Left: Back Button + Studio Title -->
+        <div class="pointer-events-auto flex items-center gap-1 sm:gap-2 max-w-[45%] sm:max-w-none">
           <button
+            type="button"
             onclick="closeAnimalStudioModal()"
-            class="w-8 h-8 rounded-full bg-white/80 hover:bg-white border border-[#c5d9b7] text-[#2B5B35] flex items-center justify-center transition hover:rotate-90"
-            title="Tutup Studio"
+            class="h-8 sm:h-9 px-2 sm:px-3 rounded-full bg-white/95 hover:bg-white text-[#2B5B35] border border-[#c5d9b7] shadow-sm flex items-center gap-1.5 font-bold text-xs sm:text-sm transition hover:scale-105 active:scale-95 cursor-pointer"
+            title="Tutup & Kembali ke Kebun"
           >
             <svg
-              class="w-4 h-4"
+              class="w-3.5 h-3.5 sm:w-4 sm:h-4"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
               stroke-width="2.5"
               stroke-linecap="round"
+              stroke-linejoin="round"
             >
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
+              <line x1="19" y1="12" x2="5" y2="12" />
+              <polyline points="12 19 5 12 12 5" />
             </svg>
+            <span class="hidden xs:inline">Kebun</span>
+          </button>
+
+          <!-- Animal Info Pill (Click to configure Name, Sound & Habitat) -->
+          <button
+            type="button"
+            onclick="toggleAnimalConfigModal()"
+            id="animalInfoPillBtn"
+            class="h-8 sm:h-9 px-2.5 sm:px-3 rounded-full bg-white/95 hover:bg-emerald-50 text-[#2B5B35] border border-[#c5d9b7] shadow-sm flex items-center gap-1.5 font-bold text-xs transition hover:scale-105 active:scale-95 cursor-pointer max-w-[150px] xs:max-w-[200px] truncate"
+            title="Atur Nama, Suara & Habitat Hewan"
+          >
+            <span>🐾</span>
+            <span id="animalInfoPillText" class="truncate font-hand font-bold text-xs sm:text-sm">Pupu (Darat)</span>
+            <span class="text-[10px] text-gray-400">⚙️</span>
           </button>
         </div>
 
-        <!-- Body: Left Toolbar + Center Canvas + Right Colors -->
-        <div
-          class="p-3 sm:p-5 overflow-y-auto max-h-[82vh] flex flex-col gap-4"
-        >
+        <!-- Center / Right Controls: Undo/Redo, Zoom/Pan, Clear, Release -->
+        <div class="pointer-events-auto flex items-center gap-1 sm:gap-1.5">
+          <!-- Canvas Tools Pill: Undo, Redo, Clear -->
           <div
-            class="flex flex-col md:flex-row items-center justify-center gap-4 sm:gap-6"
+            class="flex items-center gap-0.5 sm:gap-1 bg-white/95 backdrop-blur-md px-1.5 sm:px-2 py-1 rounded-full border border-[#c5d9b7] shadow-sm text-gray-700"
           >
-            <!-- Left Toolbar: Tools, Undo, Redo, Clear -->
-            <div
-              class="flex md:flex-col items-center gap-2 bg-white/70 p-2 sm:p-2.5 rounded-2xl border border-[#d7e2ce] shadow-sm"
+            <!-- Undo -->
+            <button
+              id="animalStudioUndoBtn"
+              type="button"
+              onclick="undoAnimalStroke()"
+              class="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center hover:bg-emerald-50 text-gray-700 hover:text-[#2B5B35] transition active:scale-90 cursor-pointer"
+              title="Batal Goresan (Ctrl+Z)"
             >
-              <!-- Tool: Pencil -->
-              <button
-                id="animalStudioToolPencil"
-                onclick="setAnimalStudioTool('pencil')"
-                class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center transition bg-[#2B5B35] text-white shadow-sm ring-2 ring-[#7DB852]"
-                title="Pensil Gambar (P)"
+              <svg
+                class="w-3.5 h-3.5 sm:w-4 sm:h-4"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
               >
-                <svg
-                  class="w-5 h-5"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-                  <path d="m15 5 4 4" />
-                </svg>
-              </button>
-              <!-- Tool: Eraser -->
-              <button
-                id="animalStudioToolEraser"
-                onclick="setAnimalStudioTool('eraser')"
-                class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center transition hover:bg-[#eef5e6] text-gray-700"
-                title="Penghapus (E)"
-              >
-                <svg
-                  class="w-5 h-5"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <path
-                    d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"
-                  />
-                  <path d="M22 21H7" />
-                  <path d="m5 11 9 9" />
-                </svg>
-              </button>
-              <!-- Tool: Eyedropper -->
-              <button
-                id="animalStudioToolEyedrop"
-                onclick="setAnimalStudioTool('eyedropper')"
-                class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center transition hover:bg-[#eef5e6] text-gray-700"
-                title="Pipet Salin Warna (I)"
-              >
-                <svg
-                  class="w-5 h-5"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <path d="m2 22 1-1h3l9-9" />
-                  <path d="M3 21v-3l9-9" />
-                  <path
-                    d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.4.4a2.1 2.1 0 0 1 0 3l-2.8 2.8a2.1 2.1 0 0 1-3 0l-4-4a2.1 2.1 0 0 1 0-3l2.8-2.8a2.1 2.1 0 0 1 3 0z"
-                  />
-                </svg>
-              </button>
-
-              <div class="w-px h-6 md:w-6 md:h-px bg-gray-200 my-0.5"></div>
-
-              <!-- Undo -->
-              <button
-                id="animalStudioUndoBtn"
-                onclick="undoAnimalStroke()"
-                class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center transition hover:bg-[#eef5e6] text-gray-700"
-                title="Batal Goresan (Ctrl+Z)"
-              >
-                <svg
-                  class="w-5 h-5"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2.2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <path d="M3 7v6h6" />
-                  <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13" />
-                </svg>
-              </button>
-              <!-- Redo -->
-              <button
-                id="animalStudioRedoBtn"
-                onclick="redoAnimalStroke()"
-                class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center transition hover:bg-[#eef5e6] text-gray-700"
-                title="Ulangi Goresan (Ctrl+Y)"
-              >
-                <svg
-                  class="w-5 h-5"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2.2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <path d="M21 7v6h-6" />
-                  <path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7" />
-                </svg>
-              </button>
-              <!-- Clear -->
-              <button
-                onclick="clearAnimalPad()"
-                class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center transition hover:bg-rose-50 text-rose-600"
-                title="Bersihkan Kanvas"
-              >
-                <svg
-                  class="w-5 h-5"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <path d="M3 6h18" />
-                  <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                  <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-                  <line x1="10" y1="11" x2="10" y2="17" />
-                  <line x1="14" y1="11" x2="14" y2="17" />
-                </svg>
-              </button>
-            </div>
-
-            <!-- Center Drawing Canvas -->
-            <div class="relative flex flex-col items-center">
-              <!-- Mini-Bar Above Canvas: Zoom & Pan Controls -->
-              <div class="w-full flex items-center justify-end px-1 mb-1 max-w-[380px] select-none">
-                <div class="flex items-center gap-0.5 bg-white/95 backdrop-blur-md px-1.5 py-0.5 rounded-full border border-[#c5d9b7] shadow-2xs text-xs text-[#2B5B35]">
-                  <button type="button" onclick="zoomAnimalCanvas(-0.25)" class="w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center rounded-full hover:bg-emerald-100 text-[#2B5B35] font-bold text-xs transition active:scale-90 cursor-pointer" title="Zoom Out (-)">−</button>
-                  <button type="button" onclick="resetAnimalZoom()" id="animalZoomLevelText" class="px-1 py-0.5 text-[10px] sm:text-[11px] font-mono font-bold text-[#2B5B35] hover:bg-emerald-50 rounded transition cursor-pointer" title="Reset Zoom (100%)">100%</button>
-                  <button type="button" onclick="zoomAnimalCanvas(0.25)" class="w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center rounded-full hover:bg-emerald-100 text-[#2B5B35] font-bold text-xs transition active:scale-90 cursor-pointer" title="Zoom In (+)">+</button>
-                  <div class="w-px h-3 bg-gray-200 mx-0.5"></div>
-                  <button type="button" id="animalPanToggleBtn" onclick="toggleAnimalPanMode()" class="w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center rounded-full hover:bg-emerald-100 text-gray-700 transition active:scale-90 cursor-pointer" title="Alat Geser Kanvas (Pan / Geser)">
-                    <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 11V6a2 2 0 0 0-4 0v4"/><path d="M14 10V4a2 2 0 0 0-4 0v7"/><path d="M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>
-                  </button>
-                </div>
-              </div>
-
-              <div
-                class="relative w-[280px] h-[280px] sm:w-[350px] sm:h-[350px] md:w-[380px] md:h-[380px] bg-white rounded-2xl border-2 border-dashed border-[#8eb477] shadow-inner overflow-hidden flex items-center justify-center"
-              >
-                <div
-                  id="drawAnimalBoxHint"
-                  class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center opacity-40 transition-opacity z-10"
-                >
-                  <span
-                    class="text-sm sm:text-base text-center text-[#477431] px-4 font-hand font-bold tracking-wide"
-                  >
-                    Gambar sahabat hewanmu di sini<br />
-                    <span class="text-xs font-normal opacity-75"
-                      >Tersedia eyedropper, undo/redo & warna bebas</span
-                    >
-                  </span>
-                </div>
-                <canvas
-                  id="animalPadCanvas"
-                  width="450"
-                  height="450"
-                  class="w-full h-full cursor-crosshair touch-none transition-transform duration-75"
-                ></canvas>
-              </div>
-
-              <!-- Under-Canvas Brush Size Selector -->
-              <div
-                class="mt-2.5 flex items-center gap-3 bg-white/80 px-3.5 py-1 rounded-full border border-[#d7e2ce] text-xs text-[#2B5B35]"
-              >
-                <span class="font-medium">Ukuran:</span>
-                <div class="flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    onclick="setAnimalBrushSize(3, this)"
-                    class="animal-size-btn w-6 h-6 flex items-center justify-center rounded-full hover:bg-gray-100"
-                    title="Pensil 3px"
-                  >
-                    <span class="w-1.5 h-1.5 bg-gray-800 rounded-full"></span>
-                  </button>
-                  <button
-                    type="button"
-                    onclick="setAnimalBrushSize(7, this)"
-                    class="animal-size-btn w-6 h-6 flex items-center justify-center rounded-full bg-emerald-100 ring-1 ring-emerald-700"
-                    title="Kuas 7px"
-                  >
-                    <span class="w-2.5 h-2.5 bg-gray-800 rounded-full"></span>
-                  </button>
-                  <button
-                    type="button"
-                    onclick="setAnimalBrushSize(14, this)"
-                    class="animal-size-btn w-6 h-6 flex items-center justify-center rounded-full hover:bg-gray-100"
-                    title="Kuas 14px"
-                  >
-                    <span class="w-3.5 h-3.5 bg-gray-800 rounded-full"></span>
-                  </button>
-                  <button
-                    type="button"
-                    onclick="setAnimalBrushSize(26, this)"
-                    class="animal-size-btn w-6 h-6 flex items-center justify-center rounded-full hover:bg-gray-100"
-                    title="Kuas Tebal 26px"
-                  >
-                    <span class="w-5 h-5 bg-gray-800 rounded-full"></span>
-                  </button>
-                </div>
-                <input
-                  id="animalBrushSlider"
-                  type="range"
-                  min="1"
-                  max="45"
-                  value="7"
-                  class="w-20 sm:w-24 accent-[#477431] cursor-pointer"
-                  oninput="setAnimalBrushSizeFromSlider(this.value)"
-                />
-                <span
-                  id="animalBrushValText"
-                  class="w-7 text-right font-mono text-[11px]"
-                  >7px</span
-                >
-              </div>
-            </div>
-
-            <!-- Right Color Swatches -->
-            <div
-              class="flex md:flex-col items-center gap-2 bg-white/70 p-2.5 rounded-2xl border border-[#d7e2ce] shadow-sm"
+                <path d="M3 7v6h6" />
+                <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13" />
+              </svg>
+            </button>
+            <!-- Redo -->
+            <button
+              id="animalStudioRedoBtn"
+              type="button"
+              onclick="redoAnimalStroke()"
+              class="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center hover:bg-emerald-50 text-gray-700 hover:text-[#2B5B35] transition active:scale-90 cursor-pointer"
+              title="Ulangi Goresan (Ctrl+Y)"
             >
-              <span class="text-[11px] font-bold text-[#3a5a40] hidden md:block"
-                >Warna:</span
+              <svg
+                class="w-3.5 h-3.5 sm:w-4 sm:h-4"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
               >
-              <button
-                class="color-dot active"
-                style="background-color: #2c2c2c"
-                onclick="selectAnimalColor('#2c2c2c', this)"
-                title="Hitam Pekat"
-              ></button>
-              <button
-                class="color-dot"
-                style="background-color: #78350f"
-                onclick="selectAnimalColor('#78350F', this)"
-                title="Cokelat Bulu"
-              ></button>
-              <button
-                class="color-dot"
-                style="background-color: #e6933a"
-                onclick="selectAnimalColor('#E6933A', this)"
-                title="Oranye Golden"
-              ></button>
-              <button
-                class="color-dot"
-                style="background-color: #fbbf24"
-                onclick="selectAnimalColor('#FBBF24', this)"
-                title="Kuning Jahe"
-              ></button>
-              <button
-                class="color-dot"
-                style="background-color: #ffffff; border: 1.5px solid #d1d5db"
-                onclick="selectAnimalColor('#FFFFFF', this)"
-                title="Putih Bersih"
-              ></button>
+                <path d="M21 7v6h-6" />
+                <path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7" />
+              </svg>
+            </button>
 
-              <!-- Custom Color Picker -->
-              <label
-                id="customAnimalColorPickerLabel"
-                class="color-dot relative flex items-center justify-center cursor-pointer border-2 border-gray-300 hover:border-gray-800 shadow-sm transition overflow-hidden"
-                title="Pilih Warna Bebas"
-                style="
-                  background: conic-gradient(
-                    from 180deg at 50% 50%,
-                    #ff0000 0deg,
-                    #ffff00 60deg,
-                    #00ff00 120deg,
-                    #00ffff 180deg,
-                    #0000ff 240deg,
-                    #ff00ff 300deg,
-                    #ff0000 360deg
-                  );
-                "
+            <div class="w-px h-4 bg-gray-200 mx-0.5"></div>
+
+            <!-- Clear -->
+            <button
+              type="button"
+              onclick="clearAnimalPad()"
+              class="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center hover:bg-rose-50 text-rose-600 transition active:scale-90 cursor-pointer"
+              title="Bersihkan Kanvas"
+            >
+              <svg
+                class="w-3.5 h-3.5 sm:w-4 sm:h-4"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M3 6h18" />
+                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                <line x1="10" y1="11" x2="10" y2="17" />
+                <line x1="14" y1="11" x2="14" y2="17" />
+              </svg>
+            </button>
+
+            <div class="w-px h-4 bg-gray-200 mx-0.5 hidden xs:block"></div>
+
+            <!-- Zoom & Pan Controls -->
+            <div class="hidden xs:flex items-center gap-0.5 text-xs text-[#2B5B35]">
+              <button
+                type="button"
+                onclick="zoomAnimalCanvas(-0.25)"
+                class="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-full hover:bg-emerald-100 text-[#2B5B35] font-bold text-xs transition active:scale-90 cursor-pointer"
+                title="Zoom Out (-)"
+              >
+                −
+              </button>
+              <button
+                type="button"
+                onclick="resetAnimalZoom()"
+                id="animalZoomLevelText"
+                class="px-1 py-0.5 text-[10px] sm:text-[11px] font-mono font-bold text-[#2B5B35] hover:bg-emerald-50 rounded transition cursor-pointer"
+                title="Reset Zoom (100%)"
+              >
+                100%
+              </button>
+              <button
+                type="button"
+                onclick="zoomAnimalCanvas(0.25)"
+                class="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-full hover:bg-emerald-100 text-[#2B5B35] font-bold text-xs transition active:scale-90 cursor-pointer"
+                title="Zoom In (+)"
+              >
+                +
+              </button>
+              <button
+                type="button"
+                id="animalPanToggleBtn"
+                onclick="toggleAnimalPanMode()"
+                class="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-full hover:bg-emerald-100 text-gray-700 transition active:scale-90 cursor-pointer"
+                title="Alat Geser Kanvas (Pan / Geser)"
               >
                 <svg
-                  class="w-3.5 h-3.5 text-gray-800 drop-shadow-sm select-none pointer-events-none"
+                  class="w-3 h-3 sm:w-3.5 sm:h-3.5"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
-                  stroke-width="2.5"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
+                  stroke-width="2"
                 >
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="m4.93 4.93 4.24 4.24" />
+                  <path d="M18 11V6a2 2 0 0 0-4 0v4" />
+                  <path d="M14 10V4a2 2 0 0 0-4 0v7" />
+                  <path d="M10 10.5V6a2 2 0 0 0-4 0v8" />
+                  <path
+                    d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"
+                  />
                 </svg>
-                <input
-                  type="color"
-                  id="animalCustomColorPicker"
-                  value="#2c2c2c"
-                  class="absolute inset-0 opacity-0 cursor-pointer w-full h-full p-0 border-0"
-                  oninput="handleCustomAnimalColorPick(this.value)"
-                  onchange="handleCustomAnimalColorPick(this.value)"
-                />
-              </label>
-
-              <!-- Active Color Preview -->
-              <div
-                class="hidden md:flex flex-col items-center mt-1 pt-1.5 border-t border-gray-200"
-              >
-                <div
-                  id="activeAnimalColorPreview"
-                  class="w-6 h-6 rounded-lg border border-gray-300 shadow-inner"
-                  style="background-color: #2c2c2c"
-                  title="Warna Aktif"
-                ></div>
-              </div>
+              </button>
             </div>
           </div>
 
-          <!-- Animal Identity: Name & Sound Type -->
-          <div
-            class="bg-white/80 p-3 sm:p-4 rounded-2xl border border-[#d2e0cb] shadow-xs flex flex-col gap-3"
+          <!-- Primary Finish Button (Lepaskan ke Kebun!) -->
+          <button
+            type="button"
+            onclick="finishDrawingAndSpawnAnimal()"
+            class="plant-btn h-8 sm:h-9 px-3 sm:px-4 text-xs sm:text-sm font-bold flex items-center gap-1 shadow-md rounded-full transition hover:scale-105 active:scale-95 cursor-pointer shrink-0"
+            title="Selesai dan lepaskan sahabat hewan ke kebun!"
           >
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label class="block text-xs font-bold text-[#2B5B35] mb-1"
-                  >Nama Sahabat Hewan:</label
-                >
-                <input
-                  id="customAnimalNameInput"
-                  type="text"
-                  maxlength="20"
-                  placeholder="Contoh: Kiki Si Rubah, Pipit..."
-                  value="Pupu"
-                  class="w-full px-3.5 py-2 rounded-xl border-2 border-[#b5cca3] bg-white text-[#2B5B35] font-medium text-sm focus:outline-none focus:border-[#477431] focus:ring-1 focus:ring-[#477431]"
-                />
-              </div>
+            <svg
+              class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#2B5B35]"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M12 2v20M2 12h20" />
+            </svg>
+            <span>Lepaskan!</span>
+          </button>
+        </div>
+      </header>
 
-              <div>
-                <label class="block text-xs font-bold text-[#2B5B35] mb-1"
-                  >Suara Saat Dielus / Dipanggil:</label
-                >
-                <select
-                  id="customAnimalSoundSelect"
-                  class="w-full px-3.5 py-2 rounded-xl border-2 border-[#b5cca3] bg-white text-[#2B5B35] font-medium text-sm focus:outline-none focus:border-[#477431] focus:ring-1 focus:ring-[#477431]"
-                >
-                  <option value="chime">Lonceng Ajaib (Magical Chime)</option>
-                  <option value="cat">Suara Kucing (Meong)</option>
-                  <option value="dog">Suara Anjing (Woof)</option>
-                  <option value="rabbit">Suara Kelinci (Cute Squeak)</option>
-                  <option value="butterfly">Kibasan Sayap Lembut</option>
-                  <option value="fish">
-                    Suara Ikan / Gelembung Air (Bloop)
-                  </option>
-                </select>
-              </div>
+      <!-- ============================================================== -->
+      <!-- 2. FLOATING LEFT TOOL SHELF (Pencil, Eraser, Eyedropper)       -->
+      <!-- ============================================================== -->
+      <nav
+        id="animalStudioFullscreenLeftToolbar"
+        class="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-30 flex flex-col items-center gap-1 sm:gap-1.5 p-1.5 sm:p-2 bg-white/95 backdrop-blur-md rounded-2xl border border-[#c5d9b7] shadow-lg pointer-events-auto transition-opacity duration-200 select-none"
+      >
+        <!-- Tool: Pencil -->
+        <button
+          type="button"
+          id="animalStudioToolPencil"
+          onclick="setAnimalStudioTool('pencil')"
+          class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center transition bg-[#2B5B35] text-white shadow-xs ring-2 ring-[#7DB852] cursor-pointer"
+          title="Pensil Gambar (P)"
+        >
+          <svg
+            class="w-3.5 h-3.5 sm:w-4 sm:h-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+            <path d="m15 5 4 4" />
+          </svg>
+        </button>
+
+        <!-- Tool: Eraser -->
+        <button
+          type="button"
+          id="animalStudioToolEraser"
+          onclick="setAnimalStudioTool('eraser')"
+          class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center transition hover:bg-[#eef5e6] text-gray-700 cursor-pointer"
+          title="Penghapus (E)"
+        >
+          <svg
+            class="w-3.5 h-3.5 sm:w-4 sm:h-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path
+              d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"
+            />
+            <path d="M22 21H7" />
+            <path d="m5 11 9 9" />
+          </svg>
+        </button>
+
+        <!-- Tool: Eyedropper -->
+        <button
+          type="button"
+          id="animalStudioToolEyedrop"
+          onclick="setAnimalStudioTool('eyedropper')"
+          class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center transition hover:bg-[#eef5e6] text-gray-700 cursor-pointer"
+          title="Pipet Salin Warna (I)"
+        >
+          <svg
+            class="w-3.5 h-3.5 sm:w-4 sm:h-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="m2 22 1-1h3l9-9" />
+            <path d="M3 21v-3l9-9" />
+            <path
+              d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.4.4a2.1 2.1 0 0 1 0 3l-2.8 2.8a2.1 2.1 0 0 1-3 0l-4-4a2.1 2.1 0 0 1 0-3l2.8-2.8a2.1 2.1 0 0 1 3 0z"
+            />
+          </svg>
+        </button>
+      </nav>
+
+      <!-- ============================================================== -->
+      <!-- 3. FLOATING BOTTOM SHELF (Brush Size, Colors, Color Picker)    -->
+      <!-- ============================================================== -->
+      <footer
+        id="animalStudioFullscreenBottomShelf"
+        class="absolute bottom-2 sm:bottom-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1.5 sm:gap-2.5 px-2.5 sm:px-3 py-1.5 bg-white/95 backdrop-blur-md rounded-2xl border border-[#c5d9b7] shadow-lg pointer-events-auto max-w-[96vw] overflow-x-auto no-scrollbar transition-opacity duration-200 select-none"
+      >
+        <!-- Brush Size Presets & Slider -->
+        <div class="flex items-center gap-1 sm:gap-1.5 shrink-0 text-xs text-[#2B5B35]">
+          <div class="flex items-center gap-0.5 sm:gap-1">
+            <button
+              type="button"
+              onclick="setAnimalBrushSize(3, this)"
+              class="animal-size-btn w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-full hover:bg-gray-100 cursor-pointer"
+              title="Kecil 3px"
+            >
+              <span class="w-1.5 h-1.5 bg-gray-800 rounded-full"></span>
+            </button>
+            <button
+              type="button"
+              onclick="setAnimalBrushSize(7, this)"
+              class="animal-size-btn w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-full bg-emerald-100 ring-1 ring-emerald-700 cursor-pointer"
+              title="Sedang 7px"
+            >
+              <span class="w-2.5 h-2.5 bg-gray-800 rounded-full"></span>
+            </button>
+            <button
+              type="button"
+              onclick="setAnimalBrushSize(14, this)"
+              class="animal-size-btn w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-full hover:bg-gray-100 cursor-pointer"
+              title="Besar 14px"
+            >
+              <span class="w-3.5 h-3.5 bg-gray-800 rounded-full"></span>
+            </button>
+            <button
+              type="button"
+              onclick="setAnimalBrushSize(26, this)"
+              class="animal-size-btn w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-full hover:bg-gray-100 cursor-pointer"
+              title="Tebal 26px"
+            >
+              <span class="w-4 h-4 bg-gray-800 rounded-full"></span>
+            </button>
+          </div>
+          <input
+            id="animalBrushSlider"
+            type="range"
+            min="1"
+            max="45"
+            value="7"
+            class="w-12 sm:w-16 accent-[#477431] cursor-pointer"
+            oninput="setAnimalBrushSizeFromSlider(this.value)"
+          />
+          <span
+            id="animalBrushValText"
+            class="w-5 text-right font-mono text-[10px] hidden xs:inline"
+            >7px</span
+          >
+        </div>
+
+        <div class="w-px h-5 sm:h-6 bg-gray-200 mx-0.5 shrink-0"></div>
+
+        <!-- Color Palette Swatches & Custom Color Picker -->
+        <div class="flex items-center gap-1.5 shrink-0">
+          <button
+            type="button"
+            class="color-dot active"
+            style="background-color: #2c2c2c"
+            onclick="selectAnimalColor('#2c2c2c', this)"
+            title="Hitam Pekat"
+          ></button>
+          <button
+            type="button"
+            class="color-dot"
+            style="background-color: #78350f"
+            onclick="selectAnimalColor('#78350F', this)"
+            title="Cokelat Bulu"
+          ></button>
+          <button
+            type="button"
+            class="color-dot"
+            style="background-color: #e6933a"
+            onclick="selectAnimalColor('#E6933A', this)"
+            title="Oranye Golden"
+          ></button>
+          <button
+            type="button"
+            class="color-dot"
+            style="background-color: #fbbf24"
+            onclick="selectAnimalColor('#FBBF24', this)"
+            title="Kuning Jahe"
+          ></button>
+          <button
+            type="button"
+            class="color-dot"
+            style="background-color: #ffffff; border: 1.5px solid #d1d5db"
+            onclick="selectAnimalColor('#FFFFFF', this)"
+            title="Putih Bersih"
+          ></button>
+
+          <!-- Custom Color Picker Wheel -->
+          <label
+            id="customAnimalColorPickerLabel"
+            class="color-dot relative flex items-center justify-center cursor-pointer border-2 border-gray-300 hover:border-gray-800 shadow-xs transition overflow-hidden"
+            title="Pilih Warna Bebas"
+            style="
+              background: conic-gradient(
+                from 180deg at 50% 50%,
+                #ff0000 0deg,
+                #ffff00 60deg,
+                #00ff00 120deg,
+                #00ffff 180deg,
+                #0000ff 240deg,
+                #ff00ff 300deg,
+                #ff0000 360deg
+              );
+            "
+          >
+            <svg
+              class="w-3.5 h-3.5 text-gray-800 drop-shadow-sm select-none pointer-events-none"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <path d="m4.93 4.93 4.24 4.24" />
+            </svg>
+            <input
+              type="color"
+              id="animalCustomColorPicker"
+              value="#2c2c2c"
+              class="absolute inset-0 opacity-0 cursor-pointer w-full h-full p-0 border-0"
+              oninput="handleCustomAnimalColorPick(this.value)"
+              onchange="handleCustomAnimalColorPick(this.value)"
+            />
+          </label>
+
+          <!-- Active Color Preview -->
+          <div
+            id="activeAnimalColorPreview"
+            class="w-5 h-5 sm:w-6 sm:h-6 rounded-lg border border-gray-300 shadow-inner shrink-0"
+            style="background-color: #2c2c2c"
+            title="Warna Aktif"
+          ></div>
+        </div>
+      </footer>
+
+      <!-- ============================================================== -->
+      <!-- 4. FLOATING ANIMAL CONFIG MODAL (Name, Sound, Habitat)         -->
+      <!-- ============================================================== -->
+      <div
+        id="animalConfigModal"
+        class="hidden fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/45 backdrop-blur-sm pointer-events-auto transition-opacity"
+      >
+        <div
+          class="bg-[#FDFBF2] border-2 sm:border-[3px] border-[#2B5B35] rounded-3xl max-w-md w-full p-4 sm:p-5 shadow-2xl relative flex flex-col gap-3 max-h-[92vh] overflow-y-auto"
+        >
+          <div class="flex items-center justify-between pb-2 border-b border-[#c5d9b7]">
+            <div class="flex items-center gap-2">
+              <span class="text-xl">🐾</span>
+              <h3 class="font-hand font-bold text-base sm:text-lg text-[#2B5B35]">
+                Atur Identitas Sahabat Hewan
+              </h3>
+            </div>
+            <button
+              type="button"
+              onclick="toggleAnimalConfigModal()"
+              class="w-7 h-7 rounded-full bg-white/80 hover:bg-white border border-[#c5d9b7] flex items-center justify-center text-[#2B5B35] transition"
+              title="Tutup Pengaturan"
+            >
+              ✕
+            </button>
+          </div>
+
+          <!-- Name & Sound -->
+          <div class="flex flex-col gap-2.5">
+            <div>
+              <label class="block text-xs font-bold text-[#2B5B35] mb-1">Nama Sahabat Hewan:</label>
+              <input
+                id="customAnimalNameInput"
+                type="text"
+                maxlength="20"
+                placeholder="Contoh: Kiki Si Rubah, Pipit..."
+                value="Pupu"
+                oninput="updateAnimalInfoPillText()"
+                class="w-full px-3 py-1.5 rounded-xl border-2 border-[#b5cca3] bg-white text-[#2B5B35] font-medium text-xs sm:text-sm focus:outline-none focus:border-[#477431]"
+              />
             </div>
 
-            <!-- NEW: Tipe & Habitat Hewan (Darat, Terbang, Air) -->
-            <div class="pt-2 border-t border-gray-100">
-              <label class="block text-xs font-bold text-[#2B5B35] mb-1.5"
-                >Tipe & Habitat Gerak Hewan:</label
+            <div>
+              <label class="block text-xs font-bold text-[#2B5B35] mb-1">Suara Saat Dielus:</label>
+              <select
+                id="customAnimalSoundSelect"
+                class="w-full px-3 py-1.5 rounded-xl border-2 border-[#b5cca3] bg-white text-[#2B5B35] font-medium text-xs sm:text-sm focus:outline-none focus:border-[#477431]"
               >
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <option value="chime">Lonceng Ajaib (Magical Chime)</option>
+                <option value="cat">Suara Kucing (Meong)</option>
+                <option value="dog">Suara Anjing (Woof)</option>
+                <option value="rabbit">Suara Kelinci (Cute Squeak)</option>
+                <option value="butterfly">Kibasan Sayap Lembut</option>
+                <option value="fish">Suara Ikan / Gelembung (Bloop)</option>
+              </select>
+            </div>
+
+            <!-- Habitat Selection -->
+            <div>
+              <label class="block text-xs font-bold text-[#2B5B35] mb-1">Tipe & Habitat Gerak:</label>
+              <div class="grid grid-cols-1 gap-1.5">
                 <!-- Option 1: Darat -->
                 <label
                   id="animalHabitatCard-land"
-                  class="relative flex items-start gap-2.5 p-2.5 rounded-xl border-2 border-[#2B5B35] bg-emerald-50/70 cursor-pointer transition shadow-xs hover:border-[#2B5B35]"
+                  class="relative flex items-center gap-2 p-2 rounded-xl border-2 border-[#2B5B35] bg-emerald-50/70 cursor-pointer transition shadow-2xs hover:border-[#2B5B35]"
                 >
                   <input
                     type="radio"
@@ -3317,144 +3402,65 @@
                     value="land"
                     checked
                     onchange="updateAnimalHabitatUI('land')"
-                    class="mt-0.5 accent-[#2B5B35]"
+                    class="accent-[#2B5B35]"
                   />
-                  <div>
-                    <div
-                      class="font-hand font-bold text-xs sm:text-sm text-[#2B5B35] flex items-center gap-1.5"
-                    >
-                      <svg
-                        class="w-4 h-4 text-[#2B5B35]"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                      >
-                        <circle cx="11" cy="4" r="2" />
-                        <circle cx="18" cy="8" r="2" />
-                        <circle cx="20" cy="16" r="2" />
-                        <path
-                          d="M9 10a5 5 0 0 1 5 5v3.5a3.5 3.5 0 0 1-6.84 1.05L6.5 17a4.5 4.5 0 0 1 2.5-7Z"
-                        />
-                      </svg>
-                      <span>Hewan Darat</span>
-                    </div>
-                    <p class="text-[10px] text-gray-500 leading-tight mt-0.5">
-                      Berjalan di tanah rumput. Tidak bisa melintasi atau
-                      ditaruh di air & medan kosong.
-                    </p>
+                  <div class="flex-1">
+                    <span class="font-bold text-xs text-[#2B5B35]">🐾 Hewan Darat</span>
+                    <p class="text-[10px] text-gray-500 leading-tight">Berjalan di rumput daratan.</p>
                   </div>
                 </label>
 
                 <!-- Option 2: Terbang -->
                 <label
                   id="animalHabitatCard-flying"
-                  class="relative flex items-start gap-2.5 p-2.5 rounded-xl border-2 border-gray-200 bg-white cursor-pointer transition shadow-xs hover:border-[#2B5B35]"
+                  class="relative flex items-center gap-2 p-2 rounded-xl border-2 border-gray-200 bg-white cursor-pointer transition shadow-2xs hover:border-[#2B5B35]"
                 >
                   <input
                     type="radio"
                     name="customAnimalHabitat"
                     value="flying"
                     onchange="updateAnimalHabitatUI('flying')"
-                    class="mt-0.5 accent-[#2B5B35]"
+                    class="accent-[#2B5B35]"
                   />
-                  <div>
-                    <div
-                      class="font-hand font-bold text-xs sm:text-sm text-[#2B5B35] flex items-center gap-1.5"
-                    >
-                      <svg
-                        class="w-4 h-4 text-violet-600"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                      >
-                        <path
-                          d="m12 12-4-5a3 3 0 0 0-4.5 4 4 4 0 0 0 4.5 4l4-3zM12 12l4-5a3 3 0 0 1 4.5 4 4 4 0 0 1-4.5 4l-4-3z"
-                        />
-                        <line x1="12" y1="5" x2="12" y2="19" />
-                      </svg>
-                      <span>Hewan Terbang</span>
-                    </div>
-                    <p class="text-[10px] text-gray-500 leading-tight mt-0.5">
-                      Bisa terbang melintasi daratan & perairan, tetap di dalam
-                      batas area kebun.
-                    </p>
+                  <div class="flex-1">
+                    <span class="font-bold text-xs text-violet-700">🦋 Hewan Terbang</span>
+                    <p class="text-[10px] text-gray-500 leading-tight">Terbang bebas di atas darat & danau air.</p>
                   </div>
                 </label>
 
                 <!-- Option 3: Air -->
                 <label
                   id="animalHabitatCard-water"
-                  class="relative flex items-start gap-2.5 p-2.5 rounded-xl border-2 border-gray-200 bg-white cursor-pointer transition shadow-xs hover:border-[#2B5B35]"
+                  class="relative flex items-center gap-2 p-2 rounded-xl border-2 border-gray-200 bg-white cursor-pointer transition shadow-2xs hover:border-[#2B5B35]"
                 >
                   <input
                     type="radio"
                     name="customAnimalHabitat"
                     value="water"
                     onchange="updateAnimalHabitatUI('water')"
-                    class="mt-0.5 accent-[#2B5B35]"
+                    class="accent-[#2B5B35]"
                   />
-                  <div>
-                    <div
-                      class="font-hand font-bold text-xs sm:text-sm text-[#2B5B35] flex items-center gap-1.5"
-                    >
-                      <svg
-                        class="w-4 h-4 text-sky-600"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                      >
-                        <path
-                          d="M6.5 12c.94-3.46 4.94-6 8.5-6 3.56 0 6.06 2.54 7 6-.94 3.46-3.44 6-7 6s-7.56-2.54-8.5-6Z"
-                        />
-                        <path d="M18 12c-2.5 0-4-2-4-4" />
-                        <path d="m2 16 4.5-4L2 8" />
-                      </svg>
-                      <span>Hewan Air</span>
-                    </div>
-                    <p class="text-[10px] text-gray-500 leading-tight mt-0.5">
-                      Berenang di medan air. Tidak bisa diletakkan di darat
-                      rumput atau medan kosong.
-                    </p>
+                  <div class="flex-1">
+                    <span class="font-bold text-xs text-sky-700">🐟 Hewan Air</span>
+                    <p class="text-[10px] text-gray-500 leading-tight">Berenang lincah di area danau / perairan.</p>
                   </div>
                 </label>
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- Footer Action Buttons -->
-        <div
-          class="px-5 py-3 sm:py-3.5 bg-[#eef5e6] border-t border-[#c5d9b7] flex items-center justify-end gap-2.5"
-        >
           <button
-            onclick="closeAnimalStudioModal()"
-            class="px-4 py-2 rounded-full border border-gray-300 bg-white hover:bg-gray-100 text-gray-700 text-xs sm:text-sm font-semibold transition active:scale-95 shadow-sm"
+            type="button"
+            onclick="toggleAnimalConfigModal()"
+            class="mt-1 w-full py-2 rounded-xl bg-[#2B5B35] hover:bg-[#1f4627] text-white font-bold text-xs sm:text-sm transition shadow-sm"
           >
-            Batal
-          </button>
-          <button
-            onclick="finishDrawingAndSpawnAnimal()"
-            class="px-6 py-2 rounded-full bg-[#2B5B35] hover:bg-[#1f4627] text-white font-bold text-xs sm:text-sm shadow-md transition active:scale-95 inline-flex items-center gap-1.5"
-          >
-            <svg
-              class="w-4 h-4 text-emerald-300"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2.5"
-            >
-              <path d="M12 2v20M2 12h20" />
-            </svg>
-            <span>Lepaskan ke Kebun!</span>
+            ✓ Simpan & Lanjut Menggambar
           </button>
         </div>
       </div>
     </div>
 
-    <!-- CUSTOM DIALOG MODAL (Replaces native browser alert, confirm, and prompt) -->
+<!-- CUSTOM DIALOG MODAL (Replaces native browser alert, confirm, and prompt) -->
     <div
       id="customDialogModal"
       class="hidden fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm pointer-events-auto transition-opacity duration-200"

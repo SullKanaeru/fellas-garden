@@ -334,7 +334,6 @@ body {
     #animalModal > div > div:first-child,
     #worldManagerModal > div > div:first-child,
     #exclusivePetSpawnerModal > div > div:first-child,
-    #animalStudioModal > div > div:first-child,
     #journalModal > div > div:first-child,
     #newWorldModal > div > div:first-child,
     #saveToGalleryModal > div > div:first-child,
@@ -393,111 +392,6 @@ body {
     #galleryHeaderActionBtn svg,
     #worldManagerModal button[onclick*="promptCreateNewWorld"] svg,
     #worldManagerModal button[onclick*="triggerImportWorldFile"] svg {
-        width: 13px !important;
-        height: 13px !important;
-    }
-
-    /* -------------------------------------------------------------
-       1. STUDIO GAMBAR HEWAN (PET STUDIO MODAL)
-       ------------------------------------------------------------- */
-    #animalStudioModal .border-b p {
-        display: none !important;
-    }
-
-    #animalStudioModal .p-3.sm\:p-5 {
-        padding: 3px 8px !important;
-        flex-direction: row !important;
-        align-items: center !important;
-        justify-content: center !important;
-        gap: 8px !important;
-        overflow-y: hidden !important;
-        flex: 1 1 auto !important;
-    }
-
-    /* Canvas Frame Container in landscape fits neatly within viewport height */
-    #animalStudioModal .relative.w-\[280px\],
-    #animalStudioModal [id*="Canvas"].touch-none {
-        width: min(45vh, 180px) !important;
-        height: min(45vh, 180px) !important;
-        border-radius: 12px !important;
-    }
-
-    #drawBoxHint span,
-    #animalDrawBoxHint span {
-        font-size: 11px !important;
-        line-height: 1.2 !important;
-    }
-    #drawBoxHint span span,
-    #animalDrawBoxHint span span {
-        display: none !important;
-    }
-
-    /* Left Toolbar (Pencil, Eraser, Eyedropper, Undo, Redo, etc.) */
-    #animalStudioModal .flex.md\:flex-col {
-        padding: 3px !important;
-        gap: 3px !important;
-        border-radius: 12px !important;
-        flex-direction: column !important;
-    }
-    #animalStudioModal .flex.md\:flex-col button {
-        width: 28px !important;
-        height: 28px !important;
-        border-radius: 8px !important;
-    }
-    #animalStudioModal .flex.md\:flex-col button svg {
-        width: 15px !important;
-        height: 15px !important;
-    }
-    #animalStudioModal .w-px.h-6 {
-        width: 16px !important;
-        height: 1px !important;
-        margin: 1px 0 !important;
-    }
-
-    #animalBrushSlider {
-        width: 50px !important;
-    }
-    .animal-size-btn {
-        width: 18px !important;
-        height: 18px !important;
-    }
-
-    /* Right Palette (Swatches) -> Clean Single-Line Palette (5 colors + Color Picker) */
-    #animalStudioModal .flex.md\:flex-col:last-child {
-        display: flex !important;
-        flex-direction: column !important;
-        gap: 7px !important;
-        padding: 5px 6px !important;
-        border-radius: 16px !important;
-        align-items: center !important;
-        justify-content: center !important;
-        margin-left: 10px !important;
-    }
-    #animalStudioModal .flex.md\:flex-col:last-child > span {
-        display: none !important;
-    }
-    #animalStudioModal .color-dot,
-    #animalStudioModal .animal-color-dot {
-        width: 24px !important;
-        height: 24px !important;
-        border-radius: 50% !important;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.12) !important;
-    }
-    #activeColorPreview,
-    #animalActiveColorPreview {
-        display: none !important;
-    }
-
-    /* Studio Modal Footer */
-    #animalStudioModal .bg-\[\#eef5e6\].border-t {
-        padding: 5px 12px !important;
-        gap: 6px !important;
-    }
-    #animalStudioModal .bg-\[\#eef5e6\].border-t button {
-        padding: 4px 10px !important;
-        font-size: 11px !important;
-    }
-    #animalStudioModal .bg-\[\#eef5e6\].border-t svg {
         width: 13px !important;
         height: 13px !important;
     }
@@ -1452,7 +1346,6 @@ body.zen-mode #zenModeRestorePill {
     #photoStudioModal > div,
     #decorModal > div,
     #journalModal > div,
-    #animalStudioModal > div,
     #customDialogModal > div,
     #saveToGalleryModal > div,
     #newWorldModal > div {
@@ -1468,8 +1361,7 @@ body.zen-mode #zenModeRestorePill {
     #achievementModal .border-b,
     #photoStudioModal .border-b,
     #decorModal .border-b,
-    #journalModal .border-b,
-    #animalStudioModal .border-b {
+    #journalModal .border-b {
         padding: 8px 12px !important;
     }
 
@@ -1479,8 +1371,7 @@ body.zen-mode #zenModeRestorePill {
     #achievementModal h2,
     #photoStudioModal h2,
     #decorModal h2,
-    #journalModal h2,
-    #animalStudioModal h2 {
+    #journalModal h2 {
         font-size: 15px !important;
     }
 
@@ -1490,8 +1381,7 @@ body.zen-mode #zenModeRestorePill {
     #achievementModal p,
     #photoStudioModal p,
     #decorModal p,
-    #journalModal p,
-    #animalStudioModal p {
+    #journalModal p {
         font-size: 10px !important;
         line-height: 1.2 !important;
     }
@@ -1503,8 +1393,7 @@ body.zen-mode #zenModeRestorePill {
     #achievementModal .overflow-y-auto,
     #photoStudioModal .overflow-y-auto,
     #decorModal .overflow-y-auto,
-    #journalModal .overflow-y-auto,
-    #animalStudioModal .overflow-y-auto {
+    #journalModal .overflow-y-auto {
         padding: 8px 10px !important;
     }
 
@@ -1705,9 +1594,10 @@ body.zen-mode #zenModeRestorePill {
 }
 
 /* ==============================================================
-   FULLSCREEN FLOWER STUDIO WORKSPACE (Ibis Paint Style)
+   FULLSCREEN STUDIOS WORKSPACE (Flower & Animal Studios - Ibis Paint Style)
    ============================================================== */
-#flowerStudioModal {
+#flowerStudioModal,
+#animalStudioModal {
     background-color: #F3EFE6 !important;
     background-image: 
         radial-gradient(circle at 50% 50%, rgba(142, 180, 119, 0.08) 0%, transparent 80%),
@@ -1724,14 +1614,16 @@ body.zen-mode #zenModeRestorePill {
     padding: 0 !important;
 }
 
-#studioViewport {
+#studioViewport,
+#animalStudioViewport {
     padding-left: 48px;
     padding-top: 8px;
     padding-bottom: 20px;
 }
 
 @media (orientation: landscape) and (max-height: 550px) {
-    #studioViewport {
+    #studioViewport,
+    #animalStudioViewport {
         padding-left: 0;
         padding-top: 0;
         padding-bottom: 0;
@@ -1739,14 +1631,16 @@ body.zen-mode #zenModeRestorePill {
 }
 
 @media (min-width: 1024px) {
-    #studioViewport {
+    #studioViewport,
+    #animalStudioViewport {
         padding-left: 0;
         padding-top: 0;
         padding-bottom: 0;
     }
 }
 
-#flowerCanvasPaper {
+#flowerCanvasPaper,
+#animalCanvasPaper {
     width: min(calc(100vw - 72px), 58vh, 520px);
     height: min(calc(100vw - 72px), 58vh, 520px);
     aspect-ratio: 1 / 1;
@@ -1756,14 +1650,16 @@ body.zen-mode #zenModeRestorePill {
 }
 
 @media (orientation: landscape) and (max-height: 550px) {
-    #flowerCanvasPaper {
+    #flowerCanvasPaper,
+    #animalCanvasPaper {
         width: min(58vw, 75vh, 310px) !important;
         height: min(58vw, 75vh, 310px) !important;
     }
 }
 
 @media (min-width: 1024px) {
-    #flowerCanvasPaper {
+    #flowerCanvasPaper,
+    #animalCanvasPaper {
         width: 600px !important;
         height: 600px !important;
     }
@@ -1773,7 +1669,10 @@ body.zen-mode #zenModeRestorePill {
 #flowerStudioModal.drawing-active #studioFullscreenTopBar,
 #flowerStudioModal.drawing-active #studioFullscreenLeftToolbar,
 #flowerStudioModal.drawing-active #studioStampSubBar,
-#flowerStudioModal.drawing-active #studioFullscreenBottomShelf {
+#flowerStudioModal.drawing-active #studioFullscreenBottomShelf,
+#animalStudioModal.drawing-active #animalStudioFullscreenTopBar,
+#animalStudioModal.drawing-active #animalStudioFullscreenLeftToolbar,
+#animalStudioModal.drawing-active #animalStudioFullscreenBottomShelf {
     opacity: 0.25;
     pointer-events: none;
     transition: opacity 0.15s ease-out;
