@@ -1010,6 +1010,31 @@ body {
     -webkit-mask-image: radial-gradient(circle, black 55%, transparent 92%);
 }
 
+/* Landscape Mobile & Short Viewport Splash Screen Optimization */
+@media (max-height: 520px) {
+    #splashScreen {
+        padding: 8px !important;
+    }
+    #splashContent {
+        max-height: 96vh !important;
+        justify-content: center !important;
+    }
+    .splash-logo-container {
+        width: clamp(90px, 25vh, 124px) !important;
+        height: clamp(90px, 25vh, 124px) !important;
+    }
+    #splashContent h1 {
+        font-size: clamp(1.35rem, 5.8vh, 1.85rem) !important;
+        margin-top: clamp(4px, 1.4vh, 8px) !important;
+        line-height: 1.15 !important;
+    }
+    #splashContent p {
+        font-size: clamp(11px, 2.8vh, 13px) !important;
+        margin-top: clamp(2px, 0.8vh, 4px) !important;
+        gap: 4px !important;
+    }
+}
+
 @keyframes splashAppear {
     0% {
         opacity: 0;
