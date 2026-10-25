@@ -4049,6 +4049,37 @@ function initGardenEventListeners() {
 
     if (e.button !== undefined && e.button !== 0) return; // Only process left click for tools
 
+    // In Night Mode, allow touching & steering constellations in the celestial sky!
+    const isNightVisible = (typeof isNightMode !== "undefined" && isNightMode) ||
+                           (typeof nightTransition !== "undefined" && nightTransition > 0.15);
+    if (isNightVisible && typeof findConstellationAtScreenPoint === "function") {
+      const hitConst = findConstellationAtScreenPoint(e.clientX, e.clientY);
+      if (hitConst && hitConst.constellation) {
+        draggedConstellation = hitConst.constellation;
+        window.draggedConstellation = draggedConstellation;
+        const curZoom = typeof zoom !== "undefined" ? zoom : 1.0;
+        const wW = typeof WORLD_W !== "undefined" ? WORLD_W : 4200;
+        const wH = typeof WORLD_H !== "undefined" ? WORLD_H : 3200;
+        const basePanX = (screenW - wW * curZoom) / 2;
+        const basePanY = (screenH - wH * curZoom) / 2;
+        const camDeltaX = panX - basePanX;
+        const camDeltaY = panY - basePanY;
+        const skyCenterX = screenW * 0.5 + camDeltaX * 0.58;
+        const skyCenterY = screenH * 0.52 + camDeltaY * 0.58;
+        draggedConstellationOffset = {
+          dx: (e.clientX - skyCenterX) / curZoom - (draggedConstellation.dx !== undefined ? draggedConstellation.dx : 0),
+          dy: (e.clientY - skyCenterY) / curZoom - (draggedConstellation.dy !== undefined ? draggedConstellation.dy : 0),
+        };
+        isDraggingCanvas = false;
+        draggedFlower = null;
+        draggedAnimal = null;
+        draggedDecoration = null;
+        worldCanvas.style.cursor = "grabbing";
+        if (typeof playStarNodeChime === "function") playStarNodeChime(1);
+        return;
+      }
+    }
+
     if (currentTool === "place-decor" && window.pendingDecorationSpec) {
       placePendingDecorationAt(worldPos.x, worldPos.y);
       return;
@@ -4348,6 +4379,25 @@ function initGardenEventListeners() {
       return;
     }
 
+    // Constellation dragging in the celestial night sky
+    if (draggedConstellation) {
+      const curZoom = typeof zoom !== "undefined" ? zoom : 1.0;
+      const wW = typeof WORLD_W !== "undefined" ? WORLD_W : 4200;
+      const wH = typeof WORLD_H !== "undefined" ? WORLD_H : 3200;
+      const basePanX = (screenW - wW * curZoom) / 2;
+      const basePanY = (screenH - wH * curZoom) / 2;
+      const camDeltaX = panX - basePanX;
+      const camDeltaY = panY - basePanY;
+      const skyCenterX = screenW * 0.5 + camDeltaX * 0.58;
+      const skyCenterY = screenH * 0.52 + camDeltaY * 0.58;
+      const offX = draggedConstellationOffset ? draggedConstellationOffset.dx : 0;
+      const offY = draggedConstellationOffset ? draggedConstellationOffset.dy : 0;
+      draggedConstellation.dx = (e.clientX - skyCenterX) / curZoom - offX;
+      draggedConstellation.dy = (e.clientY - skyCenterY) / curZoom - offY;
+      worldCanvas.style.cursor = "grabbing";
+      return;
+    }
+
     // Smooth canvas dragging
     if (isDraggingCanvas) {
       if (typeof stopFollowingAnimal === "function") stopFollowingAnimal();
@@ -4362,6 +4412,19 @@ function initGardenEventListeners() {
     currentWorldY = worldPos.y;
 
     if (!isPointerDown) {
+      const isNightVisible =
+        (typeof isNightMode !== "undefined" && isNightMode) ||
+        (typeof nightTransition !== "undefined" && nightTransition > 0.15);
+      if (
+        isNightVisible &&
+        typeof findConstellationAtScreenPoint === "function"
+      ) {
+        const hitConst = findConstellationAtScreenPoint(e.clientX, e.clientY);
+        if (hitConst) {
+          worldCanvas.style.cursor = "grab";
+          return;
+        }
+      }
       hoveredFlower = findFlowerAt(worldPos.x, worldPos.y);
       hoveredAnimal =
         typeof findAnimalAt === "function"
@@ -4460,7 +4523,7 @@ function initGardenEventListeners() {
 
   worldCanvas.addEventListener("pointermove", handlePointerMove);
   window.addEventListener("pointermove", (e) => {
-    if (isDraggingCanvas) {
+    if (isDraggingCanvas || draggedConstellation) {
       handlePointerMove(e);
     }
   });
@@ -4482,6 +4545,25 @@ function initGardenEventListeners() {
     }
     if (activeTouchPointers.size < 2) {
       isPinching = false;
+    }
+
+    if (draggedConstellation) {
+      const c = draggedConstellation;
+      draggedConstellation = null;
+      window.draggedConstellation = null;
+      worldCanvas.style.cursor = "grab";
+      if (typeof playStarNodeChime === "function") {
+        playStarNodeChime(2);
+      } else if (typeof playChimeSound === "function") {
+        playChimeSound();
+      }
+      if (typeof showGardenNotice === "function") {
+        showGardenNotice(`✨ Posisi rasi bintang "${c.name}" diperbarui!`);
+      }
+      if (typeof scheduleAutoSave === "function") {
+        scheduleAutoSave();
+      }
+      return;
     }
 
     // Handle tap vs long-press on animal

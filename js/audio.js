@@ -374,6 +374,24 @@ function closeSoundDropdown() {
   }
 }
 
+// Screen Wake Lock API to prevent device from sleeping while garden tab is open
+var screenWakeLockSentinel = null;
+
+async function requestScreenWakeLock() {
+  if (typeof navigator === "undefined" || !("wakeLock" in navigator)) return;
+  try {
+    if (document.visibilityState === "visible" && !screenWakeLockSentinel) {
+      screenWakeLockSentinel = await navigator.wakeLock.request("screen");
+      screenWakeLockSentinel.addEventListener("release", () => {
+        screenWakeLockSentinel = null;
+      });
+    }
+  } catch (err) {
+    // Battery saver or system policy may reject wake lock silently
+  }
+}
+window.requestScreenWakeLock = requestScreenWakeLock;
+
 // Menutup dropdown sound saat mengklik area di luar sound widget
 if (typeof document !== "undefined") {
   document.addEventListener("click", (e) => {
@@ -395,9 +413,78 @@ if (typeof document !== "undefined") {
         })
         .catch(() => {});
     }
+    requestScreenWakeLock();
     document.removeEventListener("pointerdown", startBgmOnFirstGesture);
   };
   document.addEventListener("pointerdown", startBgmOnFirstGesture);
+
+  // Mute / Pause musik saat tab disembunyikan atau browser diminimalkan / ditutup
+  var wasBgmPlayingBeforeHidden = false;
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") {
+      // 1. Tab disembunyikan / pindah tab / aplikasi di-minimize: matikan/pause audio
+      if (bgmAudio && !bgmAudio.paused && isBgmStarted && !isBgmMuted) {
+        wasBgmPlayingBeforeHidden = true;
+        try {
+          bgmAudio.pause();
+        } catch (e) {}
+        updateSoundIconUI(false);
+      } else {
+        wasBgmPlayingBeforeHidden = false;
+      }
+      // Lepas wake lock saat tab disembunyikan agar baterai hemat
+      if (screenWakeLockSentinel) {
+        try {
+          screenWakeLockSentinel.release();
+        } catch (e) {}
+        screenWakeLockSentinel = null;
+      }
+    } else if (document.visibilityState === "visible") {
+      // 2. Tab dibuka kembali: lanjutkan lagu jika sebelumnya sedang berputar
+      if (wasBgmPlayingBeforeHidden && bgmAudio && !isBgmMuted) {
+        try {
+          const p = bgmAudio.play();
+          if (p !== undefined) {
+            p.then(() => {
+              isBgmStarted = true;
+              updateSoundIconUI(true);
+            }).catch(() => {});
+          }
+        } catch (e) {}
+      }
+      // 3. Minta kembali Wake Lock agar perangkat tidak tidur/mati selama tab ini terbuka
+      requestScreenWakeLock();
+    }
+  });
+
+  // Pastikan lagu dimatikan saat halaman/tab ditutup (close tab / browser exit)
+  window.addEventListener("pagehide", () => {
+    if (bgmAudio) {
+      try {
+        bgmAudio.pause();
+      } catch (e) {}
+    }
+    if (screenWakeLockSentinel) {
+      try {
+        screenWakeLockSentinel.release();
+      } catch (e) {}
+    }
+  });
+
+  window.addEventListener("beforeunload", () => {
+    if (bgmAudio) {
+      try {
+        bgmAudio.pause();
+      } catch (e) {}
+    }
+  });
+
+  if (document.readyState === "complete" || document.readyState === "interactive") {
+    requestScreenWakeLock();
+  } else {
+    document.addEventListener("DOMContentLoaded", requestScreenWakeLock);
+  }
 }
 
 // Preloaded Audio Pool for UI Clicks (Instant response, zero lag)

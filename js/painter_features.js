@@ -1678,6 +1678,8 @@
 
         if (typeof screenW !== 'undefined' && typeof screenH !== 'undefined' && typeof WORLD_W !== 'undefined') {
             const slot = getConstellationSkySlotOffset(idx);
+            const curDx = (typeof c.dx === 'number') ? c.dx : slot.dx;
+            const curDy = (typeof c.dy === 'number') ? c.dy : slot.dy;
             const isPortrait = screenH > screenW;
             const targetZoom = isPortrait ? Math.max(0.38, Math.min(0.50, zoom)) : Math.max(0.58, Math.min(0.70, zoom));
             const basePanX = (screenW - WORLD_W * targetZoom) / 2;
@@ -1685,8 +1687,8 @@
             // Gently tilt camera toward the constellation while keeping the lush island horizon anchored in view
             const maxShiftX = screenW * 0.26;
             const maxShiftY = screenH * 0.28;
-            const shiftX = Math.max(-maxShiftX, Math.min(maxShiftX, -slot.dx * targetZoom * 0.52));
-            const shiftY = Math.max(-maxShiftY, Math.min(maxShiftY, -slot.dy * targetZoom * 0.52));
+            const shiftX = Math.max(-maxShiftX, Math.min(maxShiftX, -curDx * targetZoom * 0.52));
+            const shiftY = Math.max(-maxShiftY, Math.min(maxShiftY, -curDy * targetZoom * 0.52));
             const targetPanX = basePanX + shiftX;
             const targetPanY = basePanY + shiftY;
 
@@ -1739,11 +1741,14 @@
             ny: Number(((pt.ny !== undefined ? pt.ny : pt.y / 260)).toFixed(3))
         }));
 
+        const slot = getConstellationSkySlotOffset(gardenConstellations.length);
         const newConst = {
             id: 'const_' + Date.now(),
             name: name,
             color: constellationDraftColor || 'gold',
-            nodes: normalized
+            nodes: normalized,
+            dx: slot.dx,
+            dy: slot.dy
         };
 
         gardenConstellations.push(newConst);
@@ -1760,6 +1765,24 @@
         focusOnConstellationById(newConst.id);
         if (typeof showGardenNotice === 'function') {
             showGardenNotice(`🌌 Rasi Bintang "${name}" kini bersinar di angkasa luar pulau kebunmu!`);
+        }
+    }
+
+    function resetConstellationPositionById(id) {
+        if (typeof window !== 'undefined' && Array.isArray(window.gardenConstellations)) {
+            gardenConstellations = window.gardenConstellations;
+        }
+        const idx = gardenConstellations.findIndex(c => c.id === id);
+        if (idx === -1) return;
+        const c = gardenConstellations[idx];
+        const slot = getConstellationSkySlotOffset(idx);
+        c.dx = slot.dx;
+        c.dy = slot.dy;
+        if (typeof scheduleAutoSave === 'function') scheduleAutoSave();
+        renderSavedConstellationsList();
+        focusOnConstellationById(c.id);
+        if (typeof showGardenNotice === 'function') {
+            showGardenNotice(`✨ Posisi rasi "${c.name}" dikembalikan ke orbit awal!`);
         }
     }
 
@@ -1791,6 +1814,7 @@
                     <span style="color:${th.star}">✦</span>
                     <span class="font-medium">${c.name}</span>
                 </button>
+                <button type="button" onclick="resetConstellationPositionById('${c.id}')" class="text-indigo-300 hover:text-indigo-100 font-bold ml-1 cursor-pointer" title="Kembalikan ke posisi orbit awal">↺</button>
                 <button type="button" onclick="deleteConstellationById('${c.id}')" class="text-rose-400 hover:text-rose-300 font-bold ml-1 cursor-pointer" title="Hapus Rasi">✕</button>
             </div>
             `;
@@ -1960,12 +1984,64 @@
                 const boxW = 165 * Math.pow(curZoom, 0.65);
                 const boxH = 105 * Math.pow(curZoom, 0.65);
 
+                const islandWx = (typeof WORLD_W !== 'undefined') ? WORLD_W * 0.5 : 2100;
+                const islandWy = (typeof WORLD_H !== 'undefined') ? WORLD_H * 0.52 : 1664;
+
                 gardenConstellations.forEach((c, cIdx) => {
                     if (!c.nodes || c.nodes.length < 2) return;
                     const theme = CONSTELLATION_THEMES[c.color] || CONSTELLATION_THEMES.gold;
                     const slot = getConstellationSkySlotOffset(cIdx);
-                    const cx = skyCenterX + slot.dx * curZoom;
-                    const cy = skyCenterY + slot.dy * curZoom;
+                    if (typeof c.dx !== 'number' || typeof c.dy !== 'number') {
+                        c.dx = slot.dx;
+                        c.dy = slot.dy;
+                    }
+
+                    const isBeingDragged = (typeof window !== 'undefined' && window.draggedConstellation === c);
+
+                    // 1. Auto-evasion / drift away if expanding terrain covers or borders this constellation
+                    const wx = islandWx + c.dx;
+                    const wy = islandWy + c.dy;
+                    const isNearTerrain = (typeof isNearGrass === 'function' && isNearGrass(wx, wy, 140)) ||
+                                          (typeof isNearWater === 'function' && isNearWater(wx, wy, 140)) ||
+                                          (typeof isPointOnGrass === 'function' && isPointOnGrass(wx, wy)) ||
+                                          (typeof isPointOnWater === 'function' && isPointOnWater(wx, wy));
+
+                    if (isNearTerrain && !isBeingDragged) {
+                        let dirX = c.dx;
+                        let dirY = c.dy;
+                        let dist = Math.hypot(dirX, dirY);
+                        if (dist < 10) {
+                            dirX = 0;
+                            dirY = -1;
+                            dist = 1;
+                        }
+                        dirX /= dist;
+                        dirY /= dist;
+
+                        const driftSpeed = 360; // Smooth glide ~360px per second into clear outer space
+                        c.dx += dirX * driftSpeed * dt;
+                        c.dy += dirY * driftSpeed * dt;
+                        c._wasAutoDrifting = true;
+
+                        // Spawn drifting stardust sparkle trail
+                        if (Math.random() < 0.4) {
+                            if (!c._sparkles) c._sparkles = [];
+                            c._sparkles.push({
+                                x: (Math.random() - 0.5) * boxW * 0.8,
+                                y: (Math.random() - 0.5) * boxH * 0.8,
+                                vx: -dirX * 35 + (Math.random() - 0.5) * 18,
+                                vy: -dirY * 35 + (Math.random() - 0.5) * 18,
+                                life: 1.0,
+                                size: 1.5 + Math.random() * 2
+                            });
+                        }
+                    } else if (c._wasAutoDrifting && !isNearTerrain) {
+                        c._wasAutoDrifting = false;
+                        if (typeof scheduleAutoSave === 'function') scheduleAutoSave();
+                    }
+
+                    const cx = skyCenterX + c.dx * curZoom;
+                    const cy = skyCenterY + c.dy * curZoom;
 
                     // Compute node screen coordinates centered around (cx, cy)
                     let minNx = 1, maxNx = 0, minNy = 1, maxNy = 0;
@@ -1995,6 +2071,41 @@
                     sctx.arc(cx, cy, auraRad, 0, Math.PI * 2);
                     sctx.fill();
 
+                    // Render stardust sparkle particles during drift
+                    if (c._sparkles && c._sparkles.length > 0) {
+                        for (let si = c._sparkles.length - 1; si >= 0; si--) {
+                            const sp = c._sparkles[si];
+                            sp.x += sp.vx * dt;
+                            sp.y += sp.vy * dt;
+                            sp.life -= dt * 1.5;
+                            if (sp.life <= 0) {
+                                c._sparkles.splice(si, 1);
+                                continue;
+                            }
+                            sctx.save();
+                            sctx.globalAlpha = sp.life * nightAlpha * 0.85;
+                            sctx.fillStyle = theme.star;
+                            sctx.beginPath();
+                            sctx.arc(cx + sp.x, cy + sp.y, sp.size * sp.life, 0, Math.PI * 2);
+                            sctx.fill();
+                            sctx.restore();
+                        }
+                    }
+
+                    // Pulsating Orbital Alignment Ring when dragged by player
+                    if (isBeingDragged) {
+                        sctx.save();
+                        sctx.strokeStyle = theme.star;
+                        sctx.lineWidth = 1.8;
+                        sctx.setLineDash([6, 4]);
+                        sctx.lineDashOffset = -(now * 0.02);
+                        sctx.globalAlpha = nightAlpha * 0.95;
+                        sctx.beginPath();
+                        sctx.arc(cx, cy, auraRad * 1.05, 0, Math.PI * 2);
+                        sctx.stroke();
+                        sctx.restore();
+                    }
+
                     // B. Highlight Ring if newly created or focused via Telescope
                     if (focusedConstellationId === c.id && focusedConstellationTimer > 0) {
                         const ringPulse = 1 + Math.sin(now * 0.006) * 0.08;
@@ -2016,8 +2127,8 @@
 
                     // Soft outer glow
                     sctx.strokeStyle = theme.glow;
-                    sctx.lineWidth = 4.5;
-                    sctx.globalAlpha = nightAlpha * 0.65 * shimmer;
+                    sctx.lineWidth = isBeingDragged ? 5.5 : 4.5;
+                    sctx.globalAlpha = nightAlpha * (isBeingDragged ? 0.9 : 0.65) * shimmer;
                     sctx.beginPath();
                     screenPts.forEach((pt, i) => {
                         if (i === 0) sctx.moveTo(pt.x, pt.y);
@@ -2058,15 +2169,15 @@
                     sctx.font = '600 10.5px "Quicksand", sans-serif';
                     sctx.textAlign = 'center';
                     sctx.textBaseline = 'middle';
-                    const labelText = `✦ ${c.name}`;
+                    const labelText = isBeingDragged ? `✥ Geser: ${c.name}` : `✦ ${c.name}`;
                     const textW = sctx.measureText(labelText).width;
                     const pillW = textW + 14;
                     const pillH = 18;
 
-                    sctx.globalAlpha = nightAlpha * 0.82;
-                    sctx.fillStyle = 'rgba(9, 14, 28, 0.68)';
-                    sctx.strokeStyle = theme.badgeBorder;
-                    sctx.lineWidth = 1;
+                    sctx.globalAlpha = nightAlpha * (isBeingDragged ? 0.96 : 0.82);
+                    sctx.fillStyle = isBeingDragged ? 'rgba(30, 27, 75, 0.92)' : 'rgba(9, 14, 28, 0.68)';
+                    sctx.strokeStyle = isBeingDragged ? theme.star : theme.badgeBorder;
+                    sctx.lineWidth = isBeingDragged ? 1.5 : 1;
                     sctx.beginPath();
                     if (typeof sctx.roundRect === 'function') {
                         sctx.roundRect(cx - pillW / 2, labelY - pillH / 2, pillW, pillH, 9);
@@ -2076,10 +2187,22 @@
                     sctx.fill();
                     sctx.stroke();
 
-                    sctx.fillStyle = theme.label;
+                    sctx.fillStyle = isBeingDragged ? '#FEF08A' : theme.label;
                     sctx.globalAlpha = nightAlpha * 0.95;
                     sctx.fillText(labelText, cx, labelY + 0.5);
                     sctx.restore();
+
+                    // Store screen interaction bounds for interactive touch & drag
+                    c._screenCx = cx;
+                    c._screenCy = cy;
+                    c._screenLabelY = labelY;
+                    c._badgeBounds = {
+                        x1: cx - pillW / 2 - 14,
+                        x2: cx + pillW / 2 + 14,
+                        y1: labelY - pillH / 2 - 12,
+                        y2: labelY + pillH / 2 + 12
+                    };
+                    c._starsRadius = Math.max(boxW, boxH) * 0.65;
                 });
             }
 
@@ -2294,6 +2417,31 @@
     window.openEaselModal = openEaselModal;
     window.closeEaselModal = closeEaselModal;
     window.selectEaselArtwork = selectEaselArtwork;
+    function findConstellationAtScreenPoint(sx, sy) {
+        if (typeof window === 'undefined' || !Array.isArray(window.gardenConstellations)) return null;
+        const constellations = window.gardenConstellations;
+        // Check topmost drawn constellation first
+        for (let i = constellations.length - 1; i >= 0; i--) {
+            const c = constellations[i];
+            if (!c) continue;
+            // Badge hit area
+            if (c._badgeBounds) {
+                if (sx >= c._badgeBounds.x1 && sx <= c._badgeBounds.x2 &&
+                    sy >= c._badgeBounds.y1 && sy <= c._badgeBounds.y2) {
+                    return { constellation: c, hitType: 'badge' };
+                }
+            }
+            // Star cluster radius
+            if (typeof c._screenCx === 'number' && typeof c._screenCy === 'number') {
+                const r = c._starsRadius || 75;
+                if (Math.hypot(sx - c._screenCx, sy - c._screenCy) <= r) {
+                    return { constellation: c, hitType: 'stars' };
+                }
+            }
+        }
+        return null;
+    }
+
     window.inviteOwlArtCritic = inviteOwlArtCritic;
     window.updateAndDrawOwlCritic = updateAndDrawOwlCritic;
     window.openConstellationModal = openConstellationModal;
@@ -2305,7 +2453,9 @@
     window.focusOnConstellationById = focusOnConstellationById;
     window.viewConstellationsInSky = viewConstellationsInSky;
     window.saveConstellationDraft = saveConstellationDraft;
+    window.resetConstellationPositionById = resetConstellationPositionById;
     window.deleteConstellationById = deleteConstellationById;
     window.drawGardenConstellationsInSky = drawGardenConstellationsInSky;
+    window.findConstellationAtScreenPoint = findConstellationAtScreenPoint;
 
 })();
