@@ -141,6 +141,9 @@ async function bootstrapApp() {
         const initialWeather = typeof dynamicWeather !== 'undefined' && dynamicWeather ? dynamicWeather : 'clear';
         setDynamicWeather(initialWeather, null, false);
     }
+    if (typeof updateSidebarScrollIndicators === 'function') {
+        updateSidebarScrollIndicators();
+    }
 }
 
 if (typeof document !== 'undefined') {

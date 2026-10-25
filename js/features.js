@@ -1123,17 +1123,18 @@ function updateDynamicWeather(dt, now) {
             });
         }
     } else if (dynamicWeather === 'blizzard') {
-        // Soft drifting snow particles
-        for (let i = 0; i < 4; i++) {
+        // Soft drifting snow particles in world space
+        for (let i = 0; i < 3; i++) {
             particles.push({
-                type: 'leaf',
+                type: 'snow',
                 x: minX + Math.random() * (maxX - minX),
                 y: minY + Math.random() * (maxY - minY),
-                vx: 1.5 + Math.random() * 1.5,
-                vy: 2.0 + Math.random() * 1.8,
-                size: 3.2 + Math.random() * 2.2,
+                vx: -60 - Math.random() * 50,
+                vy: 45 + Math.random() * 40,
+                size: 2.2 + Math.random() * 2.5,
                 color: '#FFFFFF',
-                alpha: 0.85
+                alpha: 0.85,
+                decay: 0.35
             });
         }
     } else if (dynamicWeather === 'heatwave') {

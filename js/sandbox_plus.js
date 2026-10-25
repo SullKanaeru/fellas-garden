@@ -116,9 +116,9 @@ function updateAndDrawSeasonalEffects(targetCtx, dt, now) {
     }
 
     // 2. In Winter, draw soft frosty snow caps along island rim / pond shimmer
-    if (currentSeason === 'winter') {
+    if (currentSeason === 'winter' || (typeof dynamicWeather !== 'undefined' && dynamicWeather === 'blizzard')) {
         targetCtx.save();
-        targetCtx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+        targetCtx.strokeStyle = 'rgba(255, 255, 255, 0.50)';
         targetCtx.lineWidth = 5;
         targetCtx.beginPath();
         targetCtx.ellipse(cx, cy - 4, 415, 232, 0, 0, Math.PI * 2);

@@ -2658,6 +2658,111 @@
         /**
          * Update proses hujan berkelanjutan per frame selama durasi hujan
          */
+        
+        /**
+         * Sistem Cuaca Salju Lebat Layar Penuh (Atmospheric Screen-Space Blizzard)
+         * Menampilkan badai salju lebat dengan kristal es melayang, butiran salju beterbangan
+         * ditiup angin kencang, dan lapisan kabut salju sejuk di seluruh viewport layar.
+         */
+        var screenSnowflakes = [];
+
+        function updateAndDrawScreenBlizzard(targetCtx, dt, now) {
+            const isBlizzard = typeof dynamicWeather !== 'undefined' && dynamicWeather === 'blizzard';
+
+            if (!isBlizzard) {
+                if (screenSnowflakes.length > 0) {
+                    screenSnowflakes = [];
+                }
+                return;
+            }
+
+            // Target kapasitas kepingan salju di layar
+            const maxSnowflakes = 85;
+
+            // Spawn salju baru jika belum penuh
+            while (screenSnowflakes.length < maxSnowflakes) {
+                screenSnowflakes.push({
+                    x: Math.random() * (screenW + 200) - 50,
+                    y: Math.random() * (screenH + 60) - 30,
+                    vx: -80 - Math.random() * 85, // Angin kencang ke kiri
+                    vy: 75 + Math.random() * 95,   // Turun ke bawah
+                    size: 1.8 + Math.random() * 3.6, // Ukuran kepingan salju
+                    wobbleSpeed: 2.2 + Math.random() * 2.8,
+                    wobbleAmp: 18 + Math.random() * 22,
+                    phase: Math.random() * Math.PI * 2,
+                    alpha: 0.65 + Math.random() * 0.35,
+                    isCrystal: Math.random() < 0.22 // Kepingan kristal salju spesial
+                });
+            }
+
+            targetCtx.save();
+
+            // 1. Lapisan kabut atmosferik salju dingin (Cold misty overlay)
+            const mistPulse = 0.08 + Math.sin(now * 0.0015) * 0.025;
+            targetCtx.fillStyle = `rgba(225, 240, 255, ${mistPulse})`;
+            targetCtx.fillRect(0, 0, screenW, screenH);
+
+            // 2. Garis hembusan angin dingin (Cold wind gust lines)
+            const windGustAlpha = 0.08 + Math.sin(now * 0.002) * 0.04;
+            if (windGustAlpha > 0.04) {
+                targetCtx.strokeStyle = `rgba(255, 255, 255, ${windGustAlpha})`;
+                targetCtx.lineWidth = 1.2;
+                targetCtx.beginPath();
+                const gustY1 = (screenH * 0.3 + Math.sin(now * 0.001) * 60) % screenH;
+                targetCtx.moveTo(screenW + 40, gustY1);
+                targetCtx.lineTo(-40, gustY1 + 90);
+                const gustY2 = (screenH * 0.7 + Math.cos(now * 0.0012) * 80) % screenH;
+                targetCtx.moveTo(screenW + 40, gustY2);
+                targetCtx.lineTo(-40, gustY2 + 110);
+                targetCtx.stroke();
+            }
+
+            // 3. Update & render butiran dan kristal salju
+            for (let i = 0; i < screenSnowflakes.length; i++) {
+                const s = screenSnowflakes[i];
+                const drift = Math.sin(now * 0.003 * s.wobbleSpeed + s.phase) * s.wobbleAmp;
+                s.x += (s.vx + drift) * dt;
+                s.y += s.vy * dt;
+
+                // Bungkus / reset saat keluar layar
+                if (s.y > screenH + 20 || s.x < -60) {
+                    s.x = Math.random() * (screenW + 150);
+                    s.y = -20 - Math.random() * 30;
+                    s.vx = -80 - Math.random() * 85;
+                    s.vy = 75 + Math.random() * 95;
+                }
+
+                targetCtx.globalAlpha = s.alpha;
+
+                if (s.isCrystal) {
+                    // Gambar kristal salju 4/8 sisi
+                    targetCtx.save();
+                    targetCtx.translate(s.x, s.y);
+                    targetCtx.rotate(now * 0.002 + s.phase);
+                    targetCtx.strokeStyle = '#FFFFFF';
+                    targetCtx.lineWidth = 1.2;
+                    const r = s.size * 1.5;
+                    targetCtx.beginPath();
+                    targetCtx.moveTo(-r, 0); targetCtx.lineTo(r, 0);
+                    targetCtx.moveTo(0, -r); targetCtx.lineTo(0, r);
+                    targetCtx.stroke();
+                    targetCtx.fillStyle = '#FFFFFF';
+                    targetCtx.beginPath();
+                    targetCtx.arc(0, 0, s.size * 0.45, 0, Math.PI * 2);
+                    targetCtx.fill();
+                    targetCtx.restore();
+                } else {
+                    // Butiran salju lembut
+                    targetCtx.fillStyle = '#FFFFFF';
+                    targetCtx.beginPath();
+                    targetCtx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+                    targetCtx.fill();
+                }
+            }
+
+            targetCtx.restore();
+        }
+
         function updateRainShower(dt) {
             if (!isRainingShower || rainShowerTimer <= 0) return;
 
@@ -4133,6 +4238,9 @@
             // 8. Update & Draw Atmospheric Screen-Space Rain (Tetesan Hujan Layar Penuh Bebas Distorsi Zoom)
             updateAndDrawScreenRain(ctx, dt);
 
+            // 8b. Update & Draw Atmospheric Screen-Space Blizzard (Cuaca Salju Lebat Layar Penuh)
+            updateAndDrawScreenBlizzard(ctx, dt, now);
+
             // 9. Atmospheric Rain Mist Overlay (in Screen Coordinates, drawn above world)
             if (isRainingShower && rainShowerTimer > 0) {
                 const elapsed = rainShowerDuration - rainShowerTimer;
@@ -4481,6 +4589,39 @@
                     targetCtx.fillStyle = p.color || '#F472B6';
                     targetCtx.beginPath();
                     targetCtx.ellipse(0, 0, p.size || 6, (p.size || 6) * 0.5, 0, 0, Math.PI * 2);
+                    targetCtx.fill();
+                    targetCtx.restore();
+                } else if (p.type === 'snow') {
+                    p.x += (p.vx || 0) * dt;
+                    p.y += (p.vy || 0) * dt;
+                    p.alpha -= dt * (p.decay || 0.35);
+                    if (p.alpha <= 0) {
+                        particles.splice(i, 1);
+                        continue;
+                    }
+                    targetCtx.save();
+                    targetCtx.globalAlpha = Math.max(0, Math.min(1, p.alpha));
+                    targetCtx.fillStyle = p.color || '#FFFFFF';
+                    targetCtx.beginPath();
+                    targetCtx.arc(p.x, p.y, p.size || 3, 0, Math.PI * 2);
+                    targetCtx.fill();
+                    targetCtx.restore();
+                } else if (p.type === 'leaf') {
+                    p.x += (p.vx || 0) * dt;
+                    p.y += (p.vy || 0) * dt;
+                    p.rotation = (p.rotation || 0) + (p.vRot || 2) * dt;
+                    p.alpha -= dt * (p.decay || 0.4);
+                    if (p.alpha <= 0) {
+                        particles.splice(i, 1);
+                        continue;
+                    }
+                    targetCtx.save();
+                    targetCtx.globalAlpha = Math.max(0, Math.min(1, p.alpha));
+                    targetCtx.translate(p.x, p.y);
+                    targetCtx.rotate(p.rotation);
+                    targetCtx.fillStyle = p.color || '#F4A261';
+                    targetCtx.beginPath();
+                    targetCtx.ellipse(0, 0, p.size || 5, (p.size || 5) * 0.5, 0, 0, Math.PI * 2);
                     targetCtx.fill();
                     targetCtx.restore();
                 }
@@ -4931,3 +5072,32 @@
         window.closeAllToolDropdowns = closeAllToolDropdowns;
         window.selectPencilSubTool = selectPencilSubTool;
         window.selectEraserSubTool = selectEraserSubTool;
+
+        function scrollSidebar(dir) {
+            const container = document.getElementById('sidebarScrollContainer');
+            if (!container) return;
+            const isMobile = window.innerWidth < 640;
+            const step = isMobile ? 60 : 96; // 1 card height + gap
+            if (dir === 'up') {
+                container.scrollBy({ top: -step, behavior: 'smooth' });
+            } else {
+                container.scrollBy({ top: step, behavior: 'smooth' });
+            }
+            setTimeout(updateSidebarScrollIndicators, 150);
+        }
+
+        function updateSidebarScrollIndicators() {
+            const container = document.getElementById('sidebarScrollContainer');
+            const upBtn = document.getElementById('sidebarScrollUpBtn');
+            const downBtn = document.getElementById('sidebarScrollDownBtn');
+            if (!container || !upBtn || !downBtn) return;
+            const atTop = container.scrollTop <= 2;
+            const atBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - 2;
+            upBtn.style.opacity = atTop ? '0.35' : '1';
+            downBtn.style.opacity = atBottom ? '0.35' : '1';
+        }
+
+        window.scrollSidebar = scrollSidebar;
+        window.updateSidebarScrollIndicators = updateSidebarScrollIndicators;
+        window.updateAndDrawScreenBlizzard = updateAndDrawScreenBlizzard;
+
