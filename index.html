@@ -1624,10 +1624,10 @@
     <!-- SAVE TO GALLERY DIALOG MODAL -->
     <div
       id="saveToGalleryModal"
-      class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/45 backdrop-blur-sm pointer-events-auto"
+      class="hidden fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/45 backdrop-blur-sm pointer-events-auto"
     >
       <div
-        class="bg-[#FDFBF2] border-2 sm:border-[3px] border-[#2B5B35] rounded-3xl max-w-sm w-full p-5 shadow-2xl relative flex flex-col items-center"
+        class="bg-[#FDFBF2] border-2 sm:border-[3px] border-[#2B5B35] rounded-3xl max-w-sm w-full p-4 sm:p-5 shadow-2xl relative flex flex-col items-center max-h-[92vh] overflow-y-auto"
       >
         <button
           onclick="closeSaveToGalleryDialog()"
@@ -2072,14 +2072,14 @@
     <!-- CREATE NEW WORLD DIALOG MODAL -->
     <div
       id="newWorldModal"
-      class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm pointer-events-auto"
+      class="hidden fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/50 backdrop-blur-sm pointer-events-auto"
     >
       <div
-        class="bg-[#FDFBF2] border-2 sm:border-[3px] border-[#3a5a40] rounded-3xl p-5 sm:p-6 max-w-lg w-full shadow-2xl relative"
+        class="bg-[#FDFBF2] border-2 sm:border-[3px] border-[#3a5a40] rounded-3xl max-w-lg w-full shadow-2xl relative flex flex-col max-h-[92vh] overflow-hidden"
       >
         <button
           onclick="closeNewWorldModal()"
-          class="absolute top-4 right-4 w-7 h-7 rounded-full bg-white/80 hover:bg-white border border-[#c5d9b7] flex items-center justify-center text-[#2B5B35] transition hover:rotate-90"
+          class="absolute top-3.5 right-4 w-7 h-7 rounded-full bg-white/80 hover:bg-white border border-[#c5d9b7] flex items-center justify-center text-[#2B5B35] transition hover:rotate-90 z-10 cursor-pointer"
         >
           <svg
             class="w-4 h-4"
@@ -2094,12 +2094,12 @@
           </svg>
         </button>
 
-        <div class="flex items-center gap-2.5 mb-4">
+        <div class="px-5 py-3 sm:py-3.5 bg-[#eef5e6] border-b border-[#c5d9b7] flex items-center gap-2.5 shrink-0">
           <div
-            class="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center"
+            class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center"
           >
             <svg
-              class="w-5 h-5 text-emerald-700"
+              class="w-4 h-4 text-emerald-700"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -2112,17 +2112,17 @@
             </svg>
           </div>
           <div>
-            <h3 class="font-hand font-bold text-xl sm:text-2xl text-[#2B5B35]">
+            <h3 class="font-hand font-bold text-lg sm:text-xl text-[#2B5B35] leading-tight">
               Buat Kebun Baru
             </h3>
-            <p class="text-xs text-[#477431]">
+            <p class="text-[11px] sm:text-xs text-[#477431]">
               Mulai kanvas kebun baru dengan tema dan skenario pilihanmu
             </p>
           </div>
         </div>
 
         <!-- Form -->
-        <div class="space-y-4">
+        <div class="p-4 sm:p-5 overflow-y-auto space-y-3 sm:space-y-4 flex-1">
           <div>
             <label class="block text-xs font-bold text-[#2B5B35] mb-1"
               >Nama Kebun Baru:</label
@@ -2239,32 +2239,32 @@
               </label>
             </div>
           </div>
+        </div>
 
-          <div
-            class="flex items-center justify-end gap-2.5 pt-2 border-t border-[#e2d5bc]"
+        <div
+          class="px-5 py-2.5 sm:py-3 bg-[#f2f7ec] border-t border-[#d7e2ce] flex items-center justify-end gap-2.5 shrink-0"
+        >
+          <button
+            onclick="closeNewWorldModal()"
+            class="px-4 py-1.5 rounded-full border border-[#c5d9b7] bg-white text-[#2B5B35] hover:bg-gray-100 text-xs font-semibold transition cursor-pointer"
           >
-            <button
-              onclick="closeNewWorldModal()"
-              class="px-4 py-1.5 rounded-full border border-gray-300 text-gray-600 hover:bg-gray-100 text-xs font-semibold transition"
+            Batal
+          </button>
+          <button
+            onclick="confirmCreateNewWorld()"
+            class="px-5 py-1.5 rounded-full bg-[#2B5B35] hover:bg-[#1f4627] text-white text-xs font-bold shadow-md transition active:scale-95 inline-flex items-center gap-1.5 cursor-pointer"
+          >
+            <svg
+              class="w-3.5 h-3.5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
             >
-              Batal
-            </button>
-            <button
-              onclick="confirmCreateNewWorld()"
-              class="px-5 py-1.5 rounded-full bg-[#2B5B35] hover:bg-[#1f4627] text-white text-xs font-bold shadow-md transition active:scale-95 inline-flex items-center gap-1.5"
-            >
-              <svg
-                class="w-3.5 h-3.5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2.5"
-              >
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-              <span>Buat & Buka Kebun</span>
-            </button>
-          </div>
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+            <span>Buat & Buka Kebun</span>
+          </button>
         </div>
       </div>
     </div>
@@ -4382,179 +4382,185 @@
     <!-- HELP & SETTINGS MODAL -->
     <div
       id="helpModal"
-      class="hidden fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4"
+      class="hidden fixed inset-0 z-50 bg-black/45 backdrop-blur-sm flex items-center justify-center p-2.5 sm:p-4 pointer-events-auto"
     >
       <div
-        class="bg-[#FDFBF2] border-2 sm:border-[3px] border-[#2B5B35] rounded-3xl max-w-md w-full p-6 shadow-2xl relative"
+        class="bg-[#FDFBF2] border-2 sm:border-[3px] border-[#2B5B35] rounded-3xl max-w-xl w-full shadow-2xl relative flex flex-col max-h-[92vh] overflow-hidden"
       >
-        <button
-          onclick="closeHelpModal()"
-          class="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/80 hover:bg-white border border-[#c5d9b7] flex items-center justify-center text-[#2B5B35] transition hover:rotate-90"
-        >
-          <svg
-            class="w-4 h-4"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.5"
-            stroke-linecap="round"
-          >
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
-        </button>
-
-        <h2
-          class="font-garden-title text-2xl font-bold text-[#2B5B35] mb-3.5 flex items-center gap-2.5"
-        >
-          <img
-            src="assets/images/logo-bg.png"
-            alt="Logo"
-            class="w-8 h-8 rounded-xl object-cover shadow-xs border border-[#2B5B35]/30 shrink-0 select-none pointer-events-none"
-          />
-          <span>Panduan Fella's Garden</span>
-        </h2>
-
+        <!-- Modal Header -->
         <div
-          class="space-y-2.5 text-sm sm:text-base text-gray-700 leading-relaxed"
+          class="px-4 py-2.5 sm:px-5 sm:py-3.5 bg-[#eef5e6] border-b border-[#c5d9b7] flex items-center justify-between shrink-0"
         >
-          <div
-            class="p-3 rounded-2xl bg-[#eef7fc] border border-[#c8e3f4] flex items-start gap-2.5"
+          <h2
+            class="font-garden-title text-base sm:text-xl font-bold text-[#2B5B35] flex items-center gap-2"
           >
-            <div
-              class="w-7 h-7 rounded-lg bg-sky-100 text-sky-700 flex items-center justify-center shrink-0 mt-0.5"
+            <img
+              src="assets/images/logo-bg.png"
+              alt="Logo"
+              class="w-6 h-6 sm:w-7 sm:h-7 rounded-xl object-cover shadow-xs border border-[#2B5B35]/30 shrink-0 select-none pointer-events-none"
+            />
+            <span>Panduan Fella's Garden</span>
+          </h2>
+          <button
+            onclick="closeHelpModal()"
+            class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/80 hover:bg-white border border-[#c5d9b7] flex items-center justify-center text-[#2B5B35] transition hover:rotate-90 cursor-pointer shadow-2xs"
+            title="Tutup Panduan"
+          >
+            <svg
+              class="w-4 h-4"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
             >
-              <svg
-                class="w-4 h-4"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0" />
-                <path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2" />
-                <path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8" />
-                <path
-                  d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"
-                />
-              </svg>
-            </div>
-            <div>
-              <p class="font-bold text-[#255c85]">
-                1. Menggeser & Zoom Layar (Geser & Atur)
-              </p>
-              <p class="text-xs sm:text-sm mt-0.5">
-                Tarik bidang kosong untuk menggeser pandangan! Gunakan scroll
-                roda mouse, tombol <b>+ / −</b> di kiri bawah, atau cubit layar
-                (*pinch*) untuk Zoom. Klik ikon target untuk kembali ke tengah.
-              </p>
-            </div>
-          </div>
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
 
-          <div
-            class="p-3 rounded-2xl bg-[#f3f8ed] border border-[#d6e6c6] flex items-start gap-2.5"
-          >
+        <!-- Modal Body (Scrollable & Responsive Grid) -->
+        <div class="p-3 sm:p-4 overflow-y-auto flex-1">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-2.5">
+            <!-- 1. Menggeser & Zoom Layar -->
             <div
-              class="w-7 h-7 rounded-lg bg-emerald-100 text-[#2B5B35] flex items-center justify-center shrink-0 mt-0.5"
+              class="p-2.5 sm:p-3 rounded-2xl bg-[#eef7fc] border border-[#c8e3f4] flex items-start gap-2 sm:gap-2.5"
             >
-              <svg
-                class="w-4 h-4"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
+              <div
+                class="w-7 h-7 rounded-lg bg-sky-100 text-sky-700 flex items-center justify-center shrink-0 mt-0.5"
               >
-                <path d="M7 20h10" />
-                <path d="M10 20c5.5-2.5.8-6.4 3-13" />
-                <path
-                  d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4.1 5.5.8z"
-                />
-              </svg>
+                <svg
+                  class="w-4 h-4"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0" />
+                  <path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2" />
+                  <path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8" />
+                  <path
+                    d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"
+                  />
+                </svg>
+              </div>
+              <div class="min-w-0">
+                <p class="font-bold text-xs sm:text-sm text-[#255c85] leading-tight">
+                  1. Menggeser & Zoom Layar (Geser & Atur)
+                </p>
+                <p class="text-[11px] sm:text-xs text-gray-600 mt-1 leading-snug">
+                  Tarik bidang kosong untuk geser pandangan. Gunakan scroll mouse, tombol <b>+ / −</b>, atau cubit layar (*pinch*). Klik target untuk kembali ke tengah.
+                </p>
+              </div>
             </div>
-            <div>
-              <p class="font-bold text-[#2B5B35]">
-                2. Menggambar Tanah (Pensil Rumput)
-              </p>
-              <p class="text-xs sm:text-sm mt-0.5">
-                Pilih <b>Pensil Rumput</b> untuk memperluas tanah kebun di mana
-                saja. Rumput otomatis memiliki efek 3D dan tekstur tunas hijau!
-              </p>
-            </div>
-          </div>
 
-          <div
-            class="p-3 rounded-2xl bg-[#fff8eb] border border-[#f2dec0] flex items-start gap-2.5"
-          >
+            <!-- 2. Menggambar Tanah -->
             <div
-              class="w-7 h-7 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center shrink-0 mt-0.5"
+              class="p-2.5 sm:p-3 rounded-2xl bg-[#f3f8ed] border border-[#d6e6c6] flex items-start gap-2 sm:gap-2.5"
             >
-              <svg
-                class="w-4 h-4"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
+              <div
+                class="w-7 h-7 rounded-lg bg-emerald-100 text-[#2B5B35] flex items-center justify-center shrink-0 mt-0.5"
               >
-                <path
-                  d="M12 2C6.5 2 2 6.5 2 12c0 3.5 2 6.5 5 8 1.5.8 3 .5 3-1 0-.8-.7-1.5-1-2.2-.4-.8-.5-1.8.2-2.5.8-.8 2-.8 3-.8h1c4.5 0 8-3.5 8-8 0-4.5-3.5-7.5-9.2-7.5z"
-                />
-              </svg>
+                <svg
+                  class="w-4 h-4"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M7 20h10" />
+                  <path d="M10 20c5.5-2.5.8-6.4 3-13" />
+                  <path
+                    d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4.1 5.5.8z"
+                  />
+                </svg>
+              </div>
+              <div class="min-w-0">
+                <p class="font-bold text-xs sm:text-sm text-[#2B5B35] leading-tight">
+                  2. Menggambar Tanah (Pensil Rumput)
+                </p>
+                <p class="text-[11px] sm:text-xs text-gray-600 mt-1 leading-snug">
+                  Pilih <b>Pensil Rumput</b> untuk memperluas tanah kebun di mana saja. Rumput otomatis bertekstur 3D dan memiliki tunas hijau segar!
+                </p>
+              </div>
             </div>
-            <div>
-              <p class="font-bold text-[#8c5828]">
-                3. Menggambar & Menanam Bunga (Studio Bunga)
-              </p>
-              <p class="text-xs sm:text-sm mt-0.5">
-                Buka studio dengan tombol <b>Gambar Bunga</b> di sisi kanan,
-                gunakan pipet/pensil, lalu tanam di atas atau sekitar rumput.
-              </p>
-            </div>
-          </div>
 
-          <div
-            class="p-3 rounded-2xl bg-[#f7f2fb] border border-[#dfd0f0] flex items-start gap-2.5"
-          >
+            <!-- 3. Menggambar & Menanam Bunga -->
             <div
-              class="w-7 h-7 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center shrink-0 mt-0.5"
+              class="p-2.5 sm:p-3 rounded-2xl bg-[#fff8eb] border border-[#f2dec0] flex items-start gap-2 sm:gap-2.5"
             >
-              <svg
-                class="w-4 h-4"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
+              <div
+                class="w-7 h-7 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center shrink-0 mt-0.5"
               >
-                <path
-                  d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z"
-                />
-              </svg>
+                <svg
+                  class="w-4 h-4"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path
+                    d="M12 2C6.5 2 2 6.5 2 12c0 3.5 2 6.5 5 8 1.5.8 3 .5 3-1 0-.8-.7-1.5-1-2.2-.4-.8-.5-1.8.2-2.5.8-.8 2-.8 3-.8h1c4.5 0 8-3.5 8-8 0-4.5-3.5-7.5-9.2-7.5z"
+                  />
+                </svg>
+              </div>
+              <div class="min-w-0">
+                <p class="font-bold text-xs sm:text-sm text-[#8c5828] leading-tight">
+                  3. Menggambar & Menanam Bunga (Studio)
+                </p>
+                <p class="text-[11px] sm:text-xs text-gray-600 mt-1 leading-snug">
+                  Buka studio dengan tombol <b>Gambar Bunga</b> di sisi kanan, gunakan kuas/cat air/pensil/stempel, lalu tanam di atas atau sekitar rumput.
+                </p>
+              </div>
             </div>
-            <div>
-              <p class="font-bold text-[#5a2e8c]">
-                4. Merawat & Siram Air (Ember Air & Hujan)
-              </p>
-              <p class="text-xs sm:text-sm mt-0.5">
-                Siram bunga yang haus dengan <b>Ember Air</b> atau aktifkan
-                <b>Hujan</b> untuk membuat seluruh kebun kembali mekar segar.
-              </p>
+
+            <!-- 4. Merawat & Siram Air -->
+            <div
+              class="p-2.5 sm:p-3 rounded-2xl bg-[#f7f2fb] border border-[#dfd0f0] flex items-start gap-2 sm:gap-2.5"
+            >
+              <div
+                class="w-7 h-7 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center shrink-0 mt-0.5"
+              >
+                <svg
+                  class="w-4 h-4"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path
+                    d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z"
+                  />
+                </svg>
+              </div>
+              <div class="min-w-0">
+                <p class="font-bold text-xs sm:text-sm text-[#5a2e8c] leading-tight">
+                  4. Merawat & Siram Air (Ember & Hujan)
+                </p>
+                <p class="text-[11px] sm:text-xs text-gray-600 mt-1 leading-snug">
+                  Siram bunga yang haus dengan <b>Ember Air</b> atau aktifkan cuaca <b>Hujan</b> untuk membuat seluruh kebun mekar segar seketika.
+                </p>
+              </div>
             </div>
           </div>
         </div>
 
+        <!-- Modal Footer -->
         <div
-          class="mt-5 pt-3.5 border-t border-gray-200 flex flex-wrap items-center justify-between gap-2"
+          class="px-4 py-2 sm:px-5 sm:py-3 bg-[#f2f7ec] border-t border-[#d7e2ce] flex flex-wrap items-center justify-between gap-2 shrink-0"
         >
           <button
             onclick="resetToDefaultGarden()"
-            class="px-3.5 py-1.5 rounded-full bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 text-xs sm:text-sm font-medium transition inline-flex items-center gap-1.5"
+            class="px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 text-xs font-medium transition inline-flex items-center gap-1 cursor-pointer"
           >
             <svg
               class="w-3.5 h-3.5"
@@ -4572,7 +4578,7 @@
           </button>
           <button
             onclick="closeHelpModal()"
-            class="px-5 py-1.5 rounded-full bg-[#2B5B35] hover:bg-[#1f4627] text-white text-sm font-bold transition shadow-sm"
+            class="px-4 py-1.5 sm:px-5 sm:py-1.5 rounded-full bg-[#2B5B35] hover:bg-[#1f4627] text-white text-xs sm:text-sm font-bold transition shadow-xs cursor-pointer ml-auto"
           >
             Mengerti, Ayo Berkebun!
           </button>
