@@ -2714,23 +2714,31 @@
             const statusEl = document.getElementById('hydrationStatusBadge');
             const alertDot = document.getElementById('thirstyAlertDot');
 
-            countEl.innerHTML = `<svg class="w-3.5 h-3.5 text-pink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7.5a4.5 4.5 0 1 1 4.5 4.5M12 7.5A4.5 4.5 0 1 0 7.5 12M12 7.5V3m4.5 9a4.5 4.5 0 1 1-4.5 4.5M16.5 12H21m-9 4.5a4.5 4.5 0 1 1-4.5-4.5M12 16.5V21m-4.5-9H3"/><circle cx="12" cy="12" r="2.5" fill="#F7CE68"/></svg><span>${flowers.length} Bunga</span>`;
+            if (countEl) {
+                countEl.innerHTML = `<svg class="w-3.5 h-3.5 text-pink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7.5a4.5 4.5 0 1 1 4.5 4.5M12 7.5A4.5 4.5 0 1 0 7.5 12M12 7.5V3m4.5 9a4.5 4.5 0 1 1-4.5 4.5M16.5 12H21m-9 4.5a4.5 4.5 0 1 1-4.5-4.5M12 16.5V21m-4.5-9H3"/><circle cx="12" cy="12" r="2.5" fill="#F7CE68"/></svg><span>${flowers.length} Bunga</span>`;
+            }
 
             const wiltedCount = flowers.filter(f => f.hydration < 30).length;
             const thirstyCount = flowers.filter(f => f.hydration >= 30 && f.hydration < 60).length;
 
             if (wiltedCount > 0) {
-                statusEl.innerHTML = `<svg class="w-3.5 h-3.5 text-rose-500 animate-bounce" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span>${wiltedCount} Layu (Siram Air!)</span>`;
-                statusEl.className = 'font-bold text-rose-700 inline-flex items-center gap-1.5 animate-pulse';
-                alertDot.classList.remove('hidden');
+                if (statusEl) {
+                    statusEl.innerHTML = `<svg class="w-3.5 h-3.5 text-rose-500 animate-bounce" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span>${wiltedCount} Layu (Siram Air!)</span>`;
+                    statusEl.className = 'font-bold text-rose-700 inline-flex items-center gap-1.5 animate-pulse';
+                }
+                if (alertDot) alertDot.classList.remove('hidden');
             } else if (thirstyCount > 0) {
-                statusEl.innerHTML = `<svg class="w-3.5 h-3.5 text-sky-500" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg><span>${thirstyCount} Mulai Haus</span>`;
-                statusEl.className = 'font-medium text-sky-700 inline-flex items-center gap-1.5';
-                alertDot.classList.remove('hidden');
+                if (statusEl) {
+                    statusEl.innerHTML = `<svg class="w-3.5 h-3.5 text-sky-500" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg><span>${thirstyCount} Mulai Haus</span>`;
+                    statusEl.className = 'font-medium text-sky-700 inline-flex items-center gap-1.5';
+                }
+                if (alertDot) alertDot.classList.remove('hidden');
             } else {
-                statusEl.innerHTML = `<svg class="w-3.5 h-3.5 text-emerald-500" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg><span>Semua Segar</span>`;
-                statusEl.className = 'font-medium text-emerald-700 inline-flex items-center gap-1.5';
-                alertDot.classList.add('hidden');
+                if (statusEl) {
+                    statusEl.innerHTML = `<svg class="w-3.5 h-3.5 text-emerald-500" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg><span>Semua Segar</span>`;
+                    statusEl.className = 'font-medium text-emerald-700 inline-flex items-center gap-1.5';
+                }
+                if (alertDot) alertDot.classList.add('hidden');
             }
         }
 

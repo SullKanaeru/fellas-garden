@@ -172,43 +172,8 @@
       <!-- Subtle Status Pill -->
       <div
         id="statusToast"
-        class="mt-1 px-2.5 sm:px-3.5 py-0.5 sm:py-1 rounded-full bg-white/85 backdrop-blur-sm border border-[#d7e2ce] text-[#3a5a40] text-xs sm:text-sm flex items-center gap-1.5 sm:gap-3 shadow-sm pointer-events-auto max-w-[94vw] overflow-x-auto no-scrollbar"
+        class="mt-1 px-2.5 sm:px-3.5 py-0.5 sm:py-1 rounded-full bg-white/85 backdrop-blur-sm border border-[#d7e2ce] text-[#3a5a40] text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2.5 shadow-sm pointer-events-auto max-w-[94vw] overflow-x-auto no-scrollbar"
       >
-        <span
-          id="flowerCountBadge"
-          class="font-medium inline-flex items-center gap-1.5"
-        >
-          <svg
-            class="w-3.5 h-3.5 text-pink-500"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path
-              d="M12 7.5a4.5 4.5 0 1 1 4.5 4.5M12 7.5A4.5 4.5 0 1 0 7.5 12M12 7.5V3m4.5 9a4.5 4.5 0 1 1-4.5 4.5M16.5 12H21m-9 4.5a4.5 4.5 0 1 1-4.5-4.5M12 16.5V21m-4.5-9H3"
-            />
-            <circle cx="12" cy="12" r="2.5" fill="#F7CE68" />
-          </svg>
-          <span>14 Bunga</span>
-        </span>
-        <span class="text-gray-300">|</span>
-        <span
-          id="hydrationStatusBadge"
-          class="font-medium text-emerald-700 inline-flex items-center gap-1.5"
-        >
-          <svg
-            class="w-3.5 h-3.5 text-sky-500"
-            viewBox="0 0 24 24"
-            fill="currentColor"
-          >
-            <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
-          </svg>
-          <span>Semua Segar</span>
-        </span>
-        <span class="text-gray-300 hidden sm:inline">|</span>
         <button
           id="weatherStatusBtn"
           onclick="cycleDynamicWeather()"
@@ -264,27 +229,6 @@
               d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"
             /></svg
           ><span class="font-bold">Fokus</span>
-        </button>
-        <span class="text-gray-300 hidden sm:inline">|</span>
-        <button
-          id="witherModeBtn"
-          onclick="cycleWitherSpeed()"
-          class="hidden sm:inline-flex items-center gap-1.5 text-xs bg-[#f2f7ec] hover:bg-[#e3efda] px-2.5 py-0.5 rounded-full border border-[#c5d9b7] transition"
-          title="Atur kecepatan layu bunga"
-        >
-          <svg
-            class="w-3 h-3 text-[#2B5B35]"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <circle cx="12" cy="12" r="10" />
-            <polyline points="12 6 12 12 16 14" />
-          </svg>
-          <span>Layu: <strong id="witherModeText">Santai</strong></span>
         </button>
         <span class="text-gray-300 hidden sm:inline">|</span>
         <span
