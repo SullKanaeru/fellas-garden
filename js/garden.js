@@ -1829,6 +1829,9 @@
             };
 
             flowers.push(newFlower);
+            if (typeof attachPainterDataToNewFlower === 'function') {
+                attachPainterDataToNewFlower(newFlower, sourceCanvas);
+            }
             if (typeof incrementStat === 'function') incrementStat('flowersPlanted', 1);
             // Sort flowers by Y coordinate for natural depth overlap
             flowers.sort((a, b) => a.y - b.y);
@@ -3950,6 +3953,7 @@
                 }
 
                 if (typeof draggedDecoration !== 'undefined' && draggedDecoration) {
+                    const movedDist = Math.hypot(draggedDecoration.x - draggedDecorationOrigX, draggedDecoration.y - draggedDecorationOrigY);
                     const onGrass = typeof isPointOnGrass === 'function' && isPointOnGrass(draggedDecoration.x, draggedDecoration.y);
                     const onWater = typeof isPointOnWater === 'function' && isPointOnWater(draggedDecoration.x, draggedDecoration.y);
                     const valid = draggedDecoration.habitat === 'both' ? (onGrass || onWater) : (onGrass && !onWater);
@@ -3959,7 +3963,11 @@
                         showGardenNotice('Dekorasi darat hanya bisa ditaruh di atas tanah rumput! (Jembatan bisa di atas air) 🌿');
                         if (typeof playErrorSound === 'function') playErrorSound();
                     } else {
-                        if (typeof playPlantSound === 'function') playPlantSound();
+                        if (movedDist < 6 && draggedDecoration.type === 'easel' && typeof openEaselModal === 'function') {
+                            openEaselModal(draggedDecoration);
+                        } else {
+                            if (typeof playPlantSound === 'function') playPlantSound();
+                        }
                         if (typeof resolveAnimalDecorationCollisions === 'function') resolveAnimalDecorationCollisions();
                         scheduleAutoSave();
                     }
@@ -4367,10 +4375,20 @@
             updateRainShower(dt);
             updateAndDrawParticles(ctx, dt);
 
+            // 6b. Update & Draw Professor Hoot (Owl Art Critic) if visiting an Easel
+            if (typeof updateAndDrawOwlCritic === 'function') {
+                updateAndDrawOwlCritic(ctx, dt, now);
+            }
+
             // 7. Draw Tool Cursor Preview on Canvas (in World Coordinates)
             drawCursorPreview(ctx, now);
 
             ctx.restore();
+
+            // 7b. Draw Night Sky Constellations (Lukis Rasi Bintang)
+            if (typeof drawGardenConstellationsInSky === 'function' && nightTransition > 0.05) {
+                drawGardenConstellationsInSky(ctx, screenW, screenH, nightTransition, now);
+            }
 
             // 8. Update & Draw Atmospheric Screen-Space Rain (Tetesan Hujan Layar Penuh Bebas Distorsi Zoom)
             updateAndDrawScreenRain(ctx, dt);
@@ -4446,19 +4464,32 @@
                 targetCtx.ellipse(0, 2, f.width * 0.22, 4, 0, 0, Math.PI * 2);
                 targetCtx.fill();
 
-                // Draw healthy sprite
-                const drawX = -f.width / 2;
-                const drawY = -f.height + 6;
+                // Check if flower is currently playing its live stroke-by-stroke painting timelapse!
+                const isTimelapseHandled = (typeof drawFlowerPainterEffects === 'function' && f.timelapseActive)
+                    ? drawFlowerPainterEffects(targetCtx, f, now, 0.016)
+                    : false;
 
-                if (wiltFactor < 0.99) {
-                    targetCtx.globalAlpha = 1 - wiltFactor * 0.85;
-                    targetCtx.drawImage(f.imgCanvas, drawX, drawY, f.width, f.height);
-                }
+                if (!isTimelapseHandled) {
+                    // Draw healthy sprite
+                    const drawX = -f.width / 2;
+                    const drawY = -f.height + 6;
 
-                // Crossfade with desaturated/sepia wilted sprite as hydration drops
-                if (wiltFactor > 0.02 && f.wiltedCanvas) {
-                    targetCtx.globalAlpha = wiltFactor;
-                    targetCtx.drawImage(f.wiltedCanvas, drawX, drawY, f.width, f.height);
+                    if (wiltFactor < 0.99) {
+                        targetCtx.globalAlpha = 1 - wiltFactor * 0.85;
+                        targetCtx.drawImage(f.imgCanvas, drawX, drawY, f.width, f.height);
+                    }
+
+                    // Crossfade with desaturated/sepia wilted sprite as hydration drops
+                    if (wiltFactor > 0.02 && f.wiltedCanvas) {
+                        targetCtx.globalAlpha = wiltFactor;
+                        targetCtx.drawImage(f.wiltedCanvas, drawX, drawY, f.width, f.height);
+                    }
+
+                    // Draw Living Paint Weather Effects, Night Glow & Glitter
+                    if (typeof drawFlowerPainterEffects === 'function') {
+                        targetCtx.globalAlpha = 1.0;
+                        drawFlowerPainterEffects(targetCtx, f, now, 0.016);
+                    }
                 }
 
                 targetCtx.restore();

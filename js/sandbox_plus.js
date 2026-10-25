@@ -282,6 +282,14 @@ function rotateDecorationById(id) {
 
 const DECORATION_CATALOG = [
     {
+        type: 'easel',
+        name: 'Kuda-kuda Lukis Pameran',
+        icon: '<svg class="w-6 h-6 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="4" width="14" height="10" rx="1"/><path d="M4 14h16"/><path d="M8 14l-3 7M16 14l3 7M12 14v7"/><path d="M10 2h4"/></svg>',
+        habitat: 'land',
+        width: 52,
+        height: 56
+    },
+    {
         type: 'fence',
         name: 'Pagar Kayu Taman',
         icon: '<svg class="w-6 h-6 text-amber-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6v14M8 6v14M12 6v14M16 6v14M20 6v14M2 9h20M2 15h20M4 6l2-3 2 3M8 6l2-3 2 3M12 6l2-3 2 3M16 6l2-3 2 3M20 6l2-3 2 3"/></svg>',
@@ -514,17 +522,21 @@ function renderDecorModalCatalog() {
         } else {
             activeEl.innerHTML = decorations.map(d => {
                 const info = DECORATION_CATALOG.find(c => c.type === d.type) || DECORATION_CATALOG[0];
+                const isEasel = d.type === 'easel';
                 return `
                     <div class="flex items-center justify-between gap-2 p-2.5 bg-[#fdfbf7] rounded-xl border border-[#e2d5bc] shadow-xs">
                         <div class="flex items-center gap-2.5 min-w-0">
                             <span class="w-8 h-8 rounded-xl bg-white border border-[#c5d9b7] flex items-center justify-center shrink-0">${info.icon}</span>
                             <div class="min-w-0">
-                                <div class="font-hand font-bold text-xs sm:text-sm text-[#2B5B35] truncate leading-tight">${info.name}</div>
+                                <div class="font-hand font-bold text-xs sm:text-sm text-[#2B5B35] truncate leading-tight">${info.name} ${d.paintingTitle ? `<span class="text-[10px] text-amber-700">(${d.paintingTitle})</span>` : ''}</div>
                             </div>
                         </div>
-                        <button onclick="removeDecorationById('${d.id}')" class="px-2.5 py-1 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-[11px] font-bold transition active:scale-95 shadow-2xs shrink-0">
-                            Hapus
-                        </button>
+                        <div class="flex items-center gap-1.5 shrink-0">
+                            ${isEasel ? `<button onclick="closeDecorModal(); openEaselModal(decorations.find(x => x.id === '${d.id}'))" class="px-2.5 py-1 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 text-[11px] font-bold transition active:scale-95 shadow-2xs">🖼️ Pajang Lukisan</button>` : ''}
+                            <button onclick="removeDecorationById('${d.id}')" class="px-2.5 py-1 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-[11px] font-bold transition active:scale-95 shadow-2xs">
+                                Hapus
+                            </button>
+                        </div>
                     </div>
                 `;
             }).join('');
@@ -2699,6 +2711,8 @@ function drawDecorationInstance(ctx, d, now, dt) {
         drawRealisticTreeSwing(ctx, d, now);
     } else if (d.type === 'golden_lotus') {
         drawRealisticGoldenLotus(ctx, d, now);
+    } else if (d.type === 'easel' && typeof drawRealisticEasel === 'function') {
+        drawRealisticEasel(ctx, d, now);
     }
     ctx.restore();
 

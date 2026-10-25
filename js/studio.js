@@ -175,6 +175,7 @@
             if (!flowerPadCanvas || !flowerPadCtx) return;
             saveFlowerPadState();
             flowerPadCtx.clearRect(0, 0, flowerPadCanvas.width, flowerPadCanvas.height);
+            if (typeof resetPadPainterMetadata === 'function') resetPadPainterMetadata();
             const hint = document.getElementById('drawBoxHint');
             if (hint) hint.style.opacity = '0.4';
             pendingFlowerSprite = null;
@@ -306,14 +307,22 @@
             flowerLastX = pos.x;
             flowerLastY = pos.y;
 
-            flowerPadCtx.save();
-            flowerPadCtx.globalCompositeOperation = (studioTool === 'eraser') ? 'destination-out' : 'source-over';
-            flowerPadCtx.fillStyle = flowerColor;
-            flowerPadCtx.beginPath();
-            const rad = (studioTool === 'eraser') ? (flowerBrushSize * 1.8) / 2 : flowerBrushSize / 2;
-            flowerPadCtx.arc(pos.x, pos.y, Math.max(1, rad), 0, Math.PI * 2);
-            flowerPadCtx.fill();
-            flowerPadCtx.restore();
+            const bType = window.studioBrushType || 'pencil';
+            if (typeof startRecordingStroke === 'function') {
+                startRecordingStroke(pos, studioTool, bType, flowerColor, flowerBrushSize);
+            }
+            if (typeof renderBrushDownOnCtx === 'function') {
+                renderBrushDownOnCtx(flowerPadCtx, pos, studioTool, bType, flowerColor, flowerBrushSize);
+            } else {
+                flowerPadCtx.save();
+                flowerPadCtx.globalCompositeOperation = (studioTool === 'eraser') ? 'destination-out' : 'source-over';
+                flowerPadCtx.fillStyle = flowerColor;
+                flowerPadCtx.beginPath();
+                const rad = (studioTool === 'eraser') ? (flowerBrushSize * 1.8) / 2 : flowerBrushSize / 2;
+                flowerPadCtx.arc(pos.x, pos.y, Math.max(1, rad), 0, Math.PI * 2);
+                flowerPadCtx.fill();
+                flowerPadCtx.restore();
+            }
         });
 
         flowerPadCanvas.addEventListener('pointermove', (e) => {
@@ -331,18 +340,26 @@
             e.stopPropagation();
             const pos = getPadCoords(e);
 
-            flowerPadCtx.save();
-            flowerPadCtx.globalCompositeOperation = (studioTool === 'eraser') ? 'destination-out' : 'source-over';
-            flowerPadCtx.strokeStyle = flowerColor;
-            flowerPadCtx.lineWidth = (studioTool === 'eraser') ? flowerBrushSize * 1.8 : flowerBrushSize;
-            flowerPadCtx.lineCap = 'round';
-            flowerPadCtx.lineJoin = 'round';
+            const bType = window.studioBrushType || 'pencil';
+            if (typeof appendRecordingStrokePoint === 'function') {
+                appendRecordingStrokePoint(pos);
+            }
+            if (typeof renderBrushMoveOnCtx === 'function') {
+                renderBrushMoveOnCtx(flowerPadCtx, { x: flowerLastX, y: flowerLastY }, pos, studioTool, bType, flowerColor, flowerBrushSize);
+            } else {
+                flowerPadCtx.save();
+                flowerPadCtx.globalCompositeOperation = (studioTool === 'eraser') ? 'destination-out' : 'source-over';
+                flowerPadCtx.strokeStyle = flowerColor;
+                flowerPadCtx.lineWidth = (studioTool === 'eraser') ? flowerBrushSize * 1.8 : flowerBrushSize;
+                flowerPadCtx.lineCap = 'round';
+                flowerPadCtx.lineJoin = 'round';
 
-            flowerPadCtx.beginPath();
-            flowerPadCtx.moveTo(flowerLastX, flowerLastY);
-            flowerPadCtx.lineTo(pos.x, pos.y);
-            flowerPadCtx.stroke();
-            flowerPadCtx.restore();
+                flowerPadCtx.beginPath();
+                flowerPadCtx.moveTo(flowerLastX, flowerLastY);
+                flowerPadCtx.lineTo(pos.x, pos.y);
+                flowerPadCtx.stroke();
+                flowerPadCtx.restore();
+            }
 
             flowerLastX = pos.x;
             flowerLastY = pos.y;
@@ -355,6 +372,7 @@
             }
             if (isDrawingFlower) {
                 isDrawingFlower = false;
+                if (typeof endRecordingStroke === 'function') endRecordingStroke();
                 updatePendingSpriteFromPad();
                 updateDraftBadge();
             }
@@ -467,6 +485,7 @@
             const modal = document.getElementById('flowerStudioModal');
             if (modal) modal.classList.remove('hidden');
             resetFlowerZoom();
+            if (typeof renderStudioPainterBanner === 'function') renderStudioPainterBanner();
             const trimmed = extractTrimmedFlowerCanvas();
             const hint = document.getElementById('drawBoxHint');
             if (hint) {
@@ -492,6 +511,28 @@
             closeFlowerStudioModal();
             activatePlantingMode();
             showGardenNotice('Klik di atas atau sekitar rumput untuk menanam!');
+        }
+
+        function plantDirectlyRandom() {
+            if (!pendingFlowerSprite || typeof plantFlowerAt !== 'function') return;
+            const cx = (typeof WORLD_W !== 'undefined' ? WORLD_W : 4200) / 2;
+            const cy = (typeof WORLD_H !== 'undefined' ? WORLD_H : 3200) / 2;
+            let planted = false;
+            for (let attempt = 0; attempt < 40; attempt++) {
+                const rx = cx + (Math.random() - 0.5) * 420;
+                const ry = cy + (Math.random() - 0.5) * 320;
+                const onGrass = typeof isPointOnGrass === 'function' ? isPointOnGrass(rx, ry) : true;
+                const onWater = typeof isPointOnWater === 'function' ? isPointOnWater(rx, ry) : false;
+                const nearWater = typeof isNearWater === 'function' ? isNearWater(rx, ry, 24) : false;
+                if (onGrass && !onWater && !nearWater) {
+                    plantFlowerAt(rx, ry, pendingFlowerSprite);
+                    planted = true;
+                    break;
+                }
+            }
+            if (!planted) {
+                plantFlowerAt(cx, cy, pendingFlowerSprite);
+            }
         }
 
         function finishDrawingAndPlantDirectly() {

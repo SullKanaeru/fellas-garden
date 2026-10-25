@@ -230,6 +230,14 @@
             /></svg
           ><span class="font-bold">Fokus</span>
         </button>
+        <button
+          id="constellationStatusBtn"
+          onclick="openConstellationModal()"
+          class="inline-flex items-center gap-1 text-xs bg-[#1e1b4b]/90 hover:bg-[#312e81] px-2 sm:px-2.5 py-0.5 rounded-full border border-indigo-400/50 text-indigo-100 transition cursor-pointer shadow-sm"
+          title="Lukis Rasi Bintang di Langit Malam Kebun"
+        >
+          <span>🌌</span><span class="font-bold">Rasi</span>
+        </button>
         <span class="text-gray-300 hidden sm:inline">|</span>
         <span
           id="autoSaveIndicator"
@@ -1014,6 +1022,43 @@
           </button>
         </div>
 
+        <!-- Painter Gameplay Bar: Animal Art Commission & Daily Challenge -->
+        <div
+          id="studioPainterBanner"
+          class="px-3 sm:px-5 py-1.5 bg-[#f2f8ec] border-b border-[#d7e2ce] flex flex-wrap items-center justify-between gap-2 text-[11px] sm:text-xs text-[#2B5B35]"
+        >
+          <div class="flex items-center gap-1.5 min-w-0">
+            <span
+              id="studioCommissionBannerText"
+              class="truncate max-w-[230px] sm:max-w-[360px]"
+              >📜 Pesanan Hewan: Memuat...</span
+            >
+            <button
+              type="button"
+              onclick="cycleAnimalCommission()"
+              class="px-1.5 py-0.5 rounded-md bg-white hover:bg-emerald-50 border border-[#c5d9b7] text-[10px] font-bold text-[#2B5B35] shrink-0 transition cursor-pointer"
+              title="Ganti Pesanan Lukisan Hewan"
+            >
+              🔄 Ganti
+            </button>
+          </div>
+          <div class="flex items-center gap-1.5 min-w-0">
+            <span
+              id="studioDailyChallengeText"
+              class="truncate max-w-[220px] sm:max-w-[320px]"
+              >🎯 Tantangan: Memuat...</span
+            >
+            <button
+              type="button"
+              onclick="nextDailyPainterChallenge()"
+              class="px-1.5 py-0.5 rounded-md bg-white hover:bg-amber-50 border border-amber-300 text-[10px] font-bold text-amber-800 shrink-0 transition cursor-pointer"
+              title="Tantangan Melukis Berikutnya"
+            >
+              🎲 Tantangan
+            </button>
+          </div>
+        </div>
+
         <!-- Modal Body: Main Toolbar + Big Canvas Area + Palettes -->
         <div
           class="p-3 sm:p-5 flex flex-col md:flex-row items-center justify-center gap-4 sm:gap-6 overflow-y-auto"
@@ -1180,6 +1225,16 @@
             <div
               class="relative w-[280px] h-[280px] sm:w-[380px] sm:h-[380px] md:w-[420px] md:h-[420px] bg-white rounded-2xl border-2 border-dashed border-[#8eb477] shadow-inner overflow-hidden flex items-center justify-center"
             >
+              <!-- Floating Timelapse Replay Button -->
+              <button
+                type="button"
+                onclick="replayStudioTimelapse()"
+                class="absolute top-2 left-2 z-20 inline-flex items-center gap-1 bg-white/90 hover:bg-emerald-50 backdrop-blur-md px-2.5 py-1 rounded-full border border-[#c5d9b7] shadow-sm text-[11px] font-bold text-[#2B5B35] transition active:scale-95 cursor-pointer select-none"
+                title="Putar Ulang Animasi Goresan Lukisan (Timelapse)"
+              >
+                <span>▶</span><span>Timelapse</span>
+              </button>
+
               <!-- Floating Zoom & Pan Controls -->
               <div class="absolute top-2 right-2 z-20 flex items-center gap-1 bg-white/90 backdrop-blur-md px-2 py-1 rounded-full border border-[#c5d9b7] shadow-sm select-none">
                 <button type="button" onclick="zoomFlowerCanvas(-0.25)" class="w-6 h-6 flex items-center justify-center rounded-full hover:bg-emerald-100 text-[#2B5B35] font-bold text-sm transition active:scale-90" title="Zoom Out (-)">−</button>
@@ -1210,6 +1265,114 @@
                 height="500"
                 class="w-full h-full cursor-crosshair touch-none transition-transform duration-75"
               ></canvas>
+            </div>
+
+            <!-- Special Brush Selector Pills -->
+            <div
+              class="mt-2 flex flex-wrap items-center justify-center gap-1 bg-white/85 px-2.5 py-1 rounded-2xl border border-[#d7e2ce] max-w-[420px]"
+            >
+              <button
+                type="button"
+                id="brushTypeBtn-pencil"
+                onclick="setStudioBrushType('pencil')"
+                class="px-2 py-0.5 rounded-full text-[11px] font-bold transition bg-[#2B5B35] text-white shadow-sm ring-2 ring-[#7DB852] cursor-pointer"
+                title="Pensil Klasik (Tajam & Rapi)"
+              >
+                ✏️ Pensil
+              </button>
+              <button
+                type="button"
+                id="brushTypeBtn-watercolor"
+                onclick="setStudioBrushType('watercolor')"
+                class="px-2 py-0.5 rounded-full text-[11px] font-bold transition bg-white/80 text-[#2B5B35] hover:bg-[#eef5e6] border border-[#c5d9b7] cursor-pointer"
+                title="Kuas Cat Air (Lembut, Transparan & Hidup Saat Hujan)"
+              >
+                💧 Cat Air
+              </button>
+              <button
+                type="button"
+                id="brushTypeBtn-crayon"
+                onclick="setStudioBrushType('crayon')"
+                class="px-2 py-0.5 rounded-full text-[11px] font-bold transition bg-white/80 text-[#2B5B35] hover:bg-[#eef5e6] border border-[#c5d9b7] cursor-pointer"
+                title="Krayon Kapur (Tekstur Berbintik Artistik)"
+              >
+                🖍️ Krayon
+              </button>
+              <button
+                type="button"
+                id="brushTypeBtn-glitter"
+                onclick="setStudioBrushType('glitter')"
+                class="px-2 py-0.5 rounded-full text-[11px] font-bold transition bg-white/80 text-[#2B5B35] hover:bg-[#eef5e6] border border-[#c5d9b7] cursor-pointer"
+                title="Kuas Glitter Bintang (Berkilau Saat Ditanam)"
+              >
+                ✨ Glitter
+              </button>
+              <button
+                type="button"
+                id="brushTypeBtn-glow"
+                onclick="setStudioBrushType('glow')"
+                class="px-2 py-0.5 rounded-full text-[11px] font-bold transition bg-white/80 text-[#2B5B35] hover:bg-[#eef5e6] border border-[#c5d9b7] cursor-pointer"
+                title="Kuas Cahaya Malam (Berpendar Neon Saat Malam Hari)"
+              >
+                🌙 Cahaya
+              </button>
+              <button
+                type="button"
+                id="brushTypeBtn-stamp"
+                onclick="setStudioBrushType('stamp')"
+                class="px-2 py-0.5 rounded-full text-[11px] font-bold transition bg-white/80 text-[#2B5B35] hover:bg-[#eef5e6] border border-[#c5d9b7] cursor-pointer"
+                title="Stempel Bentuk Instan (Kelopak, Daun, Bintang, Hati, Kuncup)"
+              >
+                🌸 Stempel
+              </button>
+            </div>
+
+            <!-- Conditional Stamp Shape Sub-Toolbar -->
+            <div
+              id="studioStampSubBar"
+              class="hidden mt-1.5 flex-wrap items-center justify-center gap-1 bg-amber-50/90 px-2.5 py-1 rounded-full border border-amber-200 text-[11px]"
+            >
+              <span class="text-amber-800 font-bold mr-1">Bentuk:</span>
+              <button
+                type="button"
+                id="stampShapeBtn-petal"
+                onclick="setStudioStampShape('petal')"
+                class="px-2 py-0.5 rounded-full text-[11px] font-bold transition bg-[#2B5B35] text-white cursor-pointer"
+              >
+                🌸 Kelopak
+              </button>
+              <button
+                type="button"
+                id="stampShapeBtn-leaf"
+                onclick="setStudioStampShape('leaf')"
+                class="px-2 py-0.5 rounded-full text-[11px] font-bold transition bg-white/80 text-[#2B5B35] border border-[#c5d9b7] cursor-pointer"
+              >
+                🍃 Daun
+              </button>
+              <button
+                type="button"
+                id="stampShapeBtn-star"
+                onclick="setStudioStampShape('star')"
+                class="px-2 py-0.5 rounded-full text-[11px] font-bold transition bg-white/80 text-[#2B5B35] border border-[#c5d9b7] cursor-pointer"
+              >
+                ⭐ Bintang
+              </button>
+              <button
+                type="button"
+                id="stampShapeBtn-heart"
+                onclick="setStudioStampShape('heart')"
+                class="px-2 py-0.5 rounded-full text-[11px] font-bold transition bg-white/80 text-[#2B5B35] border border-[#c5d9b7] cursor-pointer"
+              >
+                💖 Hati
+              </button>
+              <button
+                type="button"
+                id="stampShapeBtn-bud"
+                onclick="setStudioStampShape('bud')"
+                class="px-2 py-0.5 rounded-full text-[11px] font-bold transition bg-white/80 text-[#2B5B35] border border-[#c5d9b7] cursor-pointer"
+              >
+                🌷 Kuncup
+              </button>
             </div>
 
             <!-- Under-Canvas Quick Size Selector -->
@@ -5073,6 +5236,186 @@
       </div>
     </div>
 
+    <!-- ===================================================================== -->
+    <!-- MODAL: EASEL EXHIBITION (PAMERAN LUKISAN & PROFESOR HOOT KRITIKUS)    -->
+    <!-- ===================================================================== -->
+    <div
+      id="easelExhibitionModal"
+      class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-3 sm:p-6"
+    >
+      <div
+        class="bg-[#FCFBF7] border-2 border-[#2B5B35] rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[92vh]"
+      >
+        <div
+          class="bg-[#e8f0e3] px-5 py-3.5 border-b border-[#c5d9b7] flex items-center justify-between"
+        >
+          <div class="flex items-center gap-2.5">
+            <span
+              class="w-9 h-9 rounded-2xl bg-amber-100 border border-amber-300 flex items-center justify-center text-lg"
+              >🖼️</span
+            >
+            <div>
+              <h3
+                class="font-hand text-xl sm:text-2xl font-bold text-[#2B5B35] leading-tight"
+              >
+                Pameran Kuda-kuda Lukis (Easel)
+              </h3>
+              <p class="text-xs text-[#4a6b51]">
+                Pilih lukisan bungamu untuk dipajang di kebun & undang Kritikus Seni!
+              </p>
+            </div>
+          </div>
+          <button
+            onclick="closeEaselModal()"
+            class="w-8 h-8 rounded-full bg-white hover:bg-rose-50 text-gray-600 hover:text-rose-600 flex items-center justify-center border border-gray-200 transition cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div class="p-4 sm:p-5 overflow-y-auto space-y-4">
+          <!-- Owl Art Critic Banner -->
+          <div
+            class="bg-gradient-to-r from-amber-50 via-orange-50 to-yellow-50 border border-amber-300 rounded-2xl p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
+          >
+            <div class="flex items-center gap-3">
+              <div
+                class="w-11 h-11 rounded-2xl bg-amber-200/70 border border-amber-400 flex items-center justify-center text-2xl shrink-0"
+              >
+                🦉
+              </div>
+              <div>
+                <div class="font-hand font-bold text-base text-amber-950">
+                  Profesor Hoot — Kritikus Seni Hutan
+                </div>
+                <p class="text-xs text-amber-800">
+                  Undang Profesor Hoot terbang ke easel ini untuk menilai lukisanmu dan dapatkan hadiah ⭐⭐⭐ Bintang!
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onclick="inviteOwlArtCritic()"
+              class="px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-hand font-bold text-sm shadow-sm transition shrink-0 cursor-pointer"
+            >
+              🦉 Undang Kritikus Seni
+            </button>
+          </div>
+
+          <div>
+            <h4 class="font-hand font-bold text-sm text-[#2B5B35] mb-2">
+              🎨 Pilih Lukisan untuk Dipajang di Easel:
+            </h4>
+            <div
+              id="easelArtworkGrid"
+              class="grid grid-cols-2 sm:grid-cols-3 gap-3"
+            ></div>
+          </div>
+        </div>
+
+        <div
+          class="bg-[#f3f7ef] px-5 py-3 border-t border-[#d7e2ce] flex items-center justify-between"
+        >
+          <span class="text-xs text-[#4a6b51]"
+            >💡 Tip: Klik easel di kebun kapan saja untuk mengganti lukisan pameran.</span
+          >
+          <button
+            type="button"
+            onclick="closeEaselModal()"
+            class="px-4 py-1.5 rounded-full bg-white hover:bg-gray-100 text-[#2B5B35] border border-[#c5d9b7] text-xs font-bold transition cursor-pointer"
+          >
+            Tutup
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- MODAL: NIGHT SKY STAR CONSTELLATION PAINTER (LUKIS RASI BINTANG)      -->
+    <!-- ===================================================================== -->
+    <div
+      id="constellationModal"
+      class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-3 sm:p-6"
+    >
+      <div
+        class="bg-[#0f172a] border-2 border-indigo-400/60 rounded-3xl shadow-2xl w-full max-w-xl overflow-hidden flex flex-col max-h-[92vh] text-indigo-100"
+      >
+        <div
+          class="bg-[#1e1b4b] px-5 py-3.5 border-b border-indigo-500/30 flex items-center justify-between"
+        >
+          <div class="flex items-center gap-2.5">
+            <span
+              class="w-9 h-9 rounded-2xl bg-indigo-900/80 border border-indigo-400/40 flex items-center justify-center text-lg"
+              >🌌</span
+            >
+            <div>
+              <h3
+                class="font-hand text-xl sm:text-2xl font-bold text-amber-200 leading-tight"
+              >
+                Lukis Rasi Bintang Langit Malam
+              </h3>
+              <p class="text-xs text-indigo-200/80">
+                Klik titik-titik bintang untuk menghubungkan garis rasi bintang di langit kebunmu!
+              </p>
+            </div>
+          </div>
+          <button
+            onclick="closeConstellationModal()"
+            class="w-8 h-8 rounded-full bg-indigo-950 hover:bg-rose-900 text-indigo-200 flex items-center justify-center border border-indigo-500/40 transition cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div class="p-4 sm:p-5 overflow-y-auto space-y-3.5">
+          <div
+            class="relative rounded-2xl overflow-hidden border-2 border-indigo-400/50 shadow-inner bg-[#090d16]"
+          >
+            <canvas
+              id="constellationPadCanvas"
+              width="500"
+              height="260"
+              class="w-full h-[200px] sm:h-[250px] block cursor-crosshair touch-none"
+            ></canvas>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <input
+              id="constellationNameInput"
+              type="text"
+              maxlength="28"
+              placeholder="Beri nama rasi bintang (mis: Bunga Angkasa, Rubah Malam)..."
+              class="flex-1 min-w-[180px] px-3.5 py-2 rounded-xl bg-indigo-950/90 border border-indigo-400/40 text-xs text-amber-100 placeholder-indigo-300/50 focus:outline-none focus:border-amber-300"
+            />
+            <button
+              type="button"
+              onclick="clearConstellationDraft()"
+              class="px-3 py-2 rounded-xl bg-indigo-900/70 hover:bg-indigo-800 text-indigo-200 border border-indigo-500/40 text-xs font-bold transition cursor-pointer"
+            >
+              Ulangi Titik
+            </button>
+            <button
+              type="button"
+              onclick="saveConstellationDraft()"
+              class="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-hand font-bold text-sm shadow-sm transition cursor-pointer"
+            >
+              ✨ Simpan ke Langit Malam
+            </button>
+          </div>
+
+          <div>
+            <div class="text-xs font-bold text-indigo-200 mb-1.5">
+              🌟 Rasi Bintang yang Bersinar di Kebunmu:
+            </div>
+            <div
+              id="savedConstellationsList"
+              class="flex flex-wrap items-center gap-1.5"
+            ></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Modular Application Scripts -->
     <script src="js/state.js"></script>
     <script src="js/dialog.js"></script>
@@ -5080,6 +5423,7 @@
     <script src="js/animals.js"></script>
     <script src="js/animal_studio.js"></script>
     <script src="js/exclusive_pets.js"></script>
+    <script src="js/painter_features.js"></script>
     <script src="js/studio.js"></script>
     <script src="js/gallery.js"></script>
     <script src="js/world.js"></script>

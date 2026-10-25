@@ -379,6 +379,11 @@ async function saveCurrentWorld(silent = false) {
         : 1.0,
     birthScale: 1,
     waterBounce: 0,
+    hasWatercolor: !!f.hasWatercolor,
+    hasCrayon: !!f.hasCrayon,
+    hasGlitter: !!f.hasGlitter,
+    hasGlowBrush: !!f.hasGlowBrush,
+    glowColor: f.glowColor || null,
     spriteDataUrl: f.imgCanvas ? f.imgCanvas.toDataURL("image/png") : "",
   }));
 
@@ -418,6 +423,8 @@ async function saveCurrentWorld(silent = false) {
           height: d.height,
           habitat: d.habitat || "land",
           rotation: d.rotation || 0,
+          paintingDataUrl: d.paintingDataUrl || null,
+          paintingTitle: d.paintingTitle || "",
         }))
       : [];
 
@@ -456,6 +463,7 @@ async function saveCurrentWorld(silent = false) {
     droppedSeeds: (typeof droppedSeeds !== "undefined" && Array.isArray(droppedSeeds)) ? droppedSeeds : [],
     dailyLoginState: (typeof dailyLoginState !== "undefined" && dailyLoginState) ? dailyLoginState : null,
     polaroidAlbum: (typeof polaroidAlbum !== "undefined" && Array.isArray(polaroidAlbum)) ? polaroidAlbum : [],
+    constellations: (typeof window !== "undefined" && Array.isArray(window.gardenConstellations)) ? window.gardenConstellations : [],
   };
 
   await dbSaveWorld(worldObj);
@@ -600,6 +608,11 @@ async function loadWorldById(worldId) {
             typeof sf.growthProgress === "number" ? sf.growthProgress : 1.0,
           birthScale: 1,
           waterBounce: 0,
+          hasWatercolor: !!sf.hasWatercolor,
+          hasCrayon: !!sf.hasCrayon,
+          hasGlitter: !!sf.hasGlitter,
+          hasGlowBrush: !!sf.hasGlowBrush,
+          glowColor: sf.glowColor || null,
         });
       }
     }
@@ -679,10 +692,19 @@ async function loadWorldById(worldId) {
           height: sd.height || 40,
           habitat: sd.habitat || (sd.type === "bridge" ? "both" : "land"),
           rotation: sd.rotation || 0,
+          paintingDataUrl: sd.paintingDataUrl || null,
+          paintingTitle: sd.paintingTitle || "",
           birthScale: 1,
         });
       }
     }
+  }
+
+  // Restore Night Sky Constellations
+  if (typeof window !== "undefined") {
+    window.gardenConstellations = Array.isArray(worldObj.constellations)
+      ? worldObj.constellations
+      : [];
   }
 
   // Restore Season
