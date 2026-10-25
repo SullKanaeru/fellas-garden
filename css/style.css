@@ -813,6 +813,91 @@ body {
         padding: 2px 4px !important;
         font-size: 9px !important;
     }
+
+    /* -------------------------------------------------------------
+       7. PHOTO STUDIO & POLAROID CAMERA MODAL (#photoStudioModal)
+       ------------------------------------------------------------- */
+    #photoStudioModal .p-3.sm\:p-5,
+    #photoStudioModal .p-4.sm\:p-5 {
+        padding: 6px 12px !important;
+        flex-direction: row !important;
+        align-items: stretch !important;
+        justify-content: center !important;
+        gap: 10px !important;
+        max-height: calc(96vh - 84px) !important;
+        overflow: hidden !important;
+        flex: 1 1 auto !important;
+    }
+
+    /* Left: Live Polaroid Preview Box */
+    #photoStudioModal .photo-preview-wrap,
+    #photoStudioModal .bg-\[\#e9f0e3\] {
+        width: auto !important;
+        max-width: 260px !important;
+        min-width: 180px !important;
+        padding: 6px 8px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        border-radius: 14px !important;
+        flex: 0 0 auto !important;
+    }
+    #photoStudioModal #photoPreviewCanvas {
+        max-height: min(48vh, 185px) !important;
+        max-width: 100% !important;
+        object-fit: contain !important;
+        border-radius: 6px !important;
+    }
+
+    /* Right: Controls (Filters, Frames, Caption) */
+    #photoStudioModal .photo-controls-wrap,
+    #photoStudioModal .photo-controls-wrap.bg-white\/80 {
+        flex: 1 1 auto !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: space-between !important;
+        padding: 8px 12px !important;
+        gap: 6px !important;
+        border-radius: 14px !important;
+        max-height: min(52vh, 205px) !important;
+        overflow-y: auto !important;
+    }
+    #photoStudioModal label {
+        font-size: 11px !important;
+        margin-bottom: 2px !important;
+        line-height: 1.2 !important;
+    }
+    #photoStudioModal .flex-wrap {
+        gap: 4px !important;
+    }
+    #photoStudioModal button[id^="photoFilterBtn-"],
+    #photoStudioModal button[id^="photoFrameBtn-"] {
+        padding: 2px 7px !important;
+        font-size: 10px !important;
+        border-radius: 10px !important;
+    }
+    #photoStudioModal #photoCaptionInput {
+        padding: 3px 8px !important;
+        font-size: 11px !important;
+        height: 28px !important;
+        border-radius: 8px !important;
+    }
+
+    /* Footer */
+    #photoStudioModal .bg-\[\#eef5e6\].border-t {
+        padding: 5px 14px !important;
+        min-height: 38px !important;
+        gap: 8px !important;
+    }
+    #photoStudioModal .bg-\[\#eef5e6\].border-t button {
+        padding: 3px 12px !important;
+        font-size: 11px !important;
+        border-radius: 12px !important;
+    }
+    #photoStudioModal .bg-\[\#eef5e6\].border-t svg {
+        width: 13px !important;
+        height: 13px !important;
+    }
 }
 
 /* ========================================================

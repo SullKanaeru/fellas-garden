@@ -4584,11 +4584,11 @@
 
         <!-- Body -->
         <div
-          class="p-4 sm:p-5 overflow-y-auto flex flex-col items-center gap-4"
+          class="p-3 sm:p-5 overflow-y-auto flex flex-col md:flex-row items-center md:items-stretch justify-center gap-3 sm:gap-4 flex-1"
         >
           <!-- Live Polaroid Canvas Preview -->
           <div
-            class="w-full flex items-center justify-center bg-[#e9f0e3] rounded-2xl p-3 sm:p-4 border border-[#c5d9b7] shadow-inner"
+            class="photo-preview-wrap flex-shrink-0 flex items-center justify-center bg-[#e9f0e3] rounded-2xl p-2.5 sm:p-4 border border-[#c5d9b7] shadow-inner"
           >
             <canvas
               id="photoPreviewCanvas"
@@ -4598,47 +4598,47 @@
 
           <!-- Controls Grid -->
           <div
-            class="w-full grid grid-cols-1 md:grid-cols-2 gap-3 bg-white/80 p-3.5 rounded-2xl border border-[#d7e2ce]"
+            class="photo-controls-wrap flex-1 flex flex-col justify-between gap-2.5 bg-white/80 p-3 sm:p-3.5 rounded-2xl border border-[#d7e2ce] min-w-0"
           >
             <!-- Filter Selector -->
             <div>
               <label
-                class="block font-hand font-bold text-xs sm:text-sm text-[#2B5B35] mb-1.5"
+                class="block font-hand font-bold text-xs sm:text-sm text-[#2B5B35] mb-1"
                 >Filter Warna Estetik:</label
               >
               <div class="flex flex-wrap gap-1.5">
                 <button
                   id="photoFilterBtn-normal"
                   onclick="setPhotoFilter('normal')"
-                  class="px-3 py-1.5 rounded-full text-xs font-hand font-bold bg-[#2B5B35] text-white"
+                  class="px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs font-hand font-bold bg-[#2B5B35] text-white"
                 >
                   Alami
                 </button>
                 <button
                   id="photoFilterBtn-golden"
                   onclick="setPhotoFilter('golden')"
-                  class="px-3 py-1.5 rounded-full text-xs font-hand font-bold bg-white text-[#2B5B35] border border-[#c5d9b7]"
+                  class="px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs font-hand font-bold bg-white text-[#2B5B35] border border-[#c5d9b7]"
                 >
                   Golden Hour
                 </button>
                 <button
                   id="photoFilterBtn-vintage"
                   onclick="setPhotoFilter('vintage')"
-                  class="px-3 py-1.5 rounded-full text-xs font-hand font-bold bg-white text-[#2B5B35] border border-[#c5d9b7]"
+                  class="px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs font-hand font-bold bg-white text-[#2B5B35] border border-[#c5d9b7]"
                 >
                   Cottagecore
                 </button>
                 <button
                   id="photoFilterBtn-sakura"
                   onclick="setPhotoFilter('sakura')"
-                  class="px-3 py-1.5 rounded-full text-xs font-hand font-bold bg-white text-[#2B5B35] border border-[#c5d9b7]"
+                  class="px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs font-hand font-bold bg-white text-[#2B5B35] border border-[#c5d9b7]"
                 >
                   Sakura Pink
                 </button>
                 <button
                   id="photoFilterBtn-twilight"
                   onclick="setPhotoFilter('twilight')"
-                  class="px-3 py-1.5 rounded-full text-xs font-hand font-bold bg-white text-[#2B5B35] border border-[#c5d9b7]"
+                  class="px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs font-hand font-bold bg-white text-[#2B5B35] border border-[#c5d9b7]"
                 >
                   Fairy Twilight
                 </button>
@@ -4648,35 +4648,35 @@
             <!-- Frame Selector -->
             <div>
               <label
-                class="block font-hand font-bold text-xs sm:text-sm text-[#2B5B35] mb-1.5"
+                class="block font-hand font-bold text-xs sm:text-sm text-[#2B5B35] mb-1"
                 >Pilihan Bingkai Foto:</label
               >
               <div class="flex flex-wrap gap-1.5">
                 <button
                   id="photoFrameBtn-polaroid"
                   onclick="setPhotoFrame('polaroid')"
-                  class="px-3 py-1.5 rounded-full text-xs font-hand font-bold bg-[#2B5B35] text-white"
+                  class="px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs font-hand font-bold bg-[#2B5B35] text-white"
                 >
                   Polaroid Klasik
                 </button>
                 <button
                   id="photoFrameBtn-botanical"
                   onclick="setPhotoFrame('botanical')"
-                  class="px-3 py-1.5 rounded-full text-xs font-hand font-bold bg-white text-[#2B5B35] border border-[#c5d9b7]"
+                  class="px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs font-hand font-bold bg-white text-[#2B5B35] border border-[#c5d9b7]"
                 >
                   Jurnal Botani
                 </button>
                 <button
                   id="photoFrameBtn-sakura_frame"
                   onclick="setPhotoFrame('sakura_frame')"
-                  class="px-3 py-1.5 rounded-full text-xs font-hand font-bold bg-white text-[#2B5B35] border border-[#c5d9b7]"
+                  class="px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs font-hand font-bold bg-white text-[#2B5B35] border border-[#c5d9b7]"
                 >
                   Sakura Cute
                 </button>
                 <button
                   id="photoFrameBtn-full"
                   onclick="setPhotoFrame('full')"
-                  class="px-3 py-1.5 rounded-full text-xs font-hand font-bold bg-white text-[#2B5B35] border border-[#c5d9b7]"
+                  class="px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs font-hand font-bold bg-white text-[#2B5B35] border border-[#c5d9b7]"
                 >
                   Full HD
                 </button>
@@ -4684,7 +4684,7 @@
             </div>
 
             <!-- Custom Caption Input -->
-            <div class="md:col-span-2">
+            <div>
               <label
                 for="photoCaptionInput"
                 class="block font-hand font-bold text-xs sm:text-sm text-[#2B5B35] mb-1"
@@ -4697,7 +4697,7 @@
                 value="Sore tenang di kebun kecilku"
                 oninput="renderPhotoStudioPreview()"
                 placeholder="Tulis pesan manis untuk fotomu..."
-                class="w-full px-3.5 py-2 rounded-xl border border-[#b7cfa6] bg-white text-sm font-hand font-bold text-[#2B5B35] focus:outline-none focus:ring-2 focus:ring-[#7DB852]"
+                class="w-full px-3 py-1.5 sm:py-2 rounded-xl border border-[#b7cfa6] bg-white text-xs sm:text-sm font-hand font-bold text-[#2B5B35] focus:outline-none focus:ring-2 focus:ring-[#7DB852]"
               />
             </div>
           </div>
