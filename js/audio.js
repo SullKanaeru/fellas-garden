@@ -319,15 +319,15 @@ function renderBgmTracklist() {
     .map((track, idx) => {
       const isCurrent = idx === currentBgmIndex;
       return `
-            <button onclick="selectBgmTrack(${idx})" class="w-full flex items-center justify-between p-2 rounded-2xl text-left transition active:scale-98 ${isCurrent ? "bg-[#2B5B35] text-white shadow-xs font-bold" : "bg-white hover:bg-[#eef5e6] text-[#2B5B35] border border-[#d2e0cb]"}">
-                <div class="flex items-center gap-2 truncate pr-2">
-                    <span class="text-xs shrink-0">${isCurrent ? (isBgmMuted ? "⏸️" : "▶️") : "🎵"}</span>
+            <button onclick="selectBgmTrack(${idx})" class="w-full flex items-center justify-between px-2 py-1 rounded-xl text-left transition active:scale-98 ${isCurrent ? "bg-[#2B5B35] text-white shadow-xs font-bold" : "bg-white hover:bg-[#eef5e6] text-[#2B5B35] border border-[#d2e0cb]"}">
+                <div class="flex items-center gap-1.5 truncate pr-1.5 min-w-0">
+                    <span class="text-[11px] shrink-0">${isCurrent ? (isBgmMuted ? "⏸️" : "▶️") : "🎵"}</span>
                     <div class="truncate">
-                        <div class="text-xs font-hand truncate leading-tight">${track.title}</div>
-                        <div class="text-[10px] ${isCurrent ? "text-emerald-100 font-normal" : "text-gray-400"}">${track.tag}</div>
+                        <div class="text-[11px] font-hand truncate leading-tight">${track.title}</div>
+                        <div class="text-[9px] ${isCurrent ? "text-emerald-100 font-normal" : "text-gray-400"} truncate leading-none">${track.tag}</div>
                     </div>
                 </div>
-                ${isCurrent ? '<span class="text-[10px] font-bold tracking-wide px-2 py-0.5 rounded-full bg-white/20 text-white shrink-0">Memutar</span>' : '<span class="text-[10px] text-gray-400 shrink-0"># ' + (idx + 1) + "</span>"}
+                ${isCurrent ? '<span class="text-[9px] font-bold tracking-tight px-1.5 py-0.5 rounded-full bg-white/20 text-white shrink-0">Putar</span>' : '<span class="text-[9px] text-gray-400 shrink-0">#' + (idx + 1) + "</span>"}
             </button>
         `;
     })
