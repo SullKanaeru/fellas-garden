@@ -2457,41 +2457,151 @@
         }
 
         /**
+         * Sistem Hujan Atmosferik Layar Penuh (Screen-Space Rain)
+         * Tetesan hujan jatuh dari langit melintasi seluruh layar dengan ukuran & kecepatan alami
+         * bebas dari distorsi zoom in / zoom out kamera kebun.
+         */
+        var screenRainStreaks = [];
+
+        function updateAndDrawScreenRain(targetCtx, dt) {
+            const isShower = isRainingShower && rainShowerTimer > 0;
+            const isWeatherRain = typeof dynamicWeather !== 'undefined' && (dynamicWeather === 'drizzle' || dynamicWeather === 'thunderstorm');
+
+            if (!isShower && !isWeatherRain) {
+                if (screenRainStreaks.length > 0) {
+                    screenRainStreaks = [];
+                }
+                return;
+            }
+
+            // Parameter hujan berdasarkan mode (shower / thunderstorm / drizzle)
+            let spawnCount = 0;
+            let minSpeed = 16;
+            let maxSpeed = 22;
+            let minLen = 16;
+            let maxLen = 26;
+            let streakColor = 'rgba(125, 190, 235, ';
+
+            if (isShower) {
+                spawnCount = Math.floor(6 + Math.random() * 4); // 6 - 9 garis hujan / frame
+            } else if (dynamicWeather === 'thunderstorm') {
+                spawnCount = Math.floor(8 + Math.random() * 5); // 8 - 12 garis hujan / frame
+                minSpeed = 18;
+                maxSpeed = 25;
+                minLen = 20;
+                maxLen = 32;
+                streakColor = 'rgba(150, 205, 245, ';
+            } else if (dynamicWeather === 'drizzle') {
+                spawnCount = Math.floor(3 + Math.random() * 3); // 3 - 5 garis hujan / frame
+                minSpeed = 12;
+                maxSpeed = 17;
+                minLen = 12;
+                maxLen = 20;
+            }
+
+            // Buat tetesan baru dari atas layar melintasi seluruh bidang pandang
+            for (let i = 0; i < spawnCount; i++) {
+                const sx = Math.random() * (screenW + 140) - 70;
+                const sy = -25 - Math.random() * 40;
+                const vy = minSpeed + Math.random() * (maxSpeed - minSpeed);
+                const vx = -1.4;
+                const targetSy = 80 + Math.random() * (screenH - 90);
+
+                screenRainStreaks.push({
+                    x: sx,
+                    y: sy,
+                    vx: vx,
+                    vy: vy,
+                    targetY: targetSy,
+                    length: minLen + Math.random() * (maxLen - minLen),
+                    alpha: 0.6 + Math.random() * 0.3
+                });
+            }
+
+            // Gambar dan update partikel hujan di ruang layar (screen coordinates)
+            targetCtx.save();
+            targetCtx.lineWidth = 1.5;
+
+            for (let i = screenRainStreaks.length - 1; i >= 0; i--) {
+                const p = screenRainStreaks[i];
+                p.x += p.vx;
+                p.y += p.vy;
+
+                targetCtx.strokeStyle = `${streakColor}${p.alpha})`;
+                targetCtx.beginPath();
+                targetCtx.moveTo(p.x, p.y);
+                targetCtx.lineTo(p.x - p.vx * 0.7, p.y - p.length);
+                targetCtx.stroke();
+
+                // Saat tetesan mencapai target pendaratan
+                if (p.y >= p.targetY) {
+                    // Konversi koordinat layar ke koordinat dunia kebun
+                    const wp = screenToWorld(p.x, p.targetY);
+                    const onWater = typeof isPointOnWater === 'function' && isPointOnWater(wp.x, wp.y);
+                    const onGrass = !onWater && typeof isPointOnGrass === 'function' && isPointOnGrass(wp.x, wp.y);
+
+                    if (onWater) {
+                        // Riak air konsentris di atas kolam/sungai
+                        particles.push({
+                            type: 'ripple',
+                            x: wp.x,
+                            y: wp.y,
+                            r: 2,
+                            maxR: 12 + Math.random() * 8,
+                            alpha: 0.7,
+                            color: 'rgba(130, 195, 240, '
+                        });
+                        if (Math.random() < 0.25) {
+                            particles.push({
+                                type: 'droplet',
+                                x: wp.x + (Math.random() - 0.5) * 4,
+                                y: wp.y - 2,
+                                vx: (Math.random() - 0.5) * 1.0,
+                                vy: -1.2 - Math.random() * 0.8,
+                                size: 2.0,
+                                targetY: wp.y,
+                                alpha: 0.75
+                            });
+                        }
+                    } else if (onGrass) {
+                        // Percikan embun & kilau kesegaran di atas rumput
+                        particles.push({
+                            type: 'ripple',
+                            x: wp.x,
+                            y: wp.y,
+                            r: 1.5,
+                            maxR: 7 + Math.random() * 4,
+                            alpha: 0.45,
+                            color: 'rgba(165, 218, 175, '
+                        });
+                        if (Math.random() < 0.28) {
+                            particles.push({
+                                type: 'sparkle',
+                                x: wp.x,
+                                y: wp.y - 2,
+                                vx: (Math.random() - 0.5) * 1.2,
+                                vy: -0.8 - Math.random() * 0.8,
+                                size: 2.0,
+                                color: Math.random() < 0.5 ? '#98E4B8' : '#7AC5F5',
+                                alpha: 0.85
+                            });
+                        }
+                    }
+
+                    screenRainStreaks.splice(i, 1);
+                }
+            }
+
+            targetCtx.restore();
+        }
+
+        /**
          * Update proses hujan berkelanjutan per frame selama durasi hujan
          */
         function updateRainShower(dt) {
             if (!isRainingShower || rainShowerTimer <= 0) return;
 
             rainShowerTimer -= dt;
-
-            // Munculkan 6 - 10 tetesan hujan diagonal setiap frame yang jatuh pas di rumput atau air
-            const count = Math.floor(6 + Math.random() * 5);
-            for (let i = 0; i < count; i++) {
-                const target = getRainTargetOnTerrain();
-                if (!target) continue;
-
-                const rx = target.x;
-                const ry = target.y;
-                const fallDist = 130 + Math.random() * 160;
-                const vy = 11 + Math.random() * 5;
-                const vx = -1.4;
-                const fallTime = fallDist / vy;
-                const startX = rx - (vx * fallTime);
-                const startY = ry - fallDist;
-
-                particles.push({
-                    type: 'rainStreak',
-                    x: startX,
-                    y: startY,
-                    vx: vx,
-                    vy: vy,
-                    targetY: ry,
-                    landingX: rx,
-                    targetType: target.onWater ? 'water' : 'grass',
-                    length: 15 + Math.random() * 12,
-                    alpha: 0.65 + Math.random() * 0.3
-                });
-            }
 
             // Selama hujan berlangsung, bunga tetap terhidrasi maksimal
             flowers.forEach(f => {
@@ -3946,7 +4056,10 @@
 
             ctx.restore();
 
-            // 8. Atmospheric Rain Mist Overlay (in Screen Coordinates, drawn above world)
+            // 8. Update & Draw Atmospheric Screen-Space Rain (Tetesan Hujan Layar Penuh Bebas Distorsi Zoom)
+            updateAndDrawScreenRain(ctx, dt);
+
+            // 9. Atmospheric Rain Mist Overlay (in Screen Coordinates, drawn above world)
             if (isRainingShower && rainShowerTimer > 0) {
                 const elapsed = rainShowerDuration - rainShowerTimer;
                 let rainAlpha = 1.0;
@@ -4700,6 +4813,7 @@
         window.exitPlantingMode = exitPlantingMode;
         window.cycleWitherSpeed = cycleWitherSpeed;
         window.rainShowerAll = rainShowerAll;
+        window.updateAndDrawScreenRain = updateAndDrawScreenRain;
         window.getIslandBoundingBox = getIslandBoundingBox;
         window.getRainTargetOnTerrain = getRainTargetOnTerrain;
         window.toggleDayNightMode = toggleDayNightMode;
