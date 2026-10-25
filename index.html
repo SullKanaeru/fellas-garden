@@ -260,31 +260,6 @@
       </div>
     </header>
 
-    <!-- TEMPORARY EXCLUSIVE PET SPAWNER FLOATING PILL -->
-    <div
-      id="exclusiveSpawnerQuickContainer"
-      class="fixed top-14 sm:top-16 left-2 sm:left-4 z-30 pointer-events-auto flex items-center gap-1"
-    >
-      <button
-        id="exclusivePetSpawnerQuickBtn"
-        onclick="openExclusivePetSpawnerModal()"
-        class="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-500 via-rose-500 to-purple-600 hover:from-amber-600 hover:to-purple-700 text-white font-bold text-xs sm:text-sm shadow-lg hover:shadow-xl transition active:scale-95 border-2 border-white select-none cursor-pointer"
-        title="Lihat & Spawn 15 Pet Eksklusif Telur Misterius (Chibi Kurama, Naga, Rusa Kristal, dll)"
-      >
-        <span class="text-sm animate-pulse">✨</span>
-        <span class="font-hand tracking-wide">Spawn Pet Eksklusif</span>
-        <span class="bg-white/25 text-[10px] px-1.5 py-0.2 rounded-full font-mono">15 Pet</span>
-      </button>
-      <button
-        onclick="document.getElementById('exclusiveSpawnerQuickContainer').style.display='none'"
-        class="w-5 h-5 rounded-full bg-white/70 hover:bg-white text-gray-500 hover:text-gray-800 text-[10px] flex items-center justify-center border border-gray-300 shadow-xs transition"
-        title="Sembunyikan tombol pintas (dapat dibuka kembali dari menu Hewan atau Galeri)"
-      >
-        ✕
-      </button>
-    </div>
-
-
     <!-- ACHIEVEMENT UNLOCK TOAST NOTIFICATION -->
     <div
       id="achievementToast"
@@ -2289,24 +2264,25 @@
         <!-- Body: Summon Cards + Current Animals List -->
         <div class="p-4 sm:p-5 overflow-y-auto max-h-[70vh] space-y-5">
 
-          <!-- Exclusive Pet Spawner Quick Banner -->
+          <!-- Exclusive Pet Discovery Info Banner -->
           <div class="p-3 rounded-2xl bg-gradient-to-r from-amber-50 via-orange-50 to-pink-50 border-2 border-amber-300 shadow-sm flex items-center justify-between gap-2.5">
             <div class="flex items-center gap-2.5">
               <span class="text-2xl animate-bounce">🥚</span>
               <div>
                 <div class="font-hand font-bold text-xs sm:text-sm text-amber-900 flex items-center gap-1.5">
                   <span>Pet Eksklusif Misterius</span>
-                  <span class="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-amber-500 text-white">15 Pet Unik</span>
+                  <span class="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-amber-500 text-white">15 Pet Telur</span>
                 </div>
-                <div class="text-[10px] sm:text-[11px] text-gray-600 font-medium">Lihat Chibi Kurama, Naga Zamrud, Rusa Kristal & makhluk lainnya</div>
+                <div class="text-[10px] sm:text-[11px] text-gray-600 font-medium">Tetaskan Telur Misterius yang muncul di kebun untuk menemukan mereka!</div>
               </div>
             </div>
             <button
               type="button"
-              onclick="closeAnimalModal(); openExclusivePetSpawnerModal();"
-              class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-600 hover:to-rose-600 text-white font-bold text-xs shadow-xs transition active:scale-95 shrink-0 whitespace-nowrap cursor-pointer"
+              onclick="closeAnimalModal(); openFlowerGalleryModal(); openGalleryTab('exclusive');"
+              class="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-xs transition active:scale-95 shrink-0 whitespace-nowrap cursor-pointer"
+              title="Lihat Koleksi Pet di Galeri"
             >
-              ✨ Buka Spawner
+              📖 Galeri Pet
             </button>
           </div>
 
@@ -2739,134 +2715,7 @@
     </div>
 
     
-    <!-- EXCLUSIVE PET SPAWNER MODAL (Preview & Spawn 15 Exclusive Mythical Pets) -->
-    <div
-      id="exclusivePetSpawnerModal"
-      class="hidden fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-5 bg-black/50 backdrop-blur-sm pointer-events-auto transition-opacity duration-200"
-    >
-      <div
-        class="relative w-full max-w-4xl bg-[#FDFBF2] border-2 sm:border-[3px] border-[#3a5a40] rounded-3xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden"
-      >
-        <!-- Modal Header -->
-        <div
-          class="px-4 sm:px-6 py-3 bg-[#fbf5e6] border-b border-[#e2d5bc] flex items-center justify-between shrink-0"
-        >
-          <div class="flex items-center gap-2.5">
-            <div
-              class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-amber-400 to-rose-500 text-white flex items-center justify-center shadow-sm text-lg"
-            >
-              🥚
-            </div>
-            <div>
-              <div class="flex items-center gap-2">
-                <h2
-                  class="font-garden-title text-base sm:text-xl font-bold text-[#2B5B35] leading-none"
-                >
-                  Preview & Spawn Pet Eksklusif
-                </h2>
-                <span
-                  class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300"
-                  >15 Makhluk Unik</span
-                >
-              </div>
-              <p class="text-[11px] sm:text-xs text-gray-500 font-hand mt-0.5">
-                Pilih makhluk unik di bawah untuk dihadirkan ke kebun, atau tekan Spawn Semua!
-              </p>
-            </div>
-          </div>
-          <button
-            onclick="closeExclusivePetSpawnerModal()"
-            class="w-8 h-8 rounded-full bg-white/80 hover:bg-white border border-[#c5d9b7] text-[#2B5B35] flex items-center justify-center transition hover:rotate-90 active:scale-95"
-            title="Tutup Modal"
-          >
-            <svg
-              class="w-4 h-4"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2.5"
-              stroke-linecap="round"
-            >
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </button>
-        </div>
-
-        <!-- Quick Action Toolbar -->
-        <div
-          class="px-4 sm:px-6 py-2.5 bg-[#f6faee] border-b border-[#d8e6cc] flex flex-wrap items-center justify-between gap-2 shrink-0"
-        >
-          <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-            <button
-              onclick="spawnAllExclusivePets()"
-              class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white text-xs font-bold shadow-sm transition active:scale-95 flex items-center gap-1.5 cursor-pointer"
-              title="Hadirkan seluruh 15 pet sekaligus ke kebun"
-            >
-              <span>🌟</span>
-              <span>Spawn SEMUA 15 Pet!</span>
-            </button>
-            <button
-              onclick="unlockAllExclusivePetsInGallery()"
-              class="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-sm transition active:scale-95 flex items-center gap-1.5 cursor-pointer"
-              title="Buka status 15 pet di indeks galeri misterius"
-            >
-              <span>🔓</span>
-              <span>Buka di Galeri</span>
-            </button>
-            <button
-              onclick="clearExclusivePetsFromGarden()"
-              class="px-3 py-1.5 rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-800 border border-rose-300 text-xs font-bold transition active:scale-95 flex items-center gap-1.5 cursor-pointer"
-              title="Bersihkan hanya pet eksklusif dari kebun"
-            >
-              <span>🧹</span>
-              <span>Hapus Pet di Kebun</span>
-            </button>
-          </div>
-
-          <!-- Filter tier pills -->
-          <div class="flex items-center gap-1 text-[11px] font-hand font-bold">
-            <button
-              onclick="filterExclusiveSpawner('all')"
-              id="exFilter_all"
-              class="px-2.5 py-1 rounded-full bg-[#2B5B35] text-white transition cursor-pointer"
-              >Semua (15)</button
-            >
-            <button
-              onclick="filterExclusiveSpawner('legendary')"
-              id="exFilter_legendary"
-              class="px-2.5 py-1 rounded-full bg-white hover:bg-orange-50 text-orange-800 border border-orange-200 transition cursor-pointer"
-              >🔥 Legendary (3)</button
-            >
-            <button
-              onclick="filterExclusiveSpawner('epic')"
-              id="exFilter_epic"
-              class="px-2.5 py-1 rounded-full bg-white hover:bg-purple-50 text-purple-800 border border-purple-200 transition cursor-pointer"
-              >⭐ Epic (6)</button
-            >
-            <button
-              onclick="filterExclusiveSpawner('rare')"
-              id="exFilter_rare"
-              class="px-2.5 py-1 rounded-full bg-white hover:bg-emerald-50 text-emerald-800 border border-emerald-200 transition cursor-pointer"
-              >✨ Rare (6)</button
-            >
-          </div>
-        </div>
-
-        <!-- Scrollable Grid Body -->
-        <div class="p-3 sm:p-5 overflow-y-auto flex-1 max-h-[calc(92vh-130px)]">
-          <div
-            id="exclusiveSpawnerGrid"
-            class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3"
-          >
-            <!-- Populated via renderExclusivePetSpawnerGrid() -->
-          </div>
-        </div>
-      </div>
-    </div>
-
-
-        <!-- ============================================================== -->
+    <!-- ============================================================== -->
     <!-- CUSTOM ANIMAL STUDIO FULLSCREEN WORKSPACE (Ibis Paint Style)   -->
     <!-- ============================================================== -->
     <div

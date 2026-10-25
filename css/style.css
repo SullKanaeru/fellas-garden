@@ -333,7 +333,6 @@ body {
     #decorModal > div > div:first-child,
     #animalModal > div > div:first-child,
     #worldManagerModal > div > div:first-child,
-    #exclusivePetSpawnerModal > div > div:first-child,
     #journalModal > div > div:first-child,
     #newWorldModal > div > div:first-child,
     #saveToGalleryModal > div > div:first-child,
@@ -725,54 +724,6 @@ body {
     #worldsListContainer button svg {
         width: 12px !important;
         height: 12px !important;
-    }
-
-    /* -------------------------------------------------------------
-       6. TEMPORARY EXCLUSIVE PET SPAWNER MODAL (#exclusivePetSpawnerModal)
-       ------------------------------------------------------------- */
-    #exclusivePetSpawnerModal .p-4.sm\:p-5 {
-        padding: 6px 10px !important;
-        max-height: calc(96vh - 46px) !important;
-        space-y: 6px !important;
-    }
-    #exclusivePetSpawnerModal .p-3.rounded-2xl {
-        padding: 4px 8px !important;
-        margin-bottom: 4px !important;
-    }
-    #exclusivePetSpawnerModal .p-3.rounded-2xl button {
-        padding: 2px 6px !important;
-        font-size: 10px !important;
-    }
-    #exclusiveSpawnerGrid {
-        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)) !important;
-        gap: 6px !important;
-    }
-    #exclusiveSpawnerGrid > div {
-        padding: 6px !important;
-        border-radius: 12px !important;
-    }
-    #exclusiveSpawnerGrid canvas {
-        width: 48px !important;
-        height: 48px !important;
-        border-radius: 8px !important;
-    }
-    #exclusiveSpawnerGrid h3 {
-        font-size: 11px !important;
-        line-height: 1.1 !important;
-    }
-    #exclusiveSpawnerGrid p.italic {
-        font-size: 8px !important;
-    }
-    #exclusiveSpawnerGrid p.line-clamp-2 {
-        display: none !important;
-    }
-    #exclusiveSpawnerGrid .mt-3.pt-2\.5 {
-        margin-top: 4px !important;
-        padding-top: 3px !important;
-    }
-    #exclusiveSpawnerGrid button[onclick*="spawnSingleExclusivePet"] {
-        padding: 2px 4px !important;
-        font-size: 9px !important;
     }
 
     /* -------------------------------------------------------------
@@ -1223,9 +1174,6 @@ body.zen-mode #zenModeRestorePill {
         padding: 5px 12px !important;
         font-size: 11px !important;
         top: 80px !important;
-    }
-    #exclusiveSpawnerQuickContainer {
-        top: 78px !important;
     }
 
     /* Sound Dropdown Widget */

@@ -3906,8 +3906,7 @@ function toggleAsmrFocusMode() {
         '#bottomDockNav', 
         'nav', 
         '#animalFollowBanner', 
-        '#flowerCountBadgeContainer',
-        '#exclusiveSpawnerQuickContainer'
+        '#flowerCountBadgeContainer'
     ];
 
     uiSelectors.forEach(sel => {

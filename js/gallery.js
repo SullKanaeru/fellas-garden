@@ -227,18 +227,15 @@ function switchGalleryTab(tabName) {
             searchInput.value = '';
         }
         if (tipText) {
-            tipText.innerHTML = 'Tips: Pecahkan <b>Telur Misterius 🥚✨</b> saat cuaca pelangi atau badai untuk membuka pet langka! <button onclick="closeGalleryModal(); openExclusivePetSpawnerModal();" class="ml-1 px-2 py-0.5 rounded-full bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 font-bold text-[11px] cursor-pointer inline-flex items-center gap-1">✨ Buka Spawner</button>';
+            tipText.innerHTML = 'Tips: Temukan dan rawat <b>Telur Misterius 🥚✨</b> yang muncul berkilau di kebun untuk menetaskan pet eksklusif langka!';
         }
         if (headerActionBtn) {
             headerActionBtn.innerHTML = `
-                <span class="text-xs">🥚</span>
-                <span>Telur Misterius</span>
+                <span class="text-xs">🌿</span>
+                <span>Kembali ke Kebun</span>
             `;
             headerActionBtn.onclick = () => {
                 closeGalleryModal();
-                if (typeof spawnMysteryEgg === 'function') {
-                    spawnMysteryEgg();
-                }
             };
         }
     }
