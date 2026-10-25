@@ -137,39 +137,96 @@ body {
    RESPONSIVE OPTIMIZATIONS: PORTRAIT & LANDSCAPE FOR MOBILE PHONES
    ==================================================================== */
 
-/* Narrow mobile screen in Portrait mode */
-@media (max-width: 640px) and (orientation: portrait) {
+/* ====================================================================
+   SIDEBAR LAUNCHER: STRICT 3-CARD VISIBLE SYSTEM (PORTRAIT & LANDSCAPE)
+   ==================================================================== */
+
+/* Desktop / Default (Width > 768px and Height > 520px): EXACTLY 3 BOXES */
+#sidebarScrollContainer {
+    height: 276px;
+    max-height: 276px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scroll-snap-type: y mandatory;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 2px;
+    box-sizing: border-box;
+}
+
+.launcher-btn {
+    width: 92px;
+    height: 84px;
+    min-height: 84px;
+    max-height: 84px;
+    flex-shrink: 0;
+    scroll-snap-align: start;
+    box-sizing: border-box;
+}
+
+/* Portrait Mobile Phone View: EXACTLY 3 BOXES VISIBLE */
+@media (max-width: 768px) and (orientation: portrait), (max-width: 480px) {
     .sidebar-launchers {
         right: 8px !important;
+        gap: 4px !important;
+        top: 50% !important;
+        transform: translateY(-50%) !important;
+    }
+    #sidebarScrollContainer {
+        height: 186px !important;
+        max-height: 186px !important;
+        min-height: 186px !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        scroll-snap-type: y mandatory !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
         gap: 6px !important;
+        padding: 3px 2px !important;
+        box-sizing: border-box !important;
     }
     .launcher-btn {
-        width: 68px !important;
-        height: 68px !important;
-        padding: 5px 3px !important;
-        border-radius: 16px !important;
+        width: 60px !important;
+        height: 56px !important;
+        min-height: 56px !important;
+        max-height: 56px !important;
+        flex-shrink: 0 !important;
+        scroll-snap-align: start !important;
+        padding: 3px 2px !important;
+        border-radius: 14px !important;
+        box-sizing: border-box !important;
     }
     .launcher-btn div {
-        width: 32px !important;
-        height: 32px !important;
+        width: 28px !important;
+        height: 28px !important;
+        border-radius: 8px !important;
     }
     .launcher-btn svg {
-        width: 18px !important;
-        height: 18px !important;
+        width: 16px !important;
+        height: 16px !important;
     }
     .launcher-btn span.font-hand {
-        font-size: 10px !important;
+        font-size: 9px !important;
         line-height: 1.1 !important;
         white-space: normal !important;
         text-align: center !important;
-        max-width: 62px !important;
+        max-width: 56px !important;
         display: -webkit-box !important;
         -webkit-line-clamp: 2 !important;
         -webkit-box-orient: vertical !important;
     }
+    #sidebarScrollUpBtn,
+    #sidebarScrollDownBtn {
+        width: 32px !important;
+        height: 16px !important;
+        padding: 0 !important;
+    }
 }
 
-/* Landscape mode on smartphones (Height <= 520px) */
+/* Landscape mode on smartphones (Height <= 520px): EXACTLY 3 BOXES VISIBLE */
 @media (max-height: 520px) and (orientation: landscape) {
     header#topHeader, header {
         top: 6px !important;
@@ -180,34 +237,64 @@ body {
     }
     .sidebar-launchers {
         right: 8px !important;
-        gap: 4px !important;
+        gap: 3px !important;
         top: 50% !important;
         transform: translateY(-50%) !important;
     }
+    #sidebarScrollContainer {
+        height: 150px !important;
+        max-height: 150px !important;
+        min-height: 150px !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        scroll-snap-type: y mandatory !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        gap: 4px !important;
+        padding: 2px !important;
+        box-sizing: border-box !important;
+    }
     .launcher-btn {
-        width: 58px !important;
-        height: 52px !important;
-        padding: 3px 2px !important;
+        width: 52px !important;
+        height: 46px !important;
+        min-height: 46px !important;
+        max-height: 46px !important;
+        flex-shrink: 0 !important;
+        scroll-snap-align: start !important;
+        padding: 2px !important;
         border-radius: 12px !important;
+        box-sizing: border-box !important;
     }
     .launcher-btn div {
-        width: 24px !important;
-        height: 24px !important;
+        width: 22px !important;
+        height: 22px !important;
         border-radius: 6px !important;
     }
     .launcher-btn svg {
-        width: 15px !important;
-        height: 15px !important;
+        width: 13px !important;
+        height: 13px !important;
     }
     .launcher-btn span.font-hand {
-        font-size: 9px !important;
+        font-size: 8px !important;
         line-height: 1.05 !important;
         white-space: normal !important;
         text-align: center !important;
-        max-width: 54px !important;
+        max-width: 48px !important;
         display: -webkit-box !important;
         -webkit-line-clamp: 2 !important;
         -webkit-box-orient: vertical !important;
+    }
+    #sidebarScrollUpBtn,
+    #sidebarScrollDownBtn {
+        width: 28px !important;
+        height: 14px !important;
+        padding: 0 !important;
+    }
+    #sidebarScrollUpBtn svg,
+    #sidebarScrollDownBtn svg {
+        width: 10px !important;
+        height: 10px !important;
     }
 
     /* Keep bottom dock compact and unobtrusive */
@@ -349,8 +436,8 @@ body {
     #animalStudioModal .relative.w-\[280px\],
     #flowerStudioModal [id*="Canvas"].touch-none,
     #animalStudioModal [id*="Canvas"].touch-none {
-        width: min(48vh, 195px) !important;
-        height: min(48vh, 195px) !important;
+        width: min(45vh, 180px) !important;
+        height: min(45vh, 180px) !important;
         border-radius: 12px !important;
     }
 
@@ -1561,8 +1648,8 @@ body.zen-mode #zenModeRestorePill {
 
     /* Flower Studio Modal */
     #flowerStudioModal .w-\[280px\] {
-        width: min(48vh, 195px) !important;
-        height: min(48vh, 195px) !important;
+        width: min(45vh, 180px) !important;
+        height: min(45vh, 180px) !important;
     }
     #flowerStudioModal .color-dot {
         width: 22px !important;
@@ -1603,11 +1690,11 @@ body.zen-mode #zenModeRestorePill {
         transform-origin: bottom center;
     }
     #sidebarLaunchers {
-        transform: translateY(-50%) scale(0.80) !important;
+        transform: translateY(-50%) !important;
         transform-origin: right center;
     }
     #sidebarLaunchers.sidebar-collapsed {
-        transform: translate(calc(100% - 6px), -50%) scale(0.80) !important;
+        transform: translate(calc(100% - 6px), -50%) !important;
     }
     #terrainBrushControls {
         bottom: 46px !important;

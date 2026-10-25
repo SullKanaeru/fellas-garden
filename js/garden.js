@@ -94,6 +94,9 @@
             panY = Math.round((screenH - WORLD_H * zoom) / 2);
             clampPan();
             updateZoomDisplay();
+            if (typeof updateSidebarScrollIndicators === 'function') {
+                updateSidebarScrollIndicators();
+            }
         }
 
         /**
@@ -115,6 +118,9 @@
             zoom = newZoom;
             clampPan();
             updateZoomDisplay();
+            if (typeof updateSidebarScrollIndicators === 'function') {
+                updateSidebarScrollIndicators();
+            }
         }
 
         function zoomIn() {
@@ -5290,6 +5296,9 @@
             }
             clampPan();
             updateZoomDisplay();
+            if (typeof updateSidebarScrollIndicators === 'function') {
+                updateSidebarScrollIndicators();
+            }
         }
 
         // Handle responsive resize & mobile orientation changes smoothly
@@ -5379,14 +5388,15 @@
         function scrollSidebar(dir) {
             const container = document.getElementById('sidebarScrollContainer');
             if (!container) return;
-            const isMobile = window.innerWidth < 640;
-            const step = isMobile ? 60 : 96; // 1 card height + gap
+            const firstCard = container.querySelector('.launcher-btn');
+            const gap = parseFloat(window.getComputedStyle(container).gap) || 6;
+            const step = firstCard ? (firstCard.offsetHeight + gap) : 64;
             if (dir === 'up') {
                 container.scrollBy({ top: -step, behavior: 'smooth' });
             } else {
                 container.scrollBy({ top: step, behavior: 'smooth' });
             }
-            setTimeout(updateSidebarScrollIndicators, 150);
+            setTimeout(updateSidebarScrollIndicators, 180);
         }
 
         function updateSidebarScrollIndicators() {

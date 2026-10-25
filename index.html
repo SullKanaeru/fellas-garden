@@ -678,11 +678,11 @@
         </svg>
       </button>
 
-      <!-- Scrollable 3-Card Container (Default only 3 visible cards) -->
+      <!-- Scrollable 3-Card Container (Strictly 3 visible cards) -->
       <div
         id="sidebarScrollContainer"
         onscroll="if(window.updateSidebarScrollIndicators)window.updateSidebarScrollIndicators()"
-        class="flex flex-col items-center gap-1.5 sm:gap-2.5 overflow-y-auto no-scrollbar scroll-smooth snap-y snap-mandatory p-0.5 w-full max-h-[178px] sm:max-h-[282px]"
+        class="flex flex-col items-center overflow-y-auto no-scrollbar scroll-smooth snap-y snap-mandatory w-full"
       >
         <!-- 1. Studio Button -->
         <button
@@ -1221,43 +1221,34 @@
             </button>
           </div>
 
-          <!-- Center: High-Resolution Drawing Canvas Container -->
+          <!-- Center: High-Resolution Drawing Canvas Area -->
           <div class="relative flex flex-col items-center">
+            <!-- Mini-Bar Above Canvas: Timelapse (Left) + Zoom & Pan (Right) -->
+            <div class="w-full flex items-center justify-between px-1 mb-1 max-w-[420px] select-none">
+              <button
+                type="button"
+                onclick="replayStudioTimelapse()"
+                class="px-2 py-0.5 inline-flex items-center gap-1 rounded-full bg-white/95 hover:bg-emerald-50 text-[#2B5B35] font-bold text-[10px] sm:text-[11px] border border-[#c5d9b7] shadow-2xs transition active:scale-95 cursor-pointer"
+                title="Putar Ulang Goresan Lukisan (Timelapse)"
+              >
+                <span>▶</span><span>Putar Timelapse</span>
+              </button>
+
+              <div class="flex items-center gap-0.5 bg-white/95 backdrop-blur-md px-1.5 py-0.5 rounded-full border border-[#c5d9b7] shadow-2xs text-xs text-[#2B5B35]">
+                <button type="button" onclick="zoomFlowerCanvas(-0.25)" class="w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center rounded-full hover:bg-emerald-100 text-[#2B5B35] font-bold text-xs transition active:scale-90 cursor-pointer" title="Zoom Out (-)">−</button>
+                <button type="button" onclick="resetFlowerZoom()" id="flowerZoomLevelText" class="px-1 py-0.5 text-[10px] sm:text-[11px] font-mono font-bold text-[#2B5B35] hover:bg-emerald-50 rounded transition cursor-pointer" title="Reset Zoom (100%)">100%</button>
+                <button type="button" onclick="zoomFlowerCanvas(0.25)" class="w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center rounded-full hover:bg-emerald-100 text-[#2B5B35] font-bold text-xs transition active:scale-90 cursor-pointer" title="Zoom In (+)">+</button>
+                <div class="w-px h-3 bg-gray-200 mx-0.5"></div>
+                <button type="button" id="studioPanToggleBtn" onclick="toggleStudioPanMode()" class="w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center rounded-full hover:bg-emerald-100 text-gray-700 transition active:scale-90 cursor-pointer" title="Alat Geser Kanvas (Pan / Geser)">
+                  <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 11V6a2 2 0 0 0-4 0v4"/><path d="M14 10V4a2 2 0 0 0-4 0v7"/><path d="M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Canvas Container: 100% Clean & Empty Inside -->
             <div
               class="relative w-[280px] h-[280px] sm:w-[380px] sm:h-[380px] md:w-[420px] md:h-[420px] bg-white rounded-2xl border-2 border-dashed border-[#8eb477] shadow-inner overflow-hidden flex items-center justify-center"
             >
-              <!-- Floating Top Pill: Timelapse + Zoom & Pan Controls -->
-              <div class="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 z-20 flex items-center gap-0.5 bg-white/90 backdrop-blur-md px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full border border-[#c5d9b7] shadow-2xs select-none">
-                <button
-                  type="button"
-                  onclick="replayStudioTimelapse()"
-                  class="px-1.5 py-0.5 flex items-center gap-0.5 rounded-full hover:bg-emerald-100 text-[#2B5B35] font-bold text-[10px] sm:text-[11px] transition active:scale-90 cursor-pointer"
-                  title="Putar Ulang Goresan Lukisan (Timelapse)"
-                >
-                  <span>▶</span><span class="hidden md:inline">Timelapse</span>
-                </button>
-                <div class="w-px h-3 bg-gray-200 mx-0.5"></div>
-                <button type="button" onclick="zoomFlowerCanvas(-0.25)" class="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-full hover:bg-emerald-100 text-[#2B5B35] font-bold text-xs sm:text-sm transition active:scale-90 cursor-pointer" title="Zoom Out (-)">−</button>
-                <button type="button" onclick="resetFlowerZoom()" id="flowerZoomLevelText" class="px-1 py-0.5 text-[10px] sm:text-[11px] font-mono font-bold text-[#2B5B35] hover:bg-emerald-50 rounded transition cursor-pointer" title="Reset Zoom (100%)">100%</button>
-                <button type="button" onclick="zoomFlowerCanvas(0.25)" class="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-full hover:bg-emerald-100 text-[#2B5B35] font-bold text-xs sm:text-sm transition active:scale-90 cursor-pointer" title="Zoom In (+)">+</button>
-                <div class="w-px h-3 bg-gray-200 mx-0.5"></div>
-                <button type="button" id="studioPanToggleBtn" onclick="toggleStudioPanMode()" class="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-full hover:bg-emerald-100 text-gray-700 transition active:scale-90 cursor-pointer" title="Alat Geser Kanvas (Pan / Geser)">
-                  <svg class="w-3 h-3 sm:w-3.5 sm:h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 11V6a2 2 0 0 0-4 0v4"/><path d="M14 10V4a2 2 0 0 0-4 0v7"/><path d="M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>
-                </button>
-              </div>
-
-              <!-- Floating Conditional Stamp Sub-Bar (Inside Canvas Bottom, Overlaid) -->
-              <div
-                id="studioStampSubBar"
-                class="hidden absolute bottom-2 left-1/2 -translate-x-1/2 z-20 items-center justify-center gap-1 bg-amber-50/95 backdrop-blur-sm px-2 sm:px-2.5 py-1 rounded-full border border-amber-300 shadow-md text-[10px] sm:text-[11px] whitespace-nowrap"
-              >
-                <button type="button" id="stampShapeBtn-petal" onclick="setStudioStampShape('petal')" class="px-1.5 sm:px-2 py-0.5 rounded-full font-bold transition bg-[#2B5B35] text-white cursor-pointer">🌸 Kelopak</button>
-                <button type="button" id="stampShapeBtn-leaf" onclick="setStudioStampShape('leaf')" class="px-1.5 sm:px-2 py-0.5 rounded-full font-bold transition bg-white/80 text-[#2B5B35] border border-[#c5d9b7] cursor-pointer">🍃 Daun</button>
-                <button type="button" id="stampShapeBtn-star" onclick="setStudioStampShape('star')" class="px-1.5 sm:px-2 py-0.5 rounded-full font-bold transition bg-white/80 text-[#2B5B35] border border-[#c5d9b7] cursor-pointer">⭐ Bintang</button>
-                <button type="button" id="stampShapeBtn-heart" onclick="setStudioStampShape('heart')" class="px-1.5 sm:px-2 py-0.5 rounded-full font-bold transition bg-white/80 text-[#2B5B35] border border-[#c5d9b7] cursor-pointer">💖 Hati</button>
-                <button type="button" id="stampShapeBtn-bud" onclick="setStudioStampShape('bud')" class="px-1.5 sm:px-2 py-0.5 rounded-full font-bold transition bg-white/80 text-[#2B5B35] border border-[#c5d9b7] cursor-pointer">🌷 Kuncup</button>
-              </div>
-
               <div
                 id="drawBoxHint"
                 class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center opacity-40 transition-opacity z-10"
@@ -1278,6 +1269,22 @@
                 class="w-full h-full cursor-crosshair touch-none transition-transform duration-75"
               ></canvas>
             </div>
+
+
+            <!-- Stamp Shape Sub-Bar: OUTSIDE canvas, beneath canvas -->
+            <div
+              id="studioStampSubBar"
+              class="hidden mt-1 flex items-center justify-center gap-1 bg-amber-50/95 px-2.5 py-0.5 rounded-full border border-amber-300 text-[10px] sm:text-[11px] shadow-2xs max-w-[420px] whitespace-nowrap"
+            >
+              <span class="text-amber-800 font-bold mr-0.5">Bentuk:</span>
+              <button type="button" id="stampShapeBtn-petal" onclick="setStudioStampShape('petal')" class="px-1.5 py-0.5 rounded-full font-bold transition bg-[#2B5B35] text-white cursor-pointer">🌸 Kelopak</button>
+              <button type="button" id="stampShapeBtn-leaf" onclick="setStudioStampShape('leaf')" class="px-1.5 py-0.5 rounded-full font-bold transition bg-white text-[#2B5B35] border border-[#c5d9b7] cursor-pointer">🍃 Daun</button>
+              <button type="button" id="stampShapeBtn-star" onclick="setStudioStampShape('star')" class="px-1.5 py-0.5 rounded-full font-bold transition bg-white text-[#2B5B35] border border-[#c5d9b7] cursor-pointer">⭐ Bintang</button>
+              <button type="button" id="stampShapeBtn-heart" onclick="setStudioStampShape('heart')" class="px-1.5 py-0.5 rounded-full font-bold transition bg-white text-[#2B5B35] border border-[#c5d9b7] cursor-pointer">💖 Hati</button>
+              <button type="button" id="stampShapeBtn-bud" onclick="setStudioStampShape('bud')" class="px-1.5 py-0.5 rounded-full font-bold transition bg-white text-[#2B5B35] border border-[#c5d9b7] cursor-pointer">🌷 Kuncup</button>
+            </div>
+
+
 
             <!-- Single Unified Control Bar (Special Brush Selector + Brush Size) -->
             <div
@@ -3089,20 +3096,22 @@
 
             <!-- Center Drawing Canvas -->
             <div class="relative flex flex-col items-center">
+              <!-- Mini-Bar Above Canvas: Zoom & Pan Controls -->
+              <div class="w-full flex items-center justify-end px-1 mb-1 max-w-[380px] select-none">
+                <div class="flex items-center gap-0.5 bg-white/95 backdrop-blur-md px-1.5 py-0.5 rounded-full border border-[#c5d9b7] shadow-2xs text-xs text-[#2B5B35]">
+                  <button type="button" onclick="zoomAnimalCanvas(-0.25)" class="w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center rounded-full hover:bg-emerald-100 text-[#2B5B35] font-bold text-xs transition active:scale-90 cursor-pointer" title="Zoom Out (-)">−</button>
+                  <button type="button" onclick="resetAnimalZoom()" id="animalZoomLevelText" class="px-1 py-0.5 text-[10px] sm:text-[11px] font-mono font-bold text-[#2B5B35] hover:bg-emerald-50 rounded transition cursor-pointer" title="Reset Zoom (100%)">100%</button>
+                  <button type="button" onclick="zoomAnimalCanvas(0.25)" class="w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center rounded-full hover:bg-emerald-100 text-[#2B5B35] font-bold text-xs transition active:scale-90 cursor-pointer" title="Zoom In (+)">+</button>
+                  <div class="w-px h-3 bg-gray-200 mx-0.5"></div>
+                  <button type="button" id="animalPanToggleBtn" onclick="toggleAnimalPanMode()" class="w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center rounded-full hover:bg-emerald-100 text-gray-700 transition active:scale-90 cursor-pointer" title="Alat Geser Kanvas (Pan / Geser)">
+                    <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 11V6a2 2 0 0 0-4 0v4"/><path d="M14 10V4a2 2 0 0 0-4 0v7"/><path d="M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>
+                  </button>
+                </div>
+              </div>
+
               <div
                 class="relative w-[280px] h-[280px] sm:w-[350px] sm:h-[350px] md:w-[380px] md:h-[380px] bg-white rounded-2xl border-2 border-dashed border-[#8eb477] shadow-inner overflow-hidden flex items-center justify-center"
               >
-                <!-- Floating Zoom & Pan Controls -->
-                <div class="absolute top-2 right-2 z-20 flex items-center gap-1 bg-white/90 backdrop-blur-md px-2 py-1 rounded-full border border-[#c5d9b7] shadow-sm select-none">
-                  <button type="button" onclick="zoomAnimalCanvas(-0.25)" class="w-6 h-6 flex items-center justify-center rounded-full hover:bg-emerald-100 text-[#2B5B35] font-bold text-sm transition active:scale-90" title="Zoom Out (-)">−</button>
-                  <button type="button" onclick="resetAnimalZoom()" id="animalZoomLevelText" class="px-1.5 py-0.5 text-[11px] font-mono font-bold text-[#2B5B35] hover:bg-emerald-50 rounded transition" title="Reset Zoom (100%)">100%</button>
-                  <button type="button" onclick="zoomAnimalCanvas(0.25)" class="w-6 h-6 flex items-center justify-center rounded-full hover:bg-emerald-100 text-[#2B5B35] font-bold text-sm transition active:scale-90" title="Zoom In (+)">+</button>
-                  <div class="w-px h-3.5 bg-gray-200 mx-0.5"></div>
-                  <button type="button" id="animalPanToggleBtn" onclick="toggleAnimalPanMode()" class="w-6 h-6 flex items-center justify-center rounded-full hover:bg-emerald-100 text-gray-700 transition active:scale-90" title="Alat Geser Kanvas (Pan / Geser)">
-                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 11V6a2 2 0 0 0-4 0v4"/><path d="M14 10V4a2 2 0 0 0-4 0v7"/><path d="M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>
-                  </button>
-                </div>
-
                 <div
                   id="drawAnimalBoxHint"
                   class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center opacity-40 transition-opacity z-10"
