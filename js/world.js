@@ -60,6 +60,16 @@ function openGardenDB() {
     };
     req.onsuccess = (e) => {
       dbInstance = e.target.result;
+      // Request persistent storage to protect user garden data from browser auto-eviction
+      try {
+        if (navigator.storage && navigator.storage.persist) {
+          navigator.storage.persist().then((persisted) => {
+            if (persisted) {
+              console.log("Garden storage persistence granted.");
+            }
+          }).catch(() => {});
+        }
+      } catch (err) {}
       resolve(dbInstance);
     };
     req.onerror = (e) => {
@@ -1196,7 +1206,13 @@ function renderWorldsGrid(filterText = "") {
 async function initWorldManager() {
   await openGardenDB();
   await updateWorldsBadge();
-  const existingWorlds = await dbGetAllWorlds();
+  let existingWorlds = await dbGetAllWorlds();
+
+  // Safety fallback: if DB returned empty but registry in localStorage says worlds exist, retry once
+  if ((!existingWorlds || existingWorlds.length === 0) && getLocalWorldsRegistry().length > 0) {
+    await new Promise((r) => setTimeout(r, 300));
+    existingWorlds = await dbGetAllWorlds();
+  }
 
   const savedWorldId = localStorage.getItem(CURRENT_WORLD_KEY);
 
