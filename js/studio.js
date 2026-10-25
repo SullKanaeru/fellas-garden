@@ -82,29 +82,40 @@
             isStudioPanMode = false;
             updatePanButtonUI();
 
-            const pencilBtn = document.getElementById('studioToolPencil');
+            const pencilBtn = document.getElementById('studioToolPencil') || document.getElementById('brushTypeBtn-pencil');
             const eraserBtn = document.getElementById('studioToolEraser');
             const eyedropBtn = document.getElementById('studioToolEyedrop');
 
-            if (pencilBtn) {
-                if (tool === 'pencil') {
-                    pencilBtn.className = 'w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-lg transition bg-[#2B5B35] text-white shadow-sm ring-2 ring-[#7DB852]';
-                } else {
-                    pencilBtn.className = 'w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-lg transition hover:bg-[#eef5e6] text-gray-700';
+            if (tool === 'eraser' || tool === 'eyedropper') {
+                const types = ['pencil', 'watercolor', 'crayon', 'glitter', 'glow', 'stamp'];
+                types.forEach(t => {
+                    const b = document.getElementById('brushTypeBtn-' + t);
+                    if (b) {
+                        b.classList.remove('bg-[#2B5B35]', 'text-white', 'ring-2', 'ring-[#7DB852]');
+                        b.classList.add('bg-white/80', 'text-[#2B5B35]');
+                    }
+                });
+            } else if (tool === 'pencil') {
+                const bType = window.studioBrushType || 'pencil';
+                const b = document.getElementById('brushTypeBtn-' + bType);
+                if (b) {
+                    b.classList.add('bg-[#2B5B35]', 'text-white', 'ring-2', 'ring-[#7DB852]');
+                    b.classList.remove('bg-white/80', 'text-[#2B5B35]');
                 }
             }
+
             if (eraserBtn) {
                 if (tool === 'eraser') {
-                    eraserBtn.className = 'w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-lg transition bg-[#2B5B35] text-white shadow-sm ring-2 ring-[#7DB852]';
+                    eraserBtn.className = 'w-7 h-7 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center transition bg-[#2B5B35] text-white shadow-xs ring-2 ring-[#7DB852] cursor-pointer';
                 } else {
-                    eraserBtn.className = 'w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-lg transition hover:bg-[#eef5e6] text-gray-700';
+                    eraserBtn.className = 'w-7 h-7 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center transition hover:bg-[#eef5e6] text-gray-700 cursor-pointer';
                 }
             }
             if (eyedropBtn) {
                 if (tool === 'eyedropper') {
-                    eyedropBtn.className = 'w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-lg transition bg-[#2B5B35] text-white shadow-sm ring-2 ring-[#7DB852]';
+                    eyedropBtn.className = 'w-7 h-7 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center transition bg-[#2B5B35] text-white shadow-xs ring-2 ring-[#7DB852] cursor-pointer';
                 } else {
-                    eyedropBtn.className = 'w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-lg transition hover:bg-[#eef5e6] text-gray-700';
+                    eyedropBtn.className = 'w-7 h-7 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center transition hover:bg-[#eef5e6] text-gray-700 cursor-pointer';
                 }
             }
 
@@ -302,6 +313,7 @@
 
             saveFlowerPadState();
             isDrawingFlower = true;
+            document.getElementById('flowerStudioModal')?.classList.add('drawing-active');
             const hint = document.getElementById('drawBoxHint');
             if (hint) hint.style.opacity = '0';
             flowerLastX = pos.x;
@@ -372,10 +384,17 @@
             }
             if (isDrawingFlower) {
                 isDrawingFlower = false;
+                document.getElementById('flowerStudioModal')?.classList.remove('drawing-active');
                 if (typeof endRecordingStroke === 'function') endRecordingStroke();
                 updatePendingSpriteFromPad();
                 updateDraftBadge();
             }
+        });
+
+        window.addEventListener('pointercancel', () => {
+            isDrawingFlower = false;
+            isStudioPanning = false;
+            document.getElementById('flowerStudioModal')?.classList.remove('drawing-active');
         });
 
         // Wheel Zoom on Canvas
