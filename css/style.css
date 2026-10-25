@@ -835,24 +835,32 @@ body {
         font-size: 13px !important;
         border-radius: 6px !important;
     }
-    #constellationModal > div > div:first-child button {
+    #constellationModal > div > div:first-child button[onclick="closeConstellationModal()"] {
         width: 24px !important;
         height: 24px !important;
         font-size: 12px !important;
     }
+    #constellationModal > div > div:first-child button[onclick="viewConstellationsInSky()"] {
+        height: 24px !important;
+        padding: 2px 8px !important;
+        font-size: 10px !important;
+        width: auto !important;
+    }
+    #constellationModal .p-3\.5.sm\:p-5,
     #constellationModal .p-4.sm\:p-5 {
         padding: 6px 12px !important;
         gap: 6px !important;
         overflow-y: auto !important;
     }
     #constellationModal #constellationPadCanvas {
-        height: min(44vh, 165px) !important;
+        height: min(42vh, 155px) !important;
     }
     #constellationModal #constellationNameInput {
         height: 28px !important;
         padding: 2px 8px !important;
         font-size: 10.5px !important;
     }
+    #constellationModal button[onclick="undoConstellationDraftNode()"],
     #constellationModal button[onclick="clearConstellationDraft()"],
     #constellationModal button[onclick="saveConstellationDraft()"] {
         padding: 3px 10px !important;

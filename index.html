@@ -5135,45 +5135,103 @@
     <!-- ===================================================================== -->
     <div
       id="constellationModal"
-      class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-3 sm:p-6"
+      class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-2.5 sm:p-6"
     >
       <div
-        class="bg-[#0f172a] border-2 border-indigo-400/60 rounded-3xl shadow-2xl w-full max-w-xl overflow-hidden flex flex-col max-h-[92vh] text-indigo-100"
+        class="bg-[#0b1021] border-2 border-indigo-400/60 rounded-3xl shadow-2xl w-full max-w-xl overflow-hidden flex flex-col max-h-[94vh] text-indigo-100"
       >
         <div
-          class="bg-[#1e1b4b] px-5 py-3.5 border-b border-indigo-500/30 flex items-center justify-between"
+          class="bg-gradient-to-r from-[#17153b] via-[#1e1b4b] to-[#172554] px-4 sm:px-5 py-3 border-b border-indigo-500/30 flex items-center justify-between"
         >
           <div class="flex items-center gap-2.5">
             <span
-              class="w-9 h-9 rounded-2xl bg-indigo-900/80 border border-indigo-400/40 flex items-center justify-center text-lg"
+              class="w-8 h-8 sm:w-9 sm:h-9 rounded-2xl bg-indigo-900/80 border border-indigo-400/40 flex items-center justify-center text-base sm:text-lg shadow-inner"
               >🌌</span
             >
             <div>
               <h3
-                class="font-hand text-xl sm:text-2xl font-bold text-amber-200 leading-tight"
+                class="font-hand text-lg sm:text-2xl font-bold text-amber-200 leading-tight"
               >
-                Lukis Rasi Bintang Langit Malam
+                Observatorium Rasi Bintang
               </h3>
-              <p class="text-xs text-indigo-200/80">
-                Klik titik-titik bintang untuk menghubungkan garis rasi bintang di langit kebunmu!
+              <p class="text-[11px] sm:text-xs text-indigo-200/80">
+                Ketuk atau seret antar bintang untuk merangkai rasi di angkasa luar pulau!
               </p>
             </div>
           </div>
-          <button
-            onclick="closeConstellationModal()"
-            class="w-8 h-8 rounded-full bg-indigo-950 hover:bg-rose-900 text-indigo-200 flex items-center justify-center border border-indigo-500/40 transition cursor-pointer"
-          >
-            ✕
-          </button>
+          <div class="flex items-center gap-1.5">
+            <button
+              type="button"
+              onclick="viewConstellationsInSky()"
+              class="px-2.5 py-1 rounded-full bg-indigo-900/90 hover:bg-indigo-800 text-amber-200 border border-indigo-400/40 text-[11px] font-bold transition cursor-pointer flex items-center gap-1"
+              title="Arahkan kamera ke langit malam"
+            >
+              <span>🔭</span>
+              <span class="hidden sm:inline">Lihat Langit</span>
+            </button>
+            <button
+              onclick="closeConstellationModal()"
+              class="w-8 h-8 rounded-full bg-indigo-950 hover:bg-rose-900 text-indigo-200 flex items-center justify-center border border-indigo-500/40 transition cursor-pointer"
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
-        <div class="p-4 sm:p-5 overflow-y-auto space-y-3.5">
+        <div class="p-3.5 sm:p-5 overflow-y-auto space-y-3">
+          <!-- Cosmic Color Picker & Helper Bar -->
+          <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
+            <div class="flex items-center gap-1.5">
+              <span class="text-[11px] text-indigo-300 font-medium">Warna Cahaya:</span>
+              <button
+                type="button"
+                id="constColorBtn-gold"
+                onclick="setConstellationDraftColor('gold')"
+                class="px-2 py-0.5 rounded-full bg-amber-400/20 border-2 border-amber-300 text-amber-200 text-[10px] font-bold transition cursor-pointer flex items-center gap-1"
+              >
+                <span class="w-2 h-2 rounded-full bg-amber-300 inline-block"></span>Emas
+              </button>
+              <button
+                type="button"
+                id="constColorBtn-cyan"
+                onclick="setConstellationDraftColor('cyan')"
+                class="px-2 py-0.5 rounded-full bg-sky-400/10 border border-sky-400/40 text-sky-200 text-[10px] font-bold transition cursor-pointer flex items-center gap-1"
+              >
+                <span class="w-2 h-2 rounded-full bg-sky-300 inline-block"></span>Nebula
+              </button>
+              <button
+                type="button"
+                id="constColorBtn-violet"
+                onclick="setConstellationDraftColor('violet')"
+                class="px-2 py-0.5 rounded-full bg-purple-400/10 border border-purple-400/40 text-purple-200 text-[10px] font-bold transition cursor-pointer flex items-center gap-1"
+              >
+                <span class="w-2 h-2 rounded-full bg-purple-300 inline-block"></span>Kosmik
+              </button>
+              <button
+                type="button"
+                id="constColorBtn-rose"
+                onclick="setConstellationDraftColor('rose')"
+                class="px-2 py-0.5 rounded-full bg-pink-400/10 border border-pink-400/40 text-pink-200 text-[10px] font-bold transition cursor-pointer flex items-center gap-1"
+              >
+                <span class="w-2 h-2 rounded-full bg-pink-300 inline-block"></span>Aurora
+              </button>
+            </div>
+            <button
+              type="button"
+              onclick="shuffleConstellationBgStars()"
+              class="text-[10px] text-indigo-300 hover:text-amber-200 transition cursor-pointer flex items-center gap-1"
+              title="Acak susunan gugus bintang latar"
+            >
+              🎲 Gugus Baru
+            </button>
+          </div>
+
           <div
-            class="relative rounded-2xl overflow-hidden border-2 border-indigo-400/50 shadow-inner bg-[#090d16]"
+            class="relative rounded-2xl overflow-hidden border-2 border-indigo-400/50 shadow-inner bg-[#060913]"
           >
             <canvas
               id="constellationPadCanvas"
-              class="w-full h-[210px] sm:h-[260px] block cursor-crosshair touch-none"
+              class="w-full h-[200px] sm:h-[250px] block cursor-crosshair touch-none"
             ></canvas>
           </div>
 
@@ -5182,28 +5240,36 @@
               id="constellationNameInput"
               type="text"
               maxlength="28"
-              placeholder="Beri nama rasi bintang (mis: Bunga Angkasa, Rubah Malam)..."
-              class="flex-1 min-w-[180px] px-3.5 py-2 rounded-xl bg-indigo-950/90 border border-indigo-400/40 text-xs text-amber-100 placeholder-indigo-300/50 focus:outline-none focus:border-amber-300"
+              placeholder="Nama rasi bintang (mis: Bunga Angkasa, Rubah Malam)..."
+              class="flex-1 min-w-[160px] px-3 py-2 rounded-xl bg-indigo-950/90 border border-indigo-400/40 text-xs text-amber-100 placeholder-indigo-300/50 focus:outline-none focus:border-amber-300"
             />
             <button
               type="button"
-              onclick="clearConstellationDraft()"
-              class="px-3 py-2 rounded-xl bg-indigo-900/70 hover:bg-indigo-800 text-indigo-200 border border-indigo-500/40 text-xs font-bold transition cursor-pointer"
+              onclick="undoConstellationDraftNode()"
+              class="px-2.5 py-2 rounded-xl bg-indigo-900/70 hover:bg-indigo-800 text-indigo-200 border border-indigo-500/40 text-xs font-bold transition cursor-pointer"
+              title="Batalkan titik bintang terakhir"
             >
-              Ulangi Titik
+              ↩️ Mundur
+            </button>
+            <button
+              type="button"
+              onclick="clearConstellationDraft()"
+              class="px-2.5 py-2 rounded-xl bg-indigo-900/70 hover:bg-indigo-800 text-indigo-200 border border-indigo-500/40 text-xs font-bold transition cursor-pointer"
+            >
+              Ulangi
             </button>
             <button
               type="button"
               onclick="saveConstellationDraft()"
-              class="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-hand font-bold text-sm shadow-sm transition cursor-pointer"
+              class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-300 hover:from-amber-300 hover:to-yellow-200 text-slate-950 font-hand font-bold text-xs sm:text-sm shadow-md transition cursor-pointer active:scale-95"
             >
-              ✨ Simpan ke Langit Malam
+              ✨ Simpan ke Angkasa
             </button>
           </div>
 
           <div>
-            <div class="text-xs font-bold text-indigo-200 mb-1.5">
-              🌟 Rasi Bintang yang Bersinar di Kebunmu:
+            <div class="text-[11px] font-bold text-indigo-200 mb-1.5 flex items-center justify-between">
+              <span>🌟 Rasi Bintang di Langit Kebunmu (Klik untuk fokus):</span>
             </div>
             <div
               id="savedConstellationsList"

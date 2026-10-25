@@ -4964,7 +4964,6 @@ function animateGarden(now) {
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = "high";
 
-    // Clear background with warm creamy paper tone (#FDFBF2) or night tone
     // Day/Night transition interpolation
     if (isNightMode) {
       nightTransition = Math.min(1, nightTransition + dt * 1.5);
@@ -4972,18 +4971,11 @@ function animateGarden(now) {
       nightTransition = Math.max(0, nightTransition - dt * 1.5);
     }
 
-    if (nightTransition > 0.001) {
-      // Background darkens into deep magical starry night navy (#141E28)
-      ctx.fillStyle = "#FDFBF2";
-      ctx.fillRect(0, 0, screenW, screenH);
-      ctx.fillStyle = `rgba(18, 28, 42, ${nightTransition * 0.94})`;
-      ctx.fillRect(0, 0, screenW, screenH);
-    } else {
-      ctx.fillStyle = "#FDFBF2";
-      ctx.fillRect(0, 0, screenW, screenH);
-    }
+    // Clear canvas to transparent so the 3D Grass Island can be tinted cleanly
+    // and the Deep Space Cosmos & Constellations can be rendered BEHIND the island!
+    ctx.clearRect(0, 0, screenW, screenH);
 
-    // Smooth camera tracking if following an animal (respects manual zoom & dragging)
+    // Smooth camera tracking if following an animal or gliding to a constellation
     if (followedAnimal) {
       const stillAlive = animals.some((a) => a.id === followedAnimal.id);
       if (!stillAlive) {
@@ -4996,6 +4988,28 @@ function animateGarden(now) {
         panX += (targetPanX - panX) * Math.min(1, dt * 5.0);
         panY += (targetPanY - panY) * Math.min(1, dt * 5.0);
         clampPan();
+      }
+    } else if (
+      typeof window !== "undefined" &&
+      window.constellationCameraTarget
+    ) {
+      if (isDraggingCanvas || isPinching) {
+        window.constellationCameraTarget = null;
+      } else {
+        const tgt = window.constellationCameraTarget;
+        if (typeof tgt.zoom === "number") {
+          zoom += (tgt.zoom - zoom) * Math.min(1, dt * 4.5);
+          updateZoomDisplay();
+        }
+        panX += (tgt.panX - panX) * Math.min(1, dt * 4.8);
+        panY += (tgt.panY - panY) * Math.min(1, dt * 4.8);
+        clampPan();
+        if (
+          Math.hypot(tgt.panX - panX, tgt.panY - panY) < 1.5 &&
+          (!tgt.zoom || Math.abs(tgt.zoom - zoom) < 0.01)
+        ) {
+          window.constellationCameraTarget = null;
+        }
       }
     }
 
@@ -5019,7 +5033,7 @@ function animateGarden(now) {
       drawRainbowInWorld(ctx, now);
     }
 
-    // Night ambiance tint over terrain layer
+    // Night ambiance tint over terrain layer ONLY (sky remains transparent)
     if (nightTransition > 0.001) {
       ctx.save();
       ctx.globalCompositeOperation = "source-atop";
@@ -5027,6 +5041,28 @@ function animateGarden(now) {
       ctx.fillRect(0, 0, WORLD_W, WORLD_H);
       ctx.restore();
     }
+
+    // 3c. Draw Sky Background, Deep Space Cosmos & Constellations BEHIND the 3D Grass Island
+    ctx.save();
+    ctx.setTransform(canvasDpr, 0, 0, canvasDpr, 0, 0);
+    ctx.globalCompositeOperation = "destination-over";
+    if (
+      nightTransition > 0.005 &&
+      typeof drawGardenConstellationsInSky === "function"
+    ) {
+      drawGardenConstellationsInSky(
+        ctx,
+        screenW,
+        screenH,
+        nightTransition,
+        now,
+        dt,
+      );
+    } else {
+      ctx.fillStyle = "#FDFBF2";
+      ctx.fillRect(0, 0, screenW, screenH);
+    }
+    ctx.restore();
 
     // Update Dynamic Weather & Atmosphere cycle (Day/Night & Seasons)
     if (typeof updateDynamicWeather === "function") {
@@ -5168,19 +5204,7 @@ function animateGarden(now) {
 
     ctx.restore();
 
-    // 7b. Draw Night Sky Constellations (Lukis Rasi Bintang)
-    if (
-      typeof drawGardenConstellationsInSky === "function" &&
-      nightTransition > 0.05
-    ) {
-      drawGardenConstellationsInSky(
-        ctx,
-        screenW,
-        screenH,
-        nightTransition,
-        now,
-      );
-    }
+    // (Night sky & constellations are now rendered in the background cosmos layer behind the 3D island)
 
     // 8. Update & Draw Atmospheric Screen-Space Rain (Tetesan Hujan Layar Penuh Bebas Distorsi Zoom)
     updateAndDrawScreenRain(ctx, dt);

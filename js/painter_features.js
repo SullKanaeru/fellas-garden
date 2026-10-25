@@ -1144,22 +1144,241 @@
     }
 
     // =========================================================================
-    // 6. LUKIS RASI BINTANG DI LANGIT MALAM (STAR CONSTELLATIONS)
+    // 6. OBSERVATORIUM RASI BINTANG & KOSMOS LUAR ANGKASA (PARALLAX COSMOS)
     // =========================================================================
-    var gardenConstellations = [];
+    var gardenConstellations = (typeof window !== 'undefined' && Array.isArray(window.gardenConstellations))
+        ? window.gardenConstellations
+        : [];
     window.gardenConstellations = gardenConstellations;
 
     var constellationDraftNodes = [];
     var constellationBgStars = [];
+    var constellationDraftColor = 'gold';
+    var constellationHoverStar = null;
+    var constellationPointerPos = null;
+    var constellationIsDragging = false;
+    var constellationPadParticles = [];
+    var constellationPadAnimId = null;
+    var focusedConstellationId = null;
+    var focusedConstellationTimer = 0;
+
+    const CONSTELLATION_THEMES = {
+        gold: {
+            id: 'gold',
+            name: 'Emas Bintang',
+            core: '#FFFFFF',
+            star: '#FEF08A',
+            line: 'rgba(253, 224, 71, 0.82)',
+            glow: 'rgba(250, 204, 21, 0.45)',
+            nebula: 'rgba(250, 204, 21, 0.14)',
+            label: '#FEF08A',
+            badgeBg: 'rgba(120, 53, 15, 0.55)',
+            badgeBorder: 'rgba(251, 191, 36, 0.55)'
+        },
+        cyan: {
+            id: 'cyan',
+            name: 'Biru Nebula',
+            core: '#FFFFFF',
+            star: '#BAE6FD',
+            line: 'rgba(56, 189, 248, 0.85)',
+            glow: 'rgba(14, 165, 233, 0.48)',
+            nebula: 'rgba(56, 189, 248, 0.15)',
+            label: '#BAE6FD',
+            badgeBg: 'rgba(12, 74, 110, 0.55)',
+            badgeBorder: 'rgba(56, 189, 248, 0.55)'
+        },
+        violet: {
+            id: 'violet',
+            name: 'Ungu Kosmik',
+            core: '#FFFFFF',
+            star: '#E9D5FF',
+            line: 'rgba(192, 132, 252, 0.85)',
+            glow: 'rgba(168, 85, 247, 0.48)',
+            nebula: 'rgba(168, 85, 247, 0.16)',
+            label: '#E9D5FF',
+            badgeBg: 'rgba(88, 28, 135, 0.55)',
+            badgeBorder: 'rgba(192, 132, 252, 0.55)'
+        },
+        rose: {
+            id: 'rose',
+            name: 'Aurora Merah Muda',
+            core: '#FFFFFF',
+            star: '#FBCFE8',
+            line: 'rgba(244, 114, 182, 0.85)',
+            glow: 'rgba(236, 72, 153, 0.48)',
+            nebula: 'rgba(244, 114, 182, 0.15)',
+            label: '#FBCFE8',
+            badgeBg: 'rgba(131, 24, 67, 0.55)',
+            badgeBorder: 'rgba(244, 114, 182, 0.55)'
+        }
+    };
+
+    // Curated Celestial Halo Slots AROUND and OUTSIDE the Floating Oval Island
+    // (Island semi-axes are rx=440, ry=280; every slot here sits in open outer space around the island!)
+    const SKY_CONSTELLATION_SLOTS = [
+        { dx: -435, dy: -185, label: 'Langit Barat Laut' },
+        { dx:  435, dy: -185, label: 'Langit Timur Laut' },
+        { dx:    0, dy: -365, label: 'Zenith Utara' },
+        { dx: -560, dy:  -30, label: 'Ufuk Barat' },
+        { dx:  560, dy:  -30, label: 'Ufuk Timur' },
+        { dx: -250, dy: -340, label: 'Angkasa Utara-Barat' },
+        { dx:  250, dy: -340, label: 'Angkasa Utara-Timur' },
+        { dx: -465, dy:  195, label: 'Langit Barat Daya' },
+        { dx:  465, dy:  195, label: 'Langit Tenggara' },
+        { dx:    0, dy: -510, label: 'Kosmos Utara' },
+        { dx: -680, dy: -165, label: 'Galaksi Barat' },
+        { dx:  680, dy: -165, label: 'Galaksi Timur' }
+    ];
+
+    // Deep-Space Procedural Starfield & Nebulae (Cached for zero-GC 60fps rendering)
+    var cosmicFieldInitialized = false;
+    var cosmicBackgroundStars = [];
+    var cosmicNebulaClouds = [];
+    var cosmicShootingStars = [];
+    var cosmicShootingTimer = 2.5;
+    var cosmicSkyCanvas = null;
+    var cosmicSkyCtx = null;
+
+    function initCosmicStarfield() {
+        if (cosmicFieldInitialized) return;
+        cosmicFieldInitialized = true;
+        cosmicBackgroundStars = [];
+
+        const starColors = ['#FFFFFF', '#FEF08A', '#BAE6FD', '#E9D5FF', '#FBCFE8', '#FFFFFF'];
+        // Deterministic pseudo-random generator so the cosmos feels consistent
+        let seed = 133742;
+        const rand = () => {
+            seed = (seed * 1664525 + 1013904223) % 4294967296;
+            return seed / 4294967296;
+        };
+
+        // 135 multi-layered parallax stars spanning a wide celestial dome
+        for (let i = 0; i < 135; i++) {
+            const layer = i < 65 ? 0 : (i < 110 ? 1 : 2); // 0=deep, 1=mid, 2=bright foreground sky
+            const parallax = layer === 0 ? 0.14 : (layer === 1 ? 0.28 : 0.42);
+            const r = layer === 0 ? (0.8 + rand() * 0.9) : (layer === 1 ? (1.3 + rand() * 1.2) : (2.1 + rand() * 1.4));
+            cosmicBackgroundStars.push({
+                ox: (rand() - 0.5) * 2600,
+                oy: (rand() - 0.5) * 1800,
+                r: r,
+                parallax: parallax,
+                layer: layer,
+                color: starColors[Math.floor(rand() * starColors.length)],
+                phase: rand() * Math.PI * 2,
+                speed: 0.0015 + rand() * 0.0028,
+                flare: layer === 2 && rand() > 0.35
+            });
+        }
+
+        cosmicNebulaClouds = [
+            { ox: -380, oy: -220, rx: 420, ry: 240, color: 'rgba(139, 92, 246, 0.16)', parallax: 0.15, phase: 0.4 },
+            { ox:  410, oy: -190, rx: 440, ry: 250, color: 'rgba(56, 189, 248, 0.14)',  parallax: 0.18, phase: 1.9 },
+            { ox:    0, oy: -360, rx: 520, ry: 220, color: 'rgba(99, 102, 241, 0.15)',  parallax: 0.12, phase: 3.1 },
+            { ox: -490, oy:  160, rx: 360, ry: 210, color: 'rgba(236, 72, 153, 0.11)',  parallax: 0.16, phase: 4.5 },
+            { ox:  490, oy:  170, rx: 380, ry: 210, color: 'rgba(45, 212, 191, 0.11)',  parallax: 0.16, phase: 5.2 }
+        ];
+    }
+
+    function playStarNodeChime(nodeIdx) {
+        try {
+            if (typeof getAudioCtx !== 'function') return;
+            const actx = getAudioCtx();
+            if (!actx) return;
+            const scale = [523.25, 587.33, 659.25, 783.99, 880.0, 1046.5, 1174.66, 1318.51, 1567.98];
+            const freq = scale[nodeIdx % scale.length];
+            const now = actx.currentTime;
+
+            const osc = actx.createOscillator();
+            const gain = actx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, now);
+            gain.gain.setValueAtTime(0.001, now);
+            gain.gain.linearRampToValueAtTime(0.13, now + 0.015);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.45);
+            osc.connect(gain);
+            gain.connect(actx.destination);
+            osc.start(now);
+            osc.stop(now + 0.46);
+
+            // Harmonic overtone sparkle
+            const osc2 = actx.createOscillator();
+            const gain2 = actx.createGain();
+            osc2.type = 'triangle';
+            osc2.frequency.setValueAtTime(freq * 2, now + 0.02);
+            gain2.gain.setValueAtTime(0.001, now + 0.02);
+            gain2.gain.linearRampToValueAtTime(0.045, now + 0.04);
+            gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.32);
+            osc2.connect(gain2);
+            gain2.connect(actx.destination);
+            osc2.start(now + 0.02);
+            osc2.stop(now + 0.34);
+        } catch (e) {}
+    }
 
     function initConstellationBgStars() {
         constellationBgStars = [];
-        for (let i = 0; i < 28; i++) {
-            constellationBgStars.push({
-                nx: Number((0.06 + Math.random() * 0.88).toFixed(3)),
-                ny: Number((0.10 + Math.random() * 0.80).toFixed(3)),
-                r: Number((3 + Math.random() * 2.2).toFixed(1)),
-                phase: Math.random() * Math.PI * 2
+        // Stratified grid distribution so stars in the drawing pad are evenly & pleasingly spaced
+        const cols = 7;
+        const rows = 4;
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                const cellW = 0.86 / cols;
+                const cellH = 0.78 / rows;
+                const nx = 0.07 + c * cellW + (0.18 + Math.random() * 0.64) * cellW;
+                const ny = 0.08 + r * cellH + (0.18 + Math.random() * 0.64) * cellH;
+                constellationBgStars.push({
+                    nx: Number(nx.toFixed(3)),
+                    ny: Number(ny.toFixed(3)),
+                    r: Number((2.4 + Math.random() * 2.0).toFixed(1)),
+                    phase: Math.random() * Math.PI * 2,
+                    flare: Math.random() > 0.55
+                });
+            }
+        }
+    }
+
+    function shuffleConstellationBgStars() {
+        initConstellationBgStars();
+        if (typeof playStarNodeChime === 'function') playStarNodeChime(4);
+        renderConstellationPad();
+    }
+
+    function setConstellationDraftColor(colorKey) {
+        if (!CONSTELLATION_THEMES[colorKey]) return;
+        constellationDraftColor = colorKey;
+        ['gold', 'cyan', 'violet', 'rose'].forEach(k => {
+            const btn = document.getElementById('constColorBtn-' + k);
+            if (!btn) return;
+            if (k === colorKey) {
+                btn.classList.add('ring-2', 'ring-white/80', 'scale-105');
+            } else {
+                btn.classList.remove('ring-2', 'ring-white/80', 'scale-105');
+            }
+        });
+        if (typeof playStarNodeChime === 'function') playStarNodeChime(2);
+        renderConstellationPad();
+    }
+
+    function undoConstellationDraftNode() {
+        if (constellationDraftNodes.length > 0) {
+            constellationDraftNodes.pop();
+            if (typeof playStarNodeChime === 'function') playStarNodeChime(constellationDraftNodes.length);
+            renderConstellationPad();
+        }
+    }
+
+    function spawnPadStarBurst(x, y, colorHex) {
+        for (let i = 0; i < 14; i++) {
+            const angle = (Math.PI * 2 * i) / 14 + (Math.random() - 0.5) * 0.3;
+            const speed = 28 + Math.random() * 55;
+            constellationPadParticles.push({
+                x: x,
+                y: y,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                r: 1.5 + Math.random() * 2.0,
+                life: 1.0,
+                color: i % 2 === 0 ? '#FFFFFF' : colorHex
             });
         }
     }
@@ -1178,8 +1397,28 @@
         }
     }
 
+    function startConstellationPadLoop() {
+        if (constellationPadAnimId) cancelAnimationFrame(constellationPadAnimId);
+        let lastTime = performance.now();
+        function step(now) {
+            const modal = document.getElementById('constellationModal');
+            if (!modal || modal.classList.contains('hidden')) {
+                constellationPadAnimId = null;
+                return;
+            }
+            const dt = Math.min(0.05, (now - lastTime) / 1000);
+            lastTime = now;
+            renderConstellationPad(now, dt);
+            constellationPadAnimId = requestAnimationFrame(step);
+        }
+        constellationPadAnimId = requestAnimationFrame(step);
+    }
+
     function openConstellationModal() {
-        // Ensure Night Mode is enabled so the user can see their constellations in the sky too!
+        if (typeof window !== 'undefined' && Array.isArray(window.gardenConstellations)) {
+            gardenConstellations = window.gardenConstellations;
+        }
+        // Ensure Night Mode is enabled so the user can see their constellations in the sky!
         if (typeof isNightMode !== 'undefined' && !isNightMode && typeof toggleDayNightMode === 'function') {
             toggleDayNightMode();
         }
@@ -1187,6 +1426,7 @@
         if (!modal) return;
         if (constellationBgStars.length === 0) initConstellationBgStars();
         constellationDraftNodes = [];
+        constellationPadParticles = [];
         const nameInput = document.getElementById('constellationNameInput');
         if (nameInput) nameInput.value = '';
 
@@ -1194,8 +1434,9 @@
         modal.classList.add('flex');
         requestAnimationFrame(() => {
             resizeConstellationPad();
-            renderConstellationPad();
+            setConstellationDraftColor(constellationDraftColor);
             renderSavedConstellationsList();
+            startConstellationPadLoop();
         });
     }
 
@@ -1204,6 +1445,10 @@
         if (!modal) return;
         modal.classList.add('hidden');
         modal.classList.remove('flex');
+        if (constellationPadAnimId) {
+            cancelAnimationFrame(constellationPadAnimId);
+            constellationPadAnimId = null;
+        }
     }
 
     function clearConstellationDraft() {
@@ -1211,7 +1456,27 @@
         renderConstellationPad();
     }
 
-    function renderConstellationPad() {
+    function drawFourPointStar(ctx, x, y, radius, color, alpha = 1) {
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        const outer = radius * 2.2;
+        const inner = radius * 0.42;
+        for (let i = 0; i < 8; i++) {
+            const r = i % 2 === 0 ? outer : inner;
+            const ang = (i * Math.PI) / 4;
+            const px = x + Math.cos(ang) * r;
+            const py = y + Math.sin(ang) * r;
+            if (i === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+    }
+
+    function renderConstellationPad(now = performance.now(), dt = 0.016) {
         const canvas = document.getElementById('constellationPadCanvas');
         if (!canvas) return;
         resizeConstellationPad();
@@ -1224,89 +1489,264 @@
         const dpr = Math.min(window.devicePixelRatio || 1, 2);
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-        // Deep night sky gradient
+        const theme = CONSTELLATION_THEMES[constellationDraftColor] || CONSTELLATION_THEMES.gold;
+
+        // 1. Deep Outer Space Gradient
         const grad = ctx.createLinearGradient(0, 0, 0, cssH);
-        grad.addColorStop(0, '#090D16');
-        grad.addColorStop(0.6, '#131C31');
-        grad.addColorStop(1, '#1E293B');
+        grad.addColorStop(0, '#040711');
+        grad.addColorStop(0.55, '#0B132B');
+        grad.addColorStop(1, '#152238');
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, cssW, cssH);
 
-        // Background selectable stars (1:1 aspect ratio, perfectly round stars)
+        // 2. Soft Animated Nebula Glow in Pad
+        const nebX = cssW * 0.5 + Math.sin(now * 0.0007) * 35;
+        const nebY = cssH * 0.45 + Math.cos(now * 0.0005) * 15;
+        const nebGrad = ctx.createRadialGradient(nebX, nebY, 10, nebX, nebY, cssW * 0.48);
+        nebGrad.addColorStop(0, theme.nebula);
+        nebGrad.addColorStop(0.5, 'rgba(99, 102, 241, 0.07)');
+        nebGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = nebGrad;
+        ctx.fillRect(0, 0, cssW, cssH);
+
+        // 3. Subtle Silhouette of the Garden Island Horizon at the bottom edge
+        ctx.save();
+        ctx.fillStyle = 'rgba(16, 38, 28, 0.65)';
+        ctx.strokeStyle = 'rgba(74, 222, 128, 0.22)';
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.ellipse(cssW * 0.5, cssH + 34, cssW * 0.36, 46, 0, Math.PI, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(167, 243, 208, 0.35)';
+        ctx.font = '10px "Quicksand", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('🌿 Cakrawala Pulau Kebunmu', cssW * 0.5, cssH - 4);
+        ctx.restore();
+
+        // 4. Background Selectable Stars
         constellationBgStars.forEach(st => {
             const sx = (st.nx !== undefined ? st.nx : st.x / 500) * cssW;
             const sy = (st.ny !== undefined ? st.ny : st.y / 260) * cssH;
+            const twinkle = 0.65 + 0.35 * Math.sin(now * 0.003 + (st.phase || 0));
+            const isHovered = constellationHoverStar === st;
+
             ctx.save();
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
-            ctx.shadowColor = 'rgba(255, 255, 255, 0.85)';
-            ctx.shadowBlur = 6;
+            if (isHovered) {
+                ctx.strokeStyle = theme.star;
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.arc(sx, sy, 10 + Math.sin(now * 0.01) * 2, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            ctx.fillStyle = isHovered ? theme.star : `rgba(255, 255, 255, ${(0.55 + 0.35 * twinkle).toFixed(2)})`;
+            ctx.shadowColor = isHovered ? theme.star : 'rgba(255, 255, 255, 0.8)';
+            ctx.shadowBlur = isHovered ? 12 : 5;
             ctx.beginPath();
-            ctx.arc(sx, sy, st.r || 3, 0, Math.PI * 2);
+            ctx.arc(sx, sy, (st.r || 2.8) * (0.85 + 0.2 * twinkle), 0, Math.PI * 2);
             ctx.fill();
+
+            if (st.flare || isHovered) {
+                drawFourPointStar(ctx, sx, sy, (st.r || 2.8) * 0.9, isHovered ? theme.star : '#FFFFFF', 0.55 * twinkle);
+            }
             ctx.restore();
         });
 
-        // Connected glowing lines of current draft
-        if (constellationDraftNodes.length > 1) {
+        // 5. Live Elastic Preview Thread from last node to pointer
+        if (constellationDraftNodes.length > 0 && constellationPointerPos) {
+            const last = constellationDraftNodes[constellationDraftNodes.length - 1];
+            const lx = last.nx * cssW;
+            const ly = last.ny * cssH;
+            const tx = constellationHoverStar ? constellationHoverStar.nx * cssW : constellationPointerPos.x;
+            const ty = constellationHoverStar ? constellationHoverStar.ny * cssH : constellationPointerPos.y;
+
             ctx.save();
-            ctx.strokeStyle = '#FDE047';
-            ctx.lineWidth = 2.5;
-            ctx.shadowColor = '#FDE047';
-            ctx.shadowBlur = 10;
+            ctx.strokeStyle = theme.line;
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([4, 4]);
+            ctx.globalAlpha = 0.65;
             ctx.beginPath();
-            const f = constellationDraftNodes[0];
-            const fx = (f.nx !== undefined ? f.nx : f.x / 500) * cssW;
-            const fy = (f.ny !== undefined ? f.ny : f.y / 260) * cssH;
-            ctx.moveTo(fx, fy);
-            for (let i = 1; i < constellationDraftNodes.length; i++) {
-                const pt = constellationDraftNodes[i];
-                const px = (pt.nx !== undefined ? pt.nx : pt.x / 500) * cssW;
-                const py = (pt.ny !== undefined ? pt.ny : pt.y / 260) * cssH;
-                ctx.lineTo(px, py);
-            }
+            ctx.moveTo(lx, ly);
+            ctx.lineTo(tx, ty);
             ctx.stroke();
             ctx.restore();
         }
 
-        // Selected star nodes
+        // 6. Connected Glowing Lines of Current Draft
+        if (constellationDraftNodes.length > 1) {
+            ctx.save();
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            // Outer soft glow pass
+            ctx.strokeStyle = theme.glow;
+            ctx.lineWidth = 6;
+            ctx.beginPath();
+            constellationDraftNodes.forEach((pt, i) => {
+                const px = (pt.nx !== undefined ? pt.nx : pt.x / 500) * cssW;
+                const py = (pt.ny !== undefined ? pt.ny : pt.y / 260) * cssH;
+                if (i === 0) ctx.moveTo(px, py);
+                else ctx.lineTo(px, py);
+            });
+            ctx.stroke();
+
+            // Inner bright starlight thread
+            ctx.strokeStyle = theme.line;
+            ctx.lineWidth = 2.2;
+            ctx.shadowColor = theme.star;
+            ctx.shadowBlur = 10;
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        // 7. Selected Star Nodes
         constellationDraftNodes.forEach((pt, idx) => {
             const sx = (pt.nx !== undefined ? pt.nx : pt.x / 500) * cssW;
             const sy = (pt.ny !== undefined ? pt.ny : pt.y / 260) * cssH;
+            const pulse = 1 + Math.sin(now * 0.005 + idx) * 0.15;
+
             ctx.save();
-            ctx.fillStyle = '#FEF08A';
-            ctx.shadowColor = '#FACC15';
+            drawFourPointStar(ctx, sx, sy, 4.2 * pulse, theme.star, 0.9);
+            ctx.fillStyle = '#FFFFFF';
+            ctx.shadowColor = theme.star;
             ctx.shadowBlur = 12;
             ctx.beginPath();
-            ctx.arc(sx, sy, 5.5, 0, Math.PI * 2);
+            ctx.arc(sx, sy, 3.2, 0, Math.PI * 2);
             ctx.fill();
-            ctx.fillStyle = '#FFFFFF';
+
+            ctx.fillStyle = theme.label;
             ctx.font = 'bold 10px monospace';
-            ctx.fillText(String(idx + 1), sx + 8, sy - 5);
+            ctx.fillText(String(idx + 1), sx + 8, sy - 6);
             ctx.restore();
         });
+
+        // 8. Update & Draw Stardust Burst Particles
+        for (let i = constellationPadParticles.length - 1; i >= 0; i--) {
+            const p = constellationPadParticles[i];
+            p.x += p.vx * dt;
+            p.y += p.vy * dt;
+            p.vx *= 0.94;
+            p.vy *= 0.94;
+            p.life -= dt * 2.1;
+            if (p.life <= 0) {
+                constellationPadParticles.splice(i, 1);
+                continue;
+            }
+            ctx.save();
+            ctx.globalAlpha = Math.max(0, p.life);
+            ctx.fillStyle = p.color;
+            ctx.shadowColor = p.color;
+            ctx.shadowBlur = 6;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.r * p.life, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+    }
+
+    // Smoothly glides the garden camera so the chosen constellation is framed in the sky
+    function getConstellationSkySlotOffset(cIdx) {
+        const slot = SKY_CONSTELLATION_SLOTS[cIdx % SKY_CONSTELLATION_SLOTS.length];
+        const ringMult = 1 + Math.floor(cIdx / SKY_CONSTELLATION_SLOTS.length) * 0.28;
+        const isPortrait = typeof screenH !== 'undefined' && typeof screenW !== 'undefined' && screenH > screenW;
+        let dx = slot.dx * ringMult;
+        let dy = slot.dy * ringMult;
+        if (isPortrait) {
+            dx *= 0.58;
+            if (dy < 0) dy -= 140;
+            else dy += 110;
+        }
+        return { dx, dy, label: slot.label };
+    }
+
+    function focusOnConstellationById(id) {
+        if (typeof window !== 'undefined' && Array.isArray(window.gardenConstellations)) {
+            gardenConstellations = window.gardenConstellations;
+        }
+        const idx = gardenConstellations.findIndex(c => c.id === id);
+        if (idx === -1) return;
+        const c = gardenConstellations[idx];
+
+        if (typeof isNightMode !== 'undefined' && !isNightMode && typeof toggleDayNightMode === 'function') {
+            toggleDayNightMode();
+        }
+        closeConstellationModal();
+
+        focusedConstellationId = c.id;
+        focusedConstellationTimer = 4.5;
+
+        if (typeof screenW !== 'undefined' && typeof screenH !== 'undefined' && typeof WORLD_W !== 'undefined') {
+            const slot = getConstellationSkySlotOffset(idx);
+            const isPortrait = screenH > screenW;
+            const targetZoom = isPortrait ? Math.max(0.38, Math.min(0.50, zoom)) : Math.max(0.58, Math.min(0.70, zoom));
+            const basePanX = (screenW - WORLD_W * targetZoom) / 2;
+            const basePanY = (screenH - WORLD_H * targetZoom) / 2;
+            // Gently tilt camera toward the constellation while keeping the lush island horizon anchored in view
+            const maxShiftX = screenW * 0.26;
+            const maxShiftY = screenH * 0.28;
+            const shiftX = Math.max(-maxShiftX, Math.min(maxShiftX, -slot.dx * targetZoom * 0.52));
+            const shiftY = Math.max(-maxShiftY, Math.min(maxShiftY, -slot.dy * targetZoom * 0.52));
+            const targetPanX = basePanX + shiftX;
+            const targetPanY = basePanY + shiftY;
+
+            window.constellationCameraTarget = {
+                panX: targetPanX,
+                panY: targetPanY,
+                zoom: targetZoom
+            };
+        }
+
+        if (typeof showGardenNotice === 'function') {
+            showGardenNotice(`🔭 Mengamati rasi bintang "${c.name}" di angkasa malam!`);
+        }
+        if (typeof playChimeSound === 'function') playChimeSound();
+    }
+
+    function viewConstellationsInSky() {
+        if (typeof window !== 'undefined' && Array.isArray(window.gardenConstellations)) {
+            gardenConstellations = window.gardenConstellations;
+        }
+        if (gardenConstellations.length > 0) {
+            focusOnConstellationById(gardenConstellations[gardenConstellations.length - 1].id);
+        } else {
+            if (typeof isNightMode !== 'undefined' && !isNightMode && typeof toggleDayNightMode === 'function') {
+                toggleDayNightMode();
+            }
+            closeConstellationModal();
+            if (typeof showGardenNotice === 'function') {
+                showGardenNotice('🌌 Menatap angkasa malam di sekeliling pulau kebunmu...');
+            }
+        }
     }
 
     function saveConstellationDraft() {
         if (constellationDraftNodes.length < 2) {
             if (typeof showGardenNotice === 'function') {
-                showGardenNotice('Hubungkan minimal 2 titik bintang di langit untuk membuat Rasi Bintang! ✨');
+                showGardenNotice('Hubungkan minimal 2 titik bintang untuk merangkai Rasi Bintang! ✨');
             }
             return;
+        }
+        if (typeof window !== 'undefined' && Array.isArray(window.gardenConstellations)) {
+            gardenConstellations = window.gardenConstellations;
         }
         const nameInput = document.getElementById('constellationNameInput');
         const name = (nameInput && nameInput.value.trim()) ? nameInput.value.trim() : `Rasi Bintang #${gardenConstellations.length + 1}`;
 
-        // Normalize coordinates to 0..1
+        // Normalize coordinates relative to their bounding box with comfortable padding so user drawings keep their exact proportions
         const normalized = constellationDraftNodes.map(pt => ({
             nx: Number(((pt.nx !== undefined ? pt.nx : pt.x / 500)).toFixed(3)),
             ny: Number(((pt.ny !== undefined ? pt.ny : pt.y / 260)).toFixed(3))
         }));
 
-        gardenConstellations.push({
+        const newConst = {
             id: 'const_' + Date.now(),
             name: name,
+            color: constellationDraftColor || 'gold',
             nodes: normalized
-        });
+        };
+
+        gardenConstellations.push(newConst);
         window.gardenConstellations = gardenConstellations;
 
         constellationDraftNodes = [];
@@ -1314,14 +1754,19 @@
         renderConstellationPad();
         renderSavedConstellationsList();
 
-        if (typeof showGardenNotice === 'function') {
-            showGardenNotice(`🌌 Rasi Bintang "${name}" kini bersinar abadi di langit malam kebunmu!`);
-        }
-        if (typeof playChimeSound === 'function') playChimeSound();
         if (typeof scheduleAutoSave === 'function') scheduleAutoSave();
+
+        // Automatically glide camera to admire the newly created constellation in the outer space sky!
+        focusOnConstellationById(newConst.id);
+        if (typeof showGardenNotice === 'function') {
+            showGardenNotice(`🌌 Rasi Bintang "${name}" kini bersinar di angkasa luar pulau kebunmu!`);
+        }
     }
 
     function deleteConstellationById(id) {
+        if (typeof window !== 'undefined' && Array.isArray(window.gardenConstellations)) {
+            gardenConstellations = window.gardenConstellations;
+        }
         gardenConstellations = gardenConstellations.filter(c => c.id !== id);
         window.gardenConstellations = gardenConstellations;
         renderSavedConstellationsList();
@@ -1329,73 +1774,322 @@
     }
 
     function renderSavedConstellationsList() {
+        if (typeof window !== 'undefined' && Array.isArray(window.gardenConstellations)) {
+            gardenConstellations = window.gardenConstellations;
+        }
         const listEl = document.getElementById('savedConstellationsList');
         if (!listEl) return;
         if (!gardenConstellations || gardenConstellations.length === 0) {
-            listEl.innerHTML = `<span class="text-[11px] text-slate-400">Belum ada rasi bintang tersimpan. Klik titik bintang di atas untuk menggambar!</span>`;
+            listEl.innerHTML = `<span class="text-[11px] text-indigo-300/70">Belum ada rasi bintang. Ketuk atau seret bintang di atas untuk melukis angkasa!</span>`;
             return;
         }
-        listEl.innerHTML = gardenConstellations.map(c => `
-            <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-800 text-amber-200 border border-slate-600 text-xs">
-                <span>✨ ${c.name}</span>
-                <button onclick="deleteConstellationById('${c.id}')" class="text-rose-400 hover:text-rose-300 font-bold ml-1" title="Hapus Rasi">✕</button>
+        listEl.innerHTML = gardenConstellations.map(c => {
+            const th = CONSTELLATION_THEMES[c.color] || CONSTELLATION_THEMES.gold;
+            return `
+            <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-indigo-950/90 hover:bg-indigo-900 text-amber-100 border border-indigo-400/40 text-xs transition shadow-2xs">
+                <button type="button" onclick="focusOnConstellationById('${c.id}')" class="flex items-center gap-1 cursor-pointer hover:text-amber-300 transition" title="Lihat rasi bintang ini di angkasa">
+                    <span style="color:${th.star}">✦</span>
+                    <span class="font-medium">${c.name}</span>
+                </button>
+                <button type="button" onclick="deleteConstellationById('${c.id}')" class="text-rose-400 hover:text-rose-300 font-bold ml-1 cursor-pointer" title="Hapus Rasi">✕</button>
             </div>
-        `).join('');
+            `;
+        }).join('');
     }
 
-    // Draw saved constellations in the top sky area during Night Mode
-    function drawGardenConstellationsInSky(ctx, screenW, screenH, nightAlpha, now) {
-        if (nightAlpha <= 0.08 || !gardenConstellations || gardenConstellations.length === 0) return;
+    /**
+     * Renders the Deep Space Cosmos, Parallax Starfield, Shooting Stars, and Custom Constellations
+     * onto the background sky layer (composited BEHIND the 3D Grass Island via destination-over).
+     */
+    function drawGardenConstellationsInSky(targetCtx, screenW, screenH, nightAlpha, now, dt = 0.016) {
+        initCosmicStarfield();
+        if (typeof window !== 'undefined' && Array.isArray(window.gardenConstellations)) {
+            gardenConstellations = window.gardenConstellations;
+        }
 
-        ctx.save();
-        ctx.globalAlpha = Math.min(0.85, nightAlpha * 0.9);
+        const dpr = (typeof canvasDpr !== 'undefined' && canvasDpr) ? canvasDpr : 1;
+        if (!cosmicSkyCanvas && typeof document !== 'undefined') {
+            cosmicSkyCanvas = document.createElement('canvas');
+            cosmicSkyCtx = cosmicSkyCanvas.getContext('2d');
+        }
+        if (!cosmicSkyCanvas || !cosmicSkyCtx) return;
 
-        gardenConstellations.forEach((c, cIdx) => {
-            if (!c.nodes || c.nodes.length < 2) return;
-            // Distribute constellations across upper sky
-            const regionW = Math.min(340, screenW * 0.38);
-            const regionH = Math.min(160, screenH * 0.25);
-            const offsetX = ((cIdx % 3) * (screenW * 0.3)) + screenW * 0.08;
-            const offsetY = 45 + (Math.floor(cIdx / 3) * 70);
+        const targetW = Math.max(1, Math.round(screenW * dpr));
+        const targetH = Math.max(1, Math.round(screenH * dpr));
+        if (cosmicSkyCanvas.width !== targetW || cosmicSkyCanvas.height !== targetH) {
+            cosmicSkyCanvas.width = targetW;
+            cosmicSkyCanvas.height = targetH;
+        }
 
-            const shimmer = 0.75 + Math.sin(now * 0.0025 + cIdx) * 0.25;
+        const sctx = cosmicSkyCtx;
+        sctx.save();
+        sctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-            ctx.strokeStyle = `rgba(253, 224, 71, ${0.45 * shimmer})`;
-            ctx.lineWidth = 1.6;
-            ctx.setLineDash([4, 3]);
-            ctx.beginPath();
-            c.nodes.forEach((nd, i) => {
-                const sx = offsetX + nd.nx * regionW;
-                const sy = offsetY + nd.ny * regionH;
-                if (i === 0) ctx.moveTo(sx, sy);
-                else ctx.lineTo(sx, sy);
+        // 1. Base Day/Night Sky Gradient
+        sctx.fillStyle = '#FDFBF2';
+        sctx.fillRect(0, 0, screenW, screenH);
+
+        if (nightAlpha > 0.005) {
+            sctx.save();
+            sctx.globalAlpha = Math.min(1, nightAlpha);
+
+            // Deep outer-space radial/linear gradient
+            const skyGrad = sctx.createLinearGradient(0, 0, 0, screenH);
+            skyGrad.addColorStop(0, '#040711');
+            skyGrad.addColorStop(0.45, '#091124');
+            skyGrad.addColorStop(0.85, '#101C35');
+            skyGrad.addColorStop(1, '#162440');
+            sctx.fillStyle = skyGrad;
+            sctx.fillRect(0, 0, screenW, screenH);
+
+            // Camera delta from centered island view for smooth multi-plane parallax
+            const curZoom = (typeof zoom !== 'undefined') ? zoom : 1.0;
+            const wW = (typeof WORLD_W !== 'undefined') ? WORLD_W : 4200;
+            const wH = (typeof WORLD_H !== 'undefined') ? WORLD_H : 3200;
+            const basePanX = (screenW - wW * curZoom) / 2;
+            const basePanY = (screenH - wH * curZoom) / 2;
+            const camDeltaX = ((typeof panX !== 'undefined' ? panX : basePanX) - basePanX);
+            const camDeltaY = ((typeof panY !== 'undefined' ? panY : basePanY) - basePanY);
+            const skyScale = Math.pow(curZoom, 0.55);
+
+            // 2. Drifting Parallax Cosmic Nebulae
+            cosmicNebulaClouds.forEach(nb => {
+                const driftX = Math.sin(now * 0.00025 + nb.phase) * 28;
+                const driftY = Math.cos(now * 0.0002 + nb.phase) * 18;
+                const nx = screenW * 0.5 + camDeltaX * nb.parallax + (nb.ox + driftX) * skyScale;
+                const ny = screenH * 0.48 + camDeltaY * nb.parallax + (nb.oy + driftY) * skyScale;
+                const rad = nb.rx * skyScale;
+                if (nx + rad < 0 || nx - rad > screenW || ny + rad < 0 || ny - rad > screenH) return;
+
+                const g = sctx.createRadialGradient(nx, ny, rad * 0.05, nx, ny, rad);
+                g.addColorStop(0, nb.color);
+                g.addColorStop(0.55, nb.color.replace(/0\.\d+\)/, '0.04)'));
+                g.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                sctx.fillStyle = g;
+                sctx.beginPath();
+                sctx.arc(nx, ny, rad, 0, Math.PI * 2);
+                sctx.fill();
             });
-            ctx.stroke();
-            ctx.setLineDash([]);
 
-            // Star vertices
-            let avgX = 0, avgY = 0;
-            c.nodes.forEach(nd => {
-                const sx = offsetX + nd.nx * regionW;
-                const sy = offsetY + nd.ny * regionH;
-                avgX += sx;
-                avgY += sy;
-                ctx.fillStyle = '#FEF08A';
-                ctx.beginPath();
-                ctx.arc(sx, sy, 2.8 * shimmer, 0, Math.PI * 2);
-                ctx.fill();
+            // 3. 3-Layer Parallax Twinkling Starfield
+            cosmicBackgroundStars.forEach(st => {
+                const sx = screenW * 0.5 + camDeltaX * st.parallax + st.ox * skyScale;
+                const sy = screenH * 0.48 + camDeltaY * st.parallax + st.oy * skyScale;
+                // Wrap stars seamlessly across a generous virtual sky box so panning infinitely reveals stars
+                const wrapW = Math.max(screenW * 1.6, 1600);
+                const wrapH = Math.max(screenH * 1.6, 1200);
+                const wx = (((sx + wrapW * 0.5) % wrapW) + wrapW) % wrapW - wrapW * 0.5 + screenW * 0.5;
+                const wy = (((sy + wrapH * 0.5) % wrapH) + wrapH) % wrapH - wrapH * 0.5 + screenH * 0.5;
+
+                if (wx < -12 || wx > screenW + 12 || wy < -12 || wy > screenH + 12) return;
+
+                const twinkle = 0.55 + 0.45 * Math.sin(now * st.speed + st.phase);
+                const r = st.r * (0.8 + 0.25 * twinkle);
+
+                sctx.fillStyle = st.color;
+                sctx.globalAlpha = nightAlpha * (0.45 + 0.55 * twinkle);
+                sctx.beginPath();
+                sctx.arc(wx, wy, r, 0, Math.PI * 2);
+                sctx.fill();
+
+                if (st.flare && twinkle > 0.72) {
+                    drawFourPointStar(sctx, wx, wy, r * 1.15, st.color, nightAlpha * (twinkle - 0.35));
+                }
             });
-            avgX /= c.nodes.length;
-            avgY /= c.nodes.length;
+            sctx.globalAlpha = Math.min(1, nightAlpha);
 
-            // Constellation Name Label
-            ctx.font = 'italic 10px "Quicksand", sans-serif';
-            ctx.fillStyle = 'rgba(254, 240, 138, 0.75)';
-            ctx.textAlign = 'center';
-            ctx.fillText(`✦ ${c.name}`, avgX, avgY - 10);
-        });
+            // 4. Ambient Shooting Stars / Meteors in Deep Space
+            cosmicShootingTimer -= dt;
+            if (cosmicShootingTimer <= 0) {
+                cosmicShootingTimer = 4.0 + Math.random() * 4.5;
+                const startX = Math.random() * screenW * 0.85 + screenW * 0.08;
+                const startY = Math.random() * screenH * 0.45 + 15;
+                const angle = (Math.PI * 0.18) + (Math.random() - 0.5) * 0.25;
+                const dir = Math.random() > 0.5 ? 1 : -1;
+                const speed = 340 + Math.random() * 180;
+                cosmicShootingStars.push({
+                    x: startX,
+                    y: startY,
+                    vx: Math.cos(angle) * speed * dir,
+                    vy: Math.sin(angle) * speed,
+                    len: 65 + Math.random() * 45,
+                    life: 1.0
+                });
+            }
 
-        ctx.restore();
+            for (let i = cosmicShootingStars.length - 1; i >= 0; i--) {
+                const ms = cosmicShootingStars[i];
+                ms.x += ms.vx * dt;
+                ms.y += ms.vy * dt;
+                ms.life -= dt * 1.35;
+                if (ms.life <= 0) {
+                    cosmicShootingStars.splice(i, 1);
+                    continue;
+                }
+                const speedMag = Math.hypot(ms.vx, ms.vy) || 1;
+                const tailX = ms.x - (ms.vx / speedMag) * ms.len;
+                const tailY = ms.y - (ms.vy / speedMag) * ms.len;
+
+                const mg = sctx.createLinearGradient(ms.x, ms.y, tailX, tailY);
+                mg.addColorStop(0, `rgba(255, 255, 255, ${(ms.life * nightAlpha).toFixed(2)})`);
+                mg.addColorStop(0.3, `rgba(186, 230, 253, ${(ms.life * 0.65 * nightAlpha).toFixed(2)})`);
+                mg.addColorStop(1, 'rgba(56, 189, 248, 0)');
+
+                sctx.save();
+                sctx.strokeStyle = mg;
+                sctx.lineWidth = 2.0;
+                sctx.lineCap = 'round';
+                sctx.beginPath();
+                sctx.moveTo(ms.x, ms.y);
+                sctx.lineTo(tailX, tailY);
+                sctx.stroke();
+                drawFourPointStar(sctx, ms.x, ms.y, 2.6, '#FFFFFF', ms.life * nightAlpha);
+                sctx.restore();
+            }
+
+            // 5. Player's Custom Constellations in Parallax Celestial Space around the Island
+            if (focusedConstellationTimer > 0) {
+                focusedConstellationTimer = Math.max(0, focusedConstellationTimer - dt);
+                if (focusedConstellationTimer <= 0) focusedConstellationId = null;
+            }
+
+            if (gardenConstellations && gardenConstellations.length > 0) {
+                const constParallax = 0.58;
+                const skyCenterX = screenW * 0.5 + camDeltaX * constParallax;
+                const skyCenterY = screenH * 0.52 + camDeltaY * constParallax;
+                const boxW = 165 * Math.pow(curZoom, 0.65);
+                const boxH = 105 * Math.pow(curZoom, 0.65);
+
+                gardenConstellations.forEach((c, cIdx) => {
+                    if (!c.nodes || c.nodes.length < 2) return;
+                    const theme = CONSTELLATION_THEMES[c.color] || CONSTELLATION_THEMES.gold;
+                    const slot = getConstellationSkySlotOffset(cIdx);
+                    const cx = skyCenterX + slot.dx * curZoom;
+                    const cy = skyCenterY + slot.dy * curZoom;
+
+                    // Compute node screen coordinates centered around (cx, cy)
+                    let minNx = 1, maxNx = 0, minNy = 1, maxNy = 0;
+                    c.nodes.forEach(nd => {
+                        if (nd.nx < minNx) minNx = nd.nx;
+                        if (nd.nx > maxNx) maxNx = nd.nx;
+                        if (nd.ny < minNy) minNy = nd.ny;
+                        if (nd.ny > maxNy) maxNy = nd.ny;
+                    });
+                    const midNx = (minNx + maxNx) * 0.5;
+                    const midNy = (minNy + maxNy) * 0.5;
+
+                    const screenPts = c.nodes.map(nd => ({
+                        x: cx + (nd.nx - midNx) * boxW,
+                        y: cy + (nd.ny - midNy) * boxH
+                    }));
+
+                    const shimmer = 0.78 + Math.sin(now * 0.0024 + cIdx * 1.3) * 0.22;
+
+                    // A. Soft Celestial Nebula Aura behind this Constellation
+                    const auraRad = Math.max(boxW, boxH) * 0.78;
+                    const auraGrad = sctx.createRadialGradient(cx, cy, 4, cx, cy, auraRad);
+                    auraGrad.addColorStop(0, theme.nebula);
+                    auraGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                    sctx.fillStyle = auraGrad;
+                    sctx.beginPath();
+                    sctx.arc(cx, cy, auraRad, 0, Math.PI * 2);
+                    sctx.fill();
+
+                    // B. Highlight Ring if newly created or focused via Telescope
+                    if (focusedConstellationId === c.id && focusedConstellationTimer > 0) {
+                        const ringPulse = 1 + Math.sin(now * 0.006) * 0.08;
+                        sctx.save();
+                        sctx.strokeStyle = theme.star;
+                        sctx.globalAlpha = Math.min(1, focusedConstellationTimer * 0.6) * nightAlpha;
+                        sctx.lineWidth = 1.5;
+                        sctx.setLineDash([6, 4]);
+                        sctx.beginPath();
+                        sctx.arc(cx, cy, auraRad * 0.85 * ringPulse, 0, Math.PI * 2);
+                        sctx.stroke();
+                        sctx.restore();
+                    }
+
+                    // C. Glowing Constellation Connecting Threads (Outer Glow + Crisp Starlight Core)
+                    sctx.save();
+                    sctx.lineCap = 'round';
+                    sctx.lineJoin = 'round';
+
+                    // Soft outer glow
+                    sctx.strokeStyle = theme.glow;
+                    sctx.lineWidth = 4.5;
+                    sctx.globalAlpha = nightAlpha * 0.65 * shimmer;
+                    sctx.beginPath();
+                    screenPts.forEach((pt, i) => {
+                        if (i === 0) sctx.moveTo(pt.x, pt.y);
+                        else sctx.lineTo(pt.x, pt.y);
+                    });
+                    sctx.stroke();
+
+                    // Inner crisp celestial line
+                    sctx.strokeStyle = theme.line;
+                    sctx.lineWidth = 1.5;
+                    sctx.globalAlpha = nightAlpha * 0.9 * shimmer;
+                    sctx.setLineDash([5, 3]);
+                    sctx.lineDashOffset = -(now * 0.012);
+                    sctx.stroke();
+                    sctx.setLineDash([]);
+                    sctx.restore();
+
+                    // D. Star Vertices with 4-Point Astronomical Spikes
+                    let topY = Infinity;
+                    screenPts.forEach((pt, nIdx) => {
+                        if (pt.y < topY) topY = pt.y;
+                        const nodeTwinkle = 0.75 + 0.25 * Math.sin(now * 0.004 + cIdx + nIdx * 0.9);
+                        const starRad = (2.6 + (nIdx === 0 ? 0.6 : 0)) * nodeTwinkle;
+
+                        drawFourPointStar(sctx, pt.x, pt.y, starRad * 1.15, theme.star, nightAlpha * 0.85 * nodeTwinkle);
+                        sctx.save();
+                        sctx.fillStyle = '#FFFFFF';
+                        sctx.globalAlpha = nightAlpha;
+                        sctx.beginPath();
+                        sctx.arc(pt.x, pt.y, starRad * 0.68, 0, Math.PI * 2);
+                        sctx.fill();
+                        sctx.restore();
+                    });
+
+                    // E. Sleek Astronomical Constellation Caption
+                    const labelY = Math.max(18, topY - 14);
+                    sctx.save();
+                    sctx.font = '600 10.5px "Quicksand", sans-serif';
+                    sctx.textAlign = 'center';
+                    sctx.textBaseline = 'middle';
+                    const labelText = `✦ ${c.name}`;
+                    const textW = sctx.measureText(labelText).width;
+                    const pillW = textW + 14;
+                    const pillH = 18;
+
+                    sctx.globalAlpha = nightAlpha * 0.82;
+                    sctx.fillStyle = 'rgba(9, 14, 28, 0.68)';
+                    sctx.strokeStyle = theme.badgeBorder;
+                    sctx.lineWidth = 1;
+                    sctx.beginPath();
+                    if (typeof sctx.roundRect === 'function') {
+                        sctx.roundRect(cx - pillW / 2, labelY - pillH / 2, pillW, pillH, 9);
+                    } else {
+                        sctx.rect(cx - pillW / 2, labelY - pillH / 2, pillW, pillH);
+                    }
+                    sctx.fill();
+                    sctx.stroke();
+
+                    sctx.fillStyle = theme.label;
+                    sctx.globalAlpha = nightAlpha * 0.95;
+                    sctx.fillText(labelText, cx, labelY + 0.5);
+                    sctx.restore();
+                });
+            }
+
+            sctx.restore();
+        }
+
+        sctx.restore();
+
+        // Blit the completed Cosmic Sky Canvas onto targetCtx (which has destination-over set so it sits BEHIND the 3D Island!)
+        targetCtx.drawImage(cosmicSkyCanvas, 0, 0, screenW, screenH);
     }
 
     // =========================================================================
@@ -1491,19 +2185,21 @@
         const constCanvas = document.getElementById('constellationPadCanvas');
         if (constCanvas && !constCanvas._bound) {
             constCanvas._bound = true;
-            constCanvas.addEventListener('pointerdown', (e) => {
+
+            function getSnappedOrRawStar(e, snapRadius = 24) {
                 const rect = constCanvas.getBoundingClientRect();
                 const cssW = rect.width;
                 const cssH = rect.height;
-                if (!cssW || !cssH) return;
+                if (!cssW || !cssH) return null;
 
                 const clickX = e.clientX - rect.left;
                 const clickY = e.clientY - rect.top;
+                constellationPointerPos = { x: clickX, y: clickY };
 
-                // Snap to nearest background star if close (24px snap radius)
-                let chosenNx = clickX / cssW;
-                let chosenNy = clickY / cssH;
-                let minDist = 24;
+                let chosenNx = Math.max(0.04, Math.min(0.96, clickX / cssW));
+                let chosenNy = Math.max(0.05, Math.min(0.88, clickY / cssH));
+                let minDist = snapRadius;
+                let snappedStar = null;
 
                 for (let st of constellationBgStars) {
                     const sx = (st.nx !== undefined ? st.nx : st.x / 500) * cssW;
@@ -1513,12 +2209,51 @@
                         minDist = dist;
                         chosenNx = (st.nx !== undefined ? st.nx : st.x / 500);
                         chosenNy = (st.ny !== undefined ? st.ny : st.y / 260);
+                        snappedStar = st;
                     }
                 }
+                constellationHoverStar = snappedStar;
+                return { nx: chosenNx, ny: chosenNy, screenX: chosenNx * cssW, screenY: chosenNy * cssH, snappedStar };
+            }
 
-                constellationDraftNodes.push({ nx: chosenNx, ny: chosenNy });
-                if (typeof playPencilSound === 'function') playPencilSound();
+            function addStarNodeIfDistinct(pt) {
+                if (!pt) return;
+                const last = constellationDraftNodes[constellationDraftNodes.length - 1];
+                if (last && Math.hypot(last.nx - pt.nx, last.ny - pt.ny) < 0.025) return;
+
+                constellationDraftNodes.push({ nx: pt.nx, ny: pt.ny });
+                const theme = CONSTELLATION_THEMES[constellationDraftColor] || CONSTELLATION_THEMES.gold;
+                spawnPadStarBurst(pt.screenX, pt.screenY, theme.star);
+                playStarNodeChime(constellationDraftNodes.length - 1);
                 renderConstellationPad();
+            }
+
+            constCanvas.addEventListener('pointerdown', (e) => {
+                constellationIsDragging = true;
+                const pt = getSnappedOrRawStar(e, 26);
+                addStarNodeIfDistinct(pt);
+            });
+
+            constCanvas.addEventListener('pointermove', (e) => {
+                const pt = getSnappedOrRawStar(e, 22);
+                if (constellationIsDragging && pt && pt.snappedStar) {
+                    // When dragging across the sky, automatically chain snapped background stars!
+                    const alreadyUsed = constellationDraftNodes.some(
+                        n => Math.hypot(n.nx - pt.nx, n.ny - pt.ny) < 0.02
+                    );
+                    if (!alreadyUsed) {
+                        addStarNodeIfDistinct(pt);
+                    }
+                }
+            });
+
+            window.addEventListener('pointerup', () => {
+                constellationIsDragging = false;
+            });
+
+            constCanvas.addEventListener('pointerleave', () => {
+                constellationHoverStar = null;
+                constellationPointerPos = null;
             });
         }
 
@@ -1564,9 +2299,13 @@
     window.openConstellationModal = openConstellationModal;
     window.closeConstellationModal = closeConstellationModal;
     window.clearConstellationDraft = clearConstellationDraft;
+    window.undoConstellationDraftNode = undoConstellationDraftNode;
+    window.setConstellationDraftColor = setConstellationDraftColor;
+    window.shuffleConstellationBgStars = shuffleConstellationBgStars;
+    window.focusOnConstellationById = focusOnConstellationById;
+    window.viewConstellationsInSky = viewConstellationsInSky;
     window.saveConstellationDraft = saveConstellationDraft;
     window.deleteConstellationById = deleteConstellationById;
     window.drawGardenConstellationsInSky = drawGardenConstellationsInSky;
 
 })();
-
