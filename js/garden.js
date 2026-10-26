@@ -3990,6 +3990,43 @@ function placePendingDecorationAt(x, y) {
 }
 window.placePendingDecorationAt = placePendingDecorationAt;
 
+function handlePillowTap(pillow) {
+  if (!pillow) return;
+  if (typeof isPillowOccupied === "function" && isPillowOccupied(pillow.id)) {
+    if (typeof showGardenNotice === "function") {
+      showGardenNotice("💤 Bantal empuk ini sedang dipakai beristirahat!");
+    }
+    return;
+  }
+  if (typeof animals !== "undefined" && Array.isArray(animals)) {
+    const eligible = animals.filter(
+      (a) => a.state !== "sleeping" && a.habitat !== "water" && a.type !== "fish"
+    );
+    if (eligible.length > 0) {
+      // Prioritaskan yang paling ngantuk, lalu jarak terdekat
+      eligible.sort(
+        (a, b) =>
+          (b.sleepiness || 0) - (a.sleepiness || 0) ||
+          Math.hypot(a.x - pillow.x, a.y - pillow.y) -
+            Math.hypot(b.x - pillow.x, b.y - pillow.y)
+      );
+      const chosen = eligible[0];
+      chosen.targetX = pillow.x;
+      chosen.targetY = pillow.y - 3;
+      chosen.targetPillowId = pillow.id;
+      chosen.state = "walking";
+      chosen.stateTimer = 10.0;
+      chosen.facingLeft = pillow.x < chosen.x;
+      chosen.bubbleText = "(∪｡∪) ｡｡zZ";
+      chosen.bubbleTimer = 2.2;
+      if (typeof showGardenNotice === "function") {
+        showGardenNotice(`💤 Mengajak ${chosen.name} beristirahat di bantal empuk!`);
+      }
+    }
+  }
+}
+window.handlePillowTap = handlePillowTap;
+
 function initGardenEventListeners() {
   if (gardenListenersInitialized) return;
   if (!worldCanvas && typeof document !== "undefined") {
@@ -4218,31 +4255,6 @@ function initGardenEventListeners() {
         selectedDecoration = hitDecor;
         if (typeof window !== "undefined") window.selectedDecoration = hitDecor;
         draggedDecoration = hitDecor;
-
-        if (hitDecor.type === "pet_pillow" && typeof animals !== "undefined" && animals.length > 0) {
-          const nonSleeping = animals.filter(
-            (a) => a.state !== "sleeping" && a.habitat !== "water" && a.type !== "fish"
-          );
-          if (nonSleeping.length > 0) {
-            nonSleeping.sort(
-              (a, b) =>
-                Math.hypot(a.x - hitDecor.x, a.y - hitDecor.y) -
-                Math.hypot(b.x - hitDecor.x, b.y - hitDecor.y)
-            );
-            const nearest = nonSleeping[0];
-            nearest.targetX = hitDecor.x;
-            nearest.targetY = hitDecor.y - 1;
-            nearest.targetPillowId = hitDecor.id;
-            nearest.state = "walking";
-            nearest.stateTimer = 9.0;
-            nearest.facingLeft = hitDecor.x < nearest.x;
-            nearest.bubbleText = "🐾 !";
-            nearest.bubbleTimer = 2.0;
-            if (typeof showGardenNotice === "function") {
-              showGardenNotice("💤 Memanggil sahabat kebun untuk tidur di bantal empuk!");
-            }
-          }
-        }
         draggedDecorationOrigX = hitDecor.x;
         draggedDecorationOrigY = hitDecor.y;
         draggedDecorationOffset = {
@@ -4497,6 +4509,17 @@ function initGardenEventListeners() {
       draggedDecoration.x = worldPos.x + draggedDecorationOffset.x;
       draggedDecoration.y = worldPos.y + draggedDecorationOffset.y;
       worldCanvas.style.cursor = "grabbing";
+
+      // Jika bantal dipindah / digeser, hewan yang tidur di atasnya langsung bangun!
+      if (draggedDecoration.type === "pet_pillow") {
+        const dMoved = Math.hypot(
+          draggedDecoration.x - draggedDecorationOrigX,
+          draggedDecoration.y - draggedDecorationOrigY
+        );
+        if (dMoved > 4 && typeof wakePetFromPillow === "function") {
+          wakePetFromPillow(draggedDecoration.id, "moved");
+        }
+      }
     } else if (currentTool === "water") {
       pourWaterAt(worldPos.x, worldPos.y);
     } else if (currentTool === "land") {
@@ -4792,6 +4815,11 @@ function initGardenEventListeners() {
           typeof openEaselModal === "function"
         ) {
           openEaselModal(draggedDecoration);
+        } else if (
+          movedDist < 6 &&
+          draggedDecoration.type === "pet_pillow"
+        ) {
+          handlePillowTap(draggedDecoration);
         } else {
           if (typeof playPlantSound === "function") playPlantSound();
         }
@@ -5205,7 +5233,12 @@ function animateGarden(now) {
       ...(typeof decorations !== "undefined"
         ? decorations.map((d) => ({ type: "decor", y: d.y, obj: d }))
         : []),
-      ...animals.map((a) => ({ type: "animal", y: a.y, obj: a })),
+      ...animals.map((a) => ({
+        type: "animal",
+        // When sleeping on a pillow, sort AFTER the pillow so the pet renders ON TOP of the cushion:
+        y: a.sleepingOnPillowId ? a.y + 20 : a.y,
+        obj: a,
+      })),
       ...(mysteryEgg
         ? [{ type: "egg", y: mysteryEgg.y, obj: mysteryEgg }]
         : []),

@@ -605,6 +605,7 @@ function spawnDecoration(type) {
 }
 
 function removeDecorationById(id) {
+    if (typeof wakePetFromPillow === 'function') wakePetFromPillow(id, 'removed');
     decorations = decorations.filter(d => d.id !== id);
     window.decorations = decorations;
     renderDecorModalCatalog();
@@ -883,10 +884,12 @@ function checkDecorationsSurvival() {
         const onWater = typeof isPointOnWater === 'function' && isPointOnWater(d.x, d.y);
         if (d.habitat === 'both') {
             if (!onGrass && !onWater) {
+                if (typeof wakePetFromPillow === 'function') wakePetFromPillow(d.id, 'removed');
                 decorations.splice(i, 1);
             }
         } else {
             if (!onGrass || onWater) {
+                if (typeof wakePetFromPillow === 'function') wakePetFromPillow(d.id, 'removed');
                 decorations.splice(i, 1);
             }
         }

@@ -456,7 +456,13 @@ function spawnAnimal(species, customName, variantId) {
         petAnim: 0,
         bubbleText: '',
         bubbleTimer: 0,
-        colorHue: Math.random() * 360
+        colorHue: Math.random() * 360,
+        sleepingOnPillowId: null,
+        targetPillowId: null,
+        sleepiness: Math.random() * 25,
+        sleepinessRate: 0.8 + Math.random() * 0.5,
+        napCooldown: 30 + Math.random() * 30,
+        zzzTimer: 0
     };
 
     animals.push(animal);
@@ -621,10 +627,56 @@ function focusAnimal(id) {
     closeAnimalModal();
 }
 
+function isPillowOccupied(pillowId, excludeAnimal = null) {
+    if (!pillowId) return false;
+    const petList = (typeof animals !== 'undefined' && Array.isArray(animals))
+        ? animals
+        : ((typeof window !== 'undefined' && Array.isArray(window.animals)) ? window.animals : []);
+    return petList.some(other => {
+        if (other === excludeAnimal) return false;
+        if (other.sleepingOnPillowId === pillowId) return true;
+        if (other.targetPillowId === pillowId) return true;
+        return false;
+    });
+}
+window.isPillowOccupied = isPillowOccupied;
+
+function wakePetFromPillow(pillowId, reason = 'moved') {
+    if (!pillowId) return;
+    const petList = (typeof animals !== 'undefined' && Array.isArray(animals))
+        ? animals
+        : ((typeof window !== 'undefined' && Array.isArray(window.animals)) ? window.animals : []);
+    petList.forEach(a => {
+        if (a.sleepingOnPillowId === pillowId || a.targetPillowId === pillowId) {
+            const wasSleeping = (a.sleepingOnPillowId === pillowId || a.state === 'sleeping');
+            a.sleepingOnPillowId = null;
+            a.targetPillowId = null;
+            a.state = 'idle';
+            a.stateTimer = 2.0;
+            if (wasSleeping) {
+                a.bubbleText = '(⊙_⊙;) !';
+                a.bubbleTimer = 2.2;
+                // Pet hops off pillow to clear the cushion
+                const angle = Math.random() * Math.PI * 2;
+                const hopDist = 20 + Math.random() * 8;
+                const hx = a.x + Math.cos(angle) * hopDist;
+                const hy = a.y + Math.sin(angle) * hopDist * 0.7;
+                if (typeof isLandWalkable === 'function' && isLandWalkable(hx, hy)) {
+                    a.x = hx;
+                    a.y = hy;
+                }
+            }
+        }
+    });
+}
+window.wakePetFromPillow = wakePetFromPillow;
+
 function petAnimal(a) {
     if (!a) return;
     a.sleepingOnPillowId = null;
     a.targetPillowId = null;
+    a.sleepiness = Math.max(0, (a.sleepiness || 0) - 35);
+    a.napCooldown = 45;
     a.petAnim = 1.0;
     a.state = 'happy';
     a.stateTimer = 3.5;
@@ -719,6 +771,7 @@ function isPathClearOfLand(x1, y1, x2, y2) {
 }
 
 function updateAnimals(dt, now) {
+    if (!now) now = performance.now() * 0.001;
     const cx = WORLD_W * 0.5;
     const cy = WORLD_H * 0.52;
 
@@ -1002,6 +1055,21 @@ function updateAnimals(dt, now) {
             continue;
         }
 
+        // Ensure sleepiness properties exist on land animals
+        if (a.sleepiness === undefined) a.sleepiness = Math.random() * 30;
+        if (a.sleepinessRate === undefined) a.sleepinessRate = 0.8 + Math.random() * 0.5;
+        if (a.napCooldown === undefined) a.napCooldown = 20;
+        if (a.zzzTimer === undefined) a.zzzTimer = 0;
+
+        // Sleepiness accumulation while awake
+        if (a.state !== 'sleeping') {
+            if (a.napCooldown > 0) {
+                a.napCooldown -= dt;
+            } else {
+                a.sleepiness = Math.min(100, (a.sleepiness || 0) + dt * (a.sleepinessRate || 1.0));
+            }
+        }
+
         a.stateTimer -= dt;
 
         // Bridge crossing waypoints check
@@ -1014,8 +1082,8 @@ function updateAnimals(dt, now) {
             a.facingLeft = nextWp.x < a.x;
         } else if (a.stateTimer <= 0 && !currentlyOnWater && !currentlyOffGrass) {
             if (a.state === 'walking') {
-                a.state = Math.random() < 0.25 ? 'sleeping' : 'idle';
-                a.stateTimer = 2.0 + Math.random() * 4.0;
+                a.state = 'idle';
+                a.stateTimer = 1.5 + Math.random() * 2.5;
             } else {
                 let targetedBridge = false;
                 // If near bridge, chance to cross bridge across river/pond!
@@ -1041,20 +1109,34 @@ function updateAnimals(dt, now) {
                 }
 
                 let targetedPillow = false;
-                if (!targetedBridge && typeof decorations !== 'undefined' && Array.isArray(decorations)) {
-                    const emptyPillows = decorations.filter(d => {
-                        if (d.type !== 'pet_pillow') return false;
-                        const occupied = animals.some(other => other !== a && (other.sleepingOnPillowId === d.id || Math.hypot(other.x - d.x, other.y - d.y) < 16) && other.state === 'sleeping');
-                        return !occupied;
-                    });
-                    if (emptyPillows.length > 0 && Math.random() < 0.45) {
-                        const pil = emptyPillows[Math.floor(Math.random() * emptyPillows.length)];
+                // Sleepiness Logic: Pet seeks pillow ONLY when drowsy (sleepiness >= 75)
+                const isDrowsy = (a.sleepiness || 0) >= 75;
+                const activeDecorList = (typeof decorations !== 'undefined' && Array.isArray(decorations))
+                    ? decorations
+                    : ((typeof window !== 'undefined' && Array.isArray(window.decorations)) ? window.decorations : []);
+                if (!targetedBridge && isDrowsy && activeDecorList.length > 0) {
+                    const emptyPillows = activeDecorList.filter(d => d.type === 'pet_pillow' && !isPillowOccupied(d.id, a));
+                    if (emptyPillows.length > 0) {
+                        // Pick nearest empty pillow
+                        emptyPillows.sort((p1, p2) => Math.hypot(p1.x - a.x, p1.y - a.y) - Math.hypot(p2.x - a.x, p2.y - a.y));
+                        const pil = emptyPillows[0];
                         a.targetX = pil.x;
-                        a.targetY = pil.y - 1;
+                        a.targetY = pil.y - 3;
                         a.targetPillowId = pil.id;
                         a.state = 'walking';
-                        a.stateTimer = 9.0;
+                        a.stateTimer = 10.0;
                         a.facingLeft = pil.x < a.x;
+                        a.bubbleText = '(∪｡∪) ｡｡zZ';
+                        a.bubbleTimer = 2.0;
+                        targetedPillow = true;
+                    } else if (a.sleepiness >= 98) {
+                        // Exhausted with no pillow available: take a short quick nap on the grass
+                        a.state = 'sleeping';
+                        a.stateTimer = 6.0;
+                        a.sleepiness = 50;
+                        a.zzzTimer = 0.5;
+                        a.bubbleText = '';
+                        a.bubbleTimer = 0;
                         targetedPillow = true;
                     }
                 }
@@ -1083,7 +1165,7 @@ function updateAnimals(dt, now) {
                             a.stateTimer = 1.5 + Math.random() * 2.0;
                         }
                     } else {
-                        a.state = Math.random() < 0.3 ? 'sleeping' : 'idle';
+                        a.state = 'idle';
                         a.stateTimer = 2.0 + Math.random() * 3.5;
                     }
                 }
@@ -1098,18 +1180,23 @@ function updateAnimals(dt, now) {
             if (dist < 6) {
                 a.x = a.targetX;
                 a.y = a.targetY;
-                if (a.targetPillowId && typeof decorations !== 'undefined') {
-                    const pil = decorations.find(d => d.id === a.targetPillowId);
-                    if (pil && Math.hypot(a.x - pil.x, a.y - pil.y) < 16) {
+                if (a.targetPillowId) {
+                    const decList = (typeof decorations !== 'undefined' && Array.isArray(decorations)) ? decorations : (typeof window !== 'undefined' && Array.isArray(window.decorations) ? window.decorations : []);
+                    const pil = decList.find(d => d.id === a.targetPillowId);
+                    const isPillowDragged = (typeof draggedDecoration !== 'undefined' && draggedDecoration && draggedDecoration.id === a.targetPillowId);
+                    if (pil && !isPillowDragged && Math.hypot(a.x - pil.x, a.y - pil.y) < 22) {
                         a.x = pil.x;
-                        a.y = pil.y - 1;
+                        a.y = pil.y - 3;
                         a.state = 'sleeping';
                         a.sleepingOnPillowId = pil.id;
-                        a.stateTimer = 16.0 + Math.random() * 12.0; // Sweet peaceful nap!
+                        a.stateTimer = 25.0; // Sweet nap safety limit
                         a.targetPillowId = null;
-                        a.bubbleText = '💤';
-                        a.bubbleTimer = 2.5;
+                        a.bubbleText = ''; // Clear kaomoji so it never overlaps Zzz particles!
+                        a.bubbleTimer = 0;
+                        a.zzzTimer = 0.5;
                         continue;
+                    } else {
+                        a.targetPillowId = null;
                     }
                 }
                 if (a.bridgeWaypoints && a.bridgeWaypoints.length > 0) {
@@ -1155,22 +1242,50 @@ function updateAnimals(dt, now) {
             const wagRate = a.state === 'happy' ? (a.type === 'dog' ? 3.8 : 2.8) : (a.type === 'dog' ? 1.2 : 1.0);
             a.tailPhase += dt * wagRate;
         } else if (a.state === 'sleeping') {
-            if (a.stateTimer <= 0) {
-                a.sleepingOnPillowId = null;
-                a.state = 'idle';
-                a.stateTimer = 2.0 + Math.random() * 2.0;
-            } else if (Math.random() < 0.035 && typeof particles !== 'undefined') {
+            // Recharge energy while sleeping:
+            const recoverRate = a.sleepingOnPillowId ? 4.8 : 8.0;
+            a.sleepiness = Math.max(0, (a.sleepiness || 0) - dt * recoverRate);
+
+            // Spaced, peaceful Zzz particle emissions (1 every 1.6 - 2.0s)
+            a.zzzTimer = (a.zzzTimer || 0) - dt;
+            if (a.zzzTimer <= 0 && typeof particles !== 'undefined') {
+                a.zzzTimer = 1.6 + Math.random() * 0.4;
                 particles.push({
                     type: 'zzz',
-                    x: a.x + (Math.random() - 0.5) * 8,
+                    x: a.x + (Math.random() - 0.5) * 6,
                     y: a.y - (a.type === 'exclusive' ? 18 : 14),
-                    vx: (Math.random() - 0.5) * 0.4 + (a.facingLeft ? -0.4 : 0.4),
-                    vy: -15 - Math.random() * 6,
-                    size: 11 + Math.random() * 4,
+                    vx: (Math.random() - 0.5) * 3,
+                    vy: -13 - Math.random() * 4,
+                    size: 12 + Math.random() * 3,
                     alpha: 0.95,
+                    decay: 0.52,
                     text: Math.random() < 0.4 ? 'Z' : 'z',
                     color: a.sleepingOnPillowId ? '#EC4899' : '#A855F7'
                 });
+            }
+
+            // Natural wake up when no longer sleepy ("jika sudah tidak ngantuk dia akan bangun")
+            if (a.sleepiness <= 0 || a.stateTimer <= 0) {
+                const wasOnPillow = Boolean(a.sleepingOnPillowId);
+                a.sleepingOnPillowId = null;
+                a.targetPillowId = null;
+                a.state = 'happy';
+                a.stateTimer = 3.5;
+                a.sleepiness = 0;
+                a.napCooldown = 90 + Math.random() * 60; // Refreshed! Takes 1.5 - 2.5 minutes before getting sleepy again
+                a.bubbleText = wasOnPillow ? '(✿◠‿◠) ✨' : '(˶ᵔ ᵕ ᵔ˶) 💖';
+                a.bubbleTimer = 2.8;
+
+                if (wasOnPillow) {
+                    const hopAngle = Math.random() * Math.PI * 2;
+                    const hopDist = 20 + Math.random() * 8;
+                    const hx = a.x + Math.cos(hopAngle) * hopDist;
+                    const hy = a.y + Math.sin(hopAngle) * hopDist * 0.7;
+                    if (typeof isLandWalkable === 'function' && isLandWalkable(hx, hy)) {
+                        a.x = hx;
+                        a.y = hy;
+                    }
+                }
             }
         }
     }
@@ -1188,16 +1303,24 @@ function drawCat(ctx, a, now) {
     const dragLift = a.isBeingDragged ? -16 : 0;
     const tremble = isScared ? (Math.sin(now * 30) * 1.5) : 0;
 
-    // Ground shadow
-    ctx.fillStyle = 'rgba(20, 40, 15, 0.18)';
-    ctx.beginPath();
-    ctx.ellipse(0, 2 - dragLift, isScared ? 12 : 17, isScared ? 3.5 : 5.5, 0, 0, Math.PI * 2);
-    ctx.fill();
+    // Ground shadow (suppress if resting on pillow cushion)
+    if (!a.sleepingOnPillowId) {
+        ctx.fillStyle = 'rgba(20, 40, 15, 0.18)';
+        ctx.beginPath();
+        ctx.ellipse(0, 2 - dragLift, isScared ? 12 : 17, isScared ? 3.5 : 5.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+    }
 
+    const isSleeping = a.state === 'sleeping';
+    const sleepBreath = isSleeping ? Math.sin(now * 0.003) * 0.7 : 0;
     const petBounce = Math.sin((a.petAnim || 0) * Math.PI) * 12;
     const walkHop = a.state === 'walking' ? Math.abs(Math.sin(a.hopPhase || 0)) * 3.5 : 0;
     const bridgeLift = (!a.isBeingDragged && typeof getBridgeDeckElevation === 'function') ? getBridgeDeckElevation(a.x, a.y) : 0;
-    ctx.translate(0, -petBounce - walkHop - bridgeLift + dragLift + tremble);
+    ctx.translate(0, -petBounce - walkHop - bridgeLift + dragLift + tremble + (isSleeping ? (1.6 + sleepBreath) : 0));
+
+    if (isSleeping) {
+        ctx.scale(1.04, 0.93);
+    }
 
     if (a.facingLeft) ctx.scale(-1, 1);
 
@@ -1454,16 +1577,24 @@ function drawDog(ctx, a, now) {
     const dragLift = a.isBeingDragged ? -16 : 0;
     const tremble = isScared ? (Math.sin(now * 30) * 1.5) : 0;
 
-    // Ground shadow
-    ctx.fillStyle = 'rgba(20, 40, 15, 0.18)';
-    ctx.beginPath();
-    ctx.ellipse(0, 2 - dragLift, isScared ? 13 : 18, isScared ? 3.5 : 5.5, 0, 0, Math.PI * 2);
-    ctx.fill();
+    // Ground shadow (suppress if resting on pillow cushion)
+    if (!a.sleepingOnPillowId) {
+        ctx.fillStyle = 'rgba(20, 40, 15, 0.18)';
+        ctx.beginPath();
+        ctx.ellipse(0, 2 - dragLift, isScared ? 13 : 18, isScared ? 3.5 : 5.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+    }
 
+    const isSleeping = a.state === 'sleeping';
+    const sleepBreath = isSleeping ? Math.sin(now * 0.003) * 0.7 : 0;
     const petBounce = Math.sin((a.petAnim || 0) * Math.PI) * 12;
     const walkHop = a.state === 'walking' ? Math.abs(Math.sin(a.hopPhase || 0)) * 3.8 : 0;
     const bridgeLift = (!a.isBeingDragged && typeof getBridgeDeckElevation === 'function') ? getBridgeDeckElevation(a.x, a.y) : 0;
-    ctx.translate(0, -petBounce - walkHop - bridgeLift + dragLift + tremble);
+    ctx.translate(0, -petBounce - walkHop - bridgeLift + dragLift + tremble + (isSleeping ? (1.6 + sleepBreath) : 0));
+
+    if (isSleeping) {
+        ctx.scale(1.04, 0.93);
+    }
 
     if (a.facingLeft) ctx.scale(-1, 1);
 
@@ -1710,16 +1841,24 @@ function drawRabbit(ctx, a, now) {
     const dragLift = a.isBeingDragged ? -16 : 0;
     const tremble = isScared ? (Math.sin(now * 30) * 1.5) : 0;
 
-    // Ground shadow
-    ctx.fillStyle = 'rgba(20, 40, 15, 0.18)';
-    ctx.beginPath();
-    ctx.ellipse(0, 2 - dragLift, isScared ? 11 : 15, isScared ? 3.2 : 5, 0, 0, Math.PI * 2);
-    ctx.fill();
+    // Ground shadow (suppress if resting on pillow cushion)
+    if (!a.sleepingOnPillowId) {
+        ctx.fillStyle = 'rgba(20, 40, 15, 0.18)';
+        ctx.beginPath();
+        ctx.ellipse(0, 2 - dragLift, isScared ? 11 : 15, isScared ? 3.2 : 5, 0, 0, Math.PI * 2);
+        ctx.fill();
+    }
 
+    const isSleeping = a.state === 'sleeping';
+    const sleepBreath = isSleeping ? Math.sin(now * 0.003) * 0.7 : 0;
     const petBounce = Math.sin((a.petAnim || 0) * Math.PI) * 12;
     const walkHop = a.state === 'walking' ? Math.abs(Math.sin((a.hopPhase || 0))) * 7.5 : 0;
     const bridgeLift = (!a.isBeingDragged && typeof getBridgeDeckElevation === 'function') ? getBridgeDeckElevation(a.x, a.y) : 0;
-    ctx.translate(0, -petBounce - walkHop - bridgeLift + dragLift + tremble);
+    ctx.translate(0, -petBounce - walkHop - bridgeLift + dragLift + tremble + (isSleeping ? (1.6 + sleepBreath) : 0));
+
+    if (isSleeping) {
+        ctx.scale(1.04, 0.93);
+    }
 
     if (a.facingLeft) ctx.scale(-1, 1);
 
@@ -2350,6 +2489,7 @@ function drawCustomAnimal(ctx, a, now) {
 
 function drawAnimalBubble(ctx, a) {
     if (!a.bubbleText || a.bubbleTimer <= 0) return;
+    if (a.state === 'sleeping') return; // Do not draw speech bubble during sleep! Peaceful Zzz particles only.
 
     ctx.save();
     const alpha = Math.min(1, a.bubbleTimer * 2.5);

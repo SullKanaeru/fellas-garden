@@ -436,7 +436,13 @@
             colorHue: Math.random() * 360,
             friendship: 30,
             personality: 'playful',
-            accessory: 'none'
+            accessory: 'none',
+            sleepingOnPillowId: null,
+            targetPillowId: null,
+            sleepiness: Math.random() * 25,
+            sleepinessRate: 0.8 + Math.random() * 0.5,
+            napCooldown: 40 + Math.random() * 30,
+            zzzTimer: 0
         };
 
         if (typeof animals !== 'undefined' && Array.isArray(animals)) {
@@ -497,15 +503,20 @@
         const walkHop = isWalking ? Math.abs(Math.sin(stride)) * 3.2 : 0;
         const bridgeLift = (!a.isBeingDragged && typeof getBridgeDeckElevation === 'function') ? getBridgeDeckElevation(a.x, a.y) : 0;
 
-        // Ground shadow (pulses slightly with height/hop)
-        const baseShadowRadius = (def && def.tier === 'legendary') ? 18 : 14;
-        const shadowScale = Math.max(0.7, 1 - (walkHop + petBounce) * 0.018);
-        ctx.fillStyle = 'rgba(20, 35, 15, 0.18)';
-        ctx.beginPath();
-        ctx.ellipse(0, 2 - dragLift, (isScared ? baseShadowRadius * 0.75 : baseShadowRadius) * shadowScale, (isScared ? 4 : 5.5) * shadowScale, 0, 0, Math.PI * 2);
-        ctx.fill();
+        // Ground shadow (suppress if resting on pillow cushion)
+        if (!a.sleepingOnPillowId) {
+            const baseShadowRadius = (def && def.tier === 'legendary') ? 18 : 14;
+            const shadowScale = Math.max(0.7, 1 - (walkHop + petBounce) * 0.018);
+            ctx.fillStyle = 'rgba(20, 35, 15, 0.18)';
+            ctx.beginPath();
+            ctx.ellipse(0, 2 - dragLift, (isScared ? baseShadowRadius * 0.75 : baseShadowRadius) * shadowScale, (isScared ? 4 : 5.5) * shadowScale, 0, 0, Math.PI * 2);
+            ctx.fill();
+        }
 
-        ctx.translate(0, -petBounce - walkHop - bridgeLift + dragLift + tremble);
+        ctx.translate(0, -petBounce - walkHop - bridgeLift + dragLift + tremble + (isSleeping ? (1.5 + Math.sin(rawSec * 1.8) * 0.5) : 0));
+        if (isSleeping) {
+            ctx.scale(1.04, 0.94);
+        }
         if (a.facingLeft) ctx.scale(-1, 1);
 
         // Locomotion & secondary-motion state passed to individual pet renderers
