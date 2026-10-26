@@ -234,10 +234,14 @@ function createDefaultOvalIsland() {
   maskCtx.fill();
   maskCtx.restore();
 
-  // Populate rich painterly grass tufts & clover patches inside the oval island
-  populateGrassDetailsAcrossIsland();
-  rebuildTerrain3DLayer();
+  // 1. Rebuild collision grids FIRST so isPointOnGrass works accurately!
   updateCollisionGrids();
+
+  // 2. Populate rich painterly grass tufts & clover patches inside the oval island
+  populateGrassDetailsAcrossIsland();
+
+  // 3. Rebuild 3D extruded terrain layer with the new grass details!
+  rebuildTerrain3DLayer();
 }
 
 /**
@@ -1183,17 +1187,18 @@ if (typeof window !== "undefined") {
  */
 function populateGrassDetailsAcrossIsland() {
   grassDetails = [];
-  const step = 22;
-  const minX = Math.max(40, Math.floor(WORLD_W * 0.5 - 480));
-  const maxX = Math.min(WORLD_W - 40, Math.floor(WORLD_W * 0.5 + 480));
-  const minY = Math.max(40, Math.floor(WORLD_H * 0.52 - 320));
-  const maxY = Math.min(WORLD_H - 40, Math.floor(WORLD_H * 0.52 + 320));
+  const step = 20;
+  const minX = Math.max(40, Math.floor(WORLD_W * 0.5 - 460));
+  const maxX = Math.min(WORLD_W - 40, Math.floor(WORLD_W * 0.5 + 460));
+  const minY = Math.max(40, Math.floor(WORLD_H * 0.52 - 300));
+  const maxY = Math.min(WORLD_H - 40, Math.floor(WORLD_H * 0.52 + 300));
 
   for (let y = minY; y <= maxY; y += step) {
     for (let x = minX; x <= maxX; x += step) {
-      const jitterX = x + (Math.random() - 0.5) * 18;
-      const jitterY = y + (Math.random() - 0.5) * 18;
-      if (isPointOnGrass(jitterX, jitterY)) {
+      const jitterX = x + (Math.random() - 0.5) * 16;
+      const jitterY = y + (Math.random() - 0.5) * 16;
+      if (typeof isPointOnGrass === "function" && isPointOnGrass(jitterX, jitterY) &&
+          (typeof isPointOnWater !== "function" || !isPointOnWater(jitterX, jitterY))) {
         addGrassDetailAt(jitterX, jitterY, false);
       }
     }
@@ -4213,6 +4218,31 @@ function initGardenEventListeners() {
         selectedDecoration = hitDecor;
         if (typeof window !== "undefined") window.selectedDecoration = hitDecor;
         draggedDecoration = hitDecor;
+
+        if (hitDecor.type === "pet_pillow" && typeof animals !== "undefined" && animals.length > 0) {
+          const nonSleeping = animals.filter(
+            (a) => a.state !== "sleeping" && a.habitat !== "water" && a.type !== "fish"
+          );
+          if (nonSleeping.length > 0) {
+            nonSleeping.sort(
+              (a, b) =>
+                Math.hypot(a.x - hitDecor.x, a.y - hitDecor.y) -
+                Math.hypot(b.x - hitDecor.x, b.y - hitDecor.y)
+            );
+            const nearest = nonSleeping[0];
+            nearest.targetX = hitDecor.x;
+            nearest.targetY = hitDecor.y - 1;
+            nearest.targetPillowId = hitDecor.id;
+            nearest.state = "walking";
+            nearest.stateTimer = 9.0;
+            nearest.facingLeft = hitDecor.x < nearest.x;
+            nearest.bubbleText = "🐾 !";
+            nearest.bubbleTimer = 2.0;
+            if (typeof showGardenNotice === "function") {
+              showGardenNotice("💤 Memanggil sahabat kebun untuk tidur di bantal empuk!");
+            }
+          }
+        }
         draggedDecorationOrigX = hitDecor.x;
         draggedDecorationOrigY = hitDecor.y;
         draggedDecorationOffset = {
@@ -5793,6 +5823,26 @@ function updateAndDrawParticles(targetCtx, dt) {
       targetCtx.fillStyle = p.color || "#FACC15";
       targetCtx.fillText(p.text, p.x, p.y);
       targetCtx.restore();
+    } else if (p.type === "zzz") {
+      p.phase = (p.phase || 0) + dt * 3.5;
+      p.x += ((p.vx || 0) + Math.sin(p.phase) * 6) * dt;
+      p.y += (p.vy || -16) * dt;
+      p.alpha -= dt * (p.decay || 0.42);
+      if (p.alpha <= 0) {
+        particles.splice(i, 1);
+        continue;
+      }
+      targetCtx.save();
+      targetCtx.globalAlpha = Math.max(0, Math.min(1, p.alpha));
+      targetCtx.font = `bold ${Math.round(p.size || 12)}px 'Patrick Hand', cursive, sans-serif`;
+      targetCtx.textAlign = "center";
+      targetCtx.textBaseline = "middle";
+      targetCtx.strokeStyle = "rgba(255, 255, 255, 0.85)";
+      targetCtx.lineWidth = 2.5;
+      targetCtx.strokeText(p.text || "z", p.x, p.y);
+      targetCtx.fillStyle = p.color || "#A855F7";
+      targetCtx.fillText(p.text || "z", p.x, p.y);
+      targetCtx.restore();
     } else if (p.type === "snow") {
       p.x += (p.vx || 0) * dt;
       p.y += (p.vy || 0) * dt;
@@ -6290,6 +6340,20 @@ async function confirmResetGarden() {
 function resetToDefaultGarden() {
   createDefaultOvalIsland();
   createStarterFlowersMatchingReference();
+  if (typeof decorations !== "undefined") {
+    decorations.length = 0;
+    decorations.push({
+      id: "dec_pillow_" + Date.now(),
+      type: "pet_pillow",
+      x: Math.round(WORLD_W * 0.5 + 130),
+      y: Math.round(WORLD_H * 0.52 - 40),
+      width: 54,
+      height: 38,
+      habitat: "land",
+      rotation: 0,
+      birthScale: 1,
+    });
+  }
   clearFlowerPad();
   centerGardenView();
   closeHelpModal();

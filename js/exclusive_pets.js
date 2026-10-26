@@ -1,7 +1,7 @@
 /********************************************************************
  * FELLA'S GARDEN - EXCLUSIVE PETS SYSTEM (js/exclusive_pets.js)
  * Unique, Crazy & Mythical Chibi Companions Exclusive to Mystery Eggs!
- * Features 15 Special Pets across 4 Rarity Tiers,
+ * Features 16 Special Pets across 4 Rarity Tiers,
  * Discovery Index (Gallery '???'), Unique Behaviors & Particle FX.
  ********************************************************************/
 
@@ -184,7 +184,7 @@
             desc: 'Ubur-ubur semi-transparan bercahaya kosmis yang melayang anggun di udara maupun di atas air.',
             detailDesc: 'Tentakel lembutnya berpendar biru safir dan ungu, menciptakan irama denyut cahaya yang menenangkan.',
             stars: 3,
-            weight: 8.75
+            weight: 7.0
         },
         axolotl_spirit: {
             id: 'axolotl_spirit',
@@ -203,7 +203,7 @@
             desc: 'Axolotl merah muda manis dengan insang rumbai bercahaya toska dan senyuman abadi yang menggemaskan.',
             detailDesc: 'Suka berjalan santai di tepi rumput maupun mendekati air sambil tersenyum ramah.',
             stars: 3,
-            weight: 8.75
+            weight: 7.0
         },
         tanuki_spirit: {
             id: 'tanuki_spirit',
@@ -222,7 +222,7 @@
             desc: 'Rakun bundar lucu dari negeri dongeng dengan sehelai daun hijau ajaib di kepalanya.',
             detailDesc: 'Suka tidur siang di rerumputan lebat dan sesekali mengedipkan mata jenaka kepada bunga.',
             stars: 3,
-            weight: 8.75
+            weight: 7.0
         },
         mandragora: {
             id: 'mandragora',
@@ -241,7 +241,26 @@
             desc: 'Tanaman akar mungil bertubuh kayu ceria dengan tunas daun segar di kepalanya.',
             detailDesc: 'Kadang mengubur kakinya ke tanah untuk menyerap nutrisi kebun lalu melompat bangun dengan ceria.',
             stars: 3,
-            weight: 8.75
+            weight: 7.0
+        },
+        orangutan: {
+            id: 'orangutan',
+            name: 'Orang Utan Rimba',
+            fullName: 'Bayi Orang Utan Rimba',
+            title: 'Penjelajah Rimba Cerdas & Ramah',
+            tier: 'rare',
+            tierLabel: 'RARE',
+            tierColor: '#0284C7',
+            tierBg: '#E0F2FE',
+            tierBorder: '#38BDF8',
+            tierEmoji: '💎',
+            habitat: 'land',
+            emoji: '🦧',
+            sound: 'chirp',
+            desc: 'Bayi orang utan berbulu jingga tembaga lebat nan lembut, dengan wajah bulat cerdas dan lengan panjang yang menggemaskan.',
+            detailDesc: 'Sangat ramah dan bijak, gemar bergoyang santai, menggaruk kepala kecilnya saat berpikir, dan memegang daun rimba mini.',
+            stars: 3,
+            weight: 7.0
         },
 
         // --- TIER: UNCOMMON (45% Drop Rate) ---
@@ -571,6 +590,9 @@
                 break;
             case 'jade_frog':
                 drawJadeFrog(ctx, a, anim);
+                break;
+            case 'orangutan':
+                drawOrangUtan(ctx, a, anim);
                 break;
             default:
                 drawChibiKurama(ctx, a, anim);
@@ -2403,6 +2425,408 @@
         ctx.beginPath();
         ctx.arc(0, -7, 6, 0.3, Math.PI - 0.3);
         ctx.stroke();
+    }
+
+    // 16. 🦧 ORANG UTAN RIMBA (Rare Chibi Ape with Long Furry Arms, Head-Scratch & Leaf)
+    function drawOrangUtan(ctx, a, anim) {
+        const { t, isWalking, stride, legSwing, legLiftL, legLiftR, headBob, isBlinking, isSleeping, isHappy, isScared, breath } = anim;
+
+        // Rich warm ape color palette
+        const furMain = '#C2410C';      // Warm copper orange
+        const furDark = '#9A3412';      // Deep shadow chestnut
+        const furLight = '#EA580C';     // Vibrant highlight orange
+        const outline = '#7C2D12';      // Deep rich outline
+        const faceSkin = '#FED7AA';     // Pale peach muzzle / disc
+        const faceDark = '#FDBA74';     // Warm shadow peach
+        const cheekPink = '#FCA5A5';    // Soft rosy blush
+        const leatherSkin = '#431407';  // Espresso hands & feet
+
+        // Unique secondary animation phases
+        // Scratching head animation when idle or thinking
+        const scratchPhase = Math.sin(t * 1.8);
+        const isScratching = !isWalking && !isSleeping && !isScared && (scratchPhase > 0.45);
+        const scratchHandY = isScratching ? (Math.sin(t * 14) * 2.2) : 0;
+
+        // Feet with curved toes (Chibi ape feet)
+        ctx.save();
+        ctx.fillStyle = leatherSkin;
+        ctx.strokeStyle = outline;
+        ctx.lineWidth = 1.3;
+        // Left foot
+        ctx.beginPath();
+        ctx.ellipse(-5.5 + legSwing * 0.7, 1.2 - legLiftL, 4.2, 2.6, -0.15, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        // Left thumb toe
+        ctx.beginPath();
+        ctx.arc(-8.2 + legSwing * 0.7, 1.5 - legLiftL, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Right foot
+        ctx.beginPath();
+        ctx.ellipse(5.5 - legSwing * 0.7, 1.2 - legLiftR, 4.2, 2.6, 0.15, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        // Right thumb toe
+        ctx.beginPath();
+        ctx.arc(8.2 - legSwing * 0.7, 1.5 - legLiftR, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+
+        // Chubby Pear-Shaped Furry Body
+        ctx.save();
+        ctx.fillStyle = furMain;
+        ctx.strokeStyle = outline;
+        ctx.lineWidth = 1.9;
+        ctx.beginPath();
+        // Fluffy body with rounded contour
+        ctx.ellipse(0, -9, 13.5, 11.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Fluffy shoulder/side fur tufts
+        ctx.fillStyle = furDark;
+        ctx.beginPath();
+        // Left flank fur tuft
+        ctx.moveTo(-12, -12);
+        ctx.lineTo(-15.5, -8);
+        ctx.lineTo(-11.5, -6);
+        ctx.closePath();
+        ctx.fill();
+        // Right flank fur tuft
+        ctx.moveTo(12, -12);
+        ctx.lineTo(15.5, -8);
+        ctx.lineTo(11.5, -6);
+        ctx.closePath();
+        ctx.fill();
+
+        // Lighter Peach-Orange Tummy Patch
+        ctx.fillStyle = furLight;
+        ctx.beginPath();
+        ctx.ellipse(0, -8, 8.5, 8.0, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Inner belly center
+        ctx.fillStyle = faceDark;
+        ctx.globalAlpha = 0.55;
+        ctx.beginPath();
+        ctx.ellipse(0, -6.5, 5.0, 4.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1.0;
+        ctx.restore();
+
+        // Left Arm (Long Characteristic Ape Arm)
+        ctx.save();
+        if (isSleeping) {
+            // Tucked under body/cheek peacefully
+            ctx.fillStyle = furMain;
+            ctx.strokeStyle = outline;
+            ctx.lineWidth = 1.7;
+            ctx.beginPath();
+            ctx.ellipse(-7, -4, 6.5, 3.5, 0.4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            // Espresso hand paw
+            ctx.fillStyle = leatherSkin;
+            ctx.beginPath();
+            ctx.arc(-11, -3, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+        } else if (isScratching) {
+            // Arm reaches up to scratch side of head/ear!
+            ctx.fillStyle = furMain;
+            ctx.strokeStyle = outline;
+            ctx.lineWidth = 1.7;
+            ctx.beginPath();
+            ctx.moveTo(-9, -11);
+            ctx.quadraticCurveTo(-16, -17, -9, -21 + scratchHandY);
+            ctx.stroke();
+            // Fur sleeve
+            ctx.beginPath();
+            ctx.ellipse(-13, -15, 3.2, 5.5, -0.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            // Scratching hand paw on ear
+            ctx.fillStyle = leatherSkin;
+            ctx.beginPath();
+            ctx.ellipse(-8, -21 + scratchHandY, 2.8, 2.2, 0.4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+        } else if (isHappy) {
+            // Both arms waving up in joy!
+            ctx.fillStyle = furMain;
+            ctx.strokeStyle = outline;
+            ctx.lineWidth = 1.7;
+            const waveAng = Math.sin(t * 8) * 0.25;
+            ctx.save();
+            ctx.translate(-9, -12);
+            ctx.rotate(-0.8 + waveAng);
+            ctx.beginPath();
+            ctx.ellipse(-5, -7, 3.2, 7.5, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = leatherSkin;
+            ctx.beginPath();
+            ctx.arc(-5, -14, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.restore();
+        } else {
+            // Natural walking or idle long arm hanging past knee
+            const armSwing = isWalking ? Math.sin(stride) * 3.5 : Math.sin(t * 2.0) * 0.8;
+            ctx.save();
+            ctx.translate(-9, -11);
+            ctx.rotate(0.15 + (isWalking ? armSwing * 0.08 : 0));
+            ctx.fillStyle = furMain;
+            ctx.strokeStyle = outline;
+            ctx.lineWidth = 1.7;
+            // Long curved arm
+            ctx.beginPath();
+            ctx.ellipse(-2, 5, 3.2, 7.2, 0.1, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            // Dark hand reaching down
+            ctx.fillStyle = leatherSkin;
+            ctx.beginPath();
+            ctx.ellipse(-2, 11, 2.8, 2.4, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.restore();
+        }
+        ctx.restore();
+
+        // Right Arm (Holding signature fresh jungle leaf)
+        ctx.save();
+        if (isSleeping) {
+            ctx.fillStyle = furMain;
+            ctx.strokeStyle = outline;
+            ctx.lineWidth = 1.7;
+            ctx.beginPath();
+            ctx.ellipse(7, -4, 6.5, 3.5, -0.4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = leatherSkin;
+            ctx.beginPath();
+            ctx.arc(11, -3, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+        } else if (isHappy) {
+            ctx.save();
+            ctx.translate(9, -12);
+            const waveAng = -Math.sin(t * 8) * 0.25;
+            ctx.rotate(0.8 + waveAng);
+            ctx.fillStyle = furMain;
+            ctx.strokeStyle = outline;
+            ctx.lineWidth = 1.7;
+            ctx.beginPath();
+            ctx.ellipse(5, -7, 3.2, 7.5, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = leatherSkin;
+            ctx.beginPath();
+            ctx.arc(5, -14, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.restore();
+        } else {
+            const armSwing = isWalking ? -Math.sin(stride) * 3.5 : -Math.sin(t * 2.0) * 0.8;
+            ctx.save();
+            ctx.translate(9, -11);
+            ctx.rotate(-0.15 + (isWalking ? armSwing * 0.08 : 0));
+            ctx.fillStyle = furMain;
+            ctx.strokeStyle = outline;
+            ctx.lineWidth = 1.7;
+            ctx.beginPath();
+            ctx.ellipse(2, 5, 3.2, 7.2, -0.1, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            // Dark hand
+            ctx.fillStyle = leatherSkin;
+            ctx.beginPath();
+            ctx.ellipse(2, 11, 2.8, 2.4, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // Jungle Leaf held in hand!
+            ctx.save();
+            ctx.translate(3, 11);
+            const leafWiggle = Math.sin(t * 3.0) * 0.15;
+            ctx.rotate(0.4 + leafWiggle);
+            ctx.fillStyle = '#22C55E';
+            ctx.strokeStyle = '#15803D';
+            ctx.lineWidth = 1.1;
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.quadraticCurveTo(4, -8, 1, -13);
+            ctx.quadraticCurveTo(-3, -7, 0, 0);
+            ctx.fill();
+            ctx.stroke();
+            // Leaf vein
+            ctx.strokeStyle = '#86EFAC';
+            ctx.lineWidth = 0.8;
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(1, -11);
+            ctx.stroke();
+            ctx.restore();
+
+            ctx.restore();
+        }
+        ctx.restore();
+
+        // Head (with expressive chibi disc face and top fluff tuft)
+        ctx.save();
+        ctx.translate(0, -19 + headBob);
+        if (isSleeping) ctx.rotate(0.08);
+
+        // Fluffy Round Ears
+        [-9, 9].forEach((ex, i) => {
+            ctx.fillStyle = furMain;
+            ctx.strokeStyle = outline;
+            ctx.lineWidth = 1.4;
+            ctx.beginPath();
+            ctx.arc(ex, -2, 3.8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            // Inner peach ear
+            ctx.fillStyle = faceDark;
+            ctx.beginPath();
+            ctx.arc(ex + (i === 0 ? 0.8 : -0.8), -2, 2.0, 0, Math.PI * 2);
+            ctx.fill();
+        });
+
+        // Head Fur Background & Iconic Cheek Fluff Pads
+        ctx.fillStyle = furMain;
+        ctx.strokeStyle = outline;
+        ctx.lineWidth = 1.8;
+        ctx.beginPath();
+        ctx.ellipse(0, -2, 11.5, 9.8, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Cheek fluff tufts (Orangutan cheek flanges/fluff)
+        ctx.fillStyle = furDark;
+        ctx.beginPath();
+        // Left cheek tufts
+        ctx.moveTo(-10, -5);
+        ctx.lineTo(-13.5, -2);
+        ctx.lineTo(-10.5, 0);
+        ctx.lineTo(-13, 2.5);
+        ctx.lineTo(-9, 3);
+        ctx.closePath();
+        ctx.fill();
+        // Right cheek tufts
+        ctx.moveTo(10, -5);
+        ctx.lineTo(13.5, -2);
+        ctx.lineTo(10.5, 0);
+        ctx.lineTo(13, 2.5);
+        ctx.lineTo(9, 3);
+        ctx.closePath();
+        ctx.fill();
+
+        // Signature Spiky Head Tuft (Wiggles cutely!)
+        ctx.save();
+        const tuftWiggle = Math.sin(t * 3.5) * 0.18;
+        ctx.translate(0, -11);
+        ctx.rotate(tuftWiggle);
+        ctx.fillStyle = furLight;
+        ctx.strokeStyle = outline;
+        ctx.lineWidth = 1.3;
+        ctx.beginPath();
+        ctx.moveTo(-3, 1);
+        ctx.lineTo(-1, -6);
+        ctx.lineTo(2, -8);
+        ctx.lineTo(3, -3);
+        ctx.lineTo(4, 1);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+
+        // Heart-Shaped Peach Facial Disc
+        ctx.fillStyle = faceSkin;
+        ctx.strokeStyle = outline;
+        ctx.lineWidth = 1.3;
+        ctx.beginPath();
+        // Rounded ape face mask
+        ctx.ellipse(0, -0.5, 8.5, 7.2, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Rosy Blushing Cheeks
+        ctx.fillStyle = cheekPink;
+        ctx.globalAlpha = 0.65;
+        ctx.beginPath();
+        ctx.arc(-5.2, 1.2, 1.8, 0, Math.PI * 2);
+        ctx.arc(5.2, 1.2, 1.8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1.0;
+
+        // Expressive Eyes
+        if (isBlinking || isSleeping) {
+            drawClosedEyeArc(ctx, -3.8, -1.8, 2.2, outline, 1.6);
+            drawClosedEyeArc(ctx, 3.8, -1.8, 2.2, outline, 1.6);
+        } else {
+            // Big shiny chibi eyes
+            ctx.fillStyle = '#292524';
+            ctx.beginPath();
+            ctx.arc(-3.8, -1.8, 2.0, 0, Math.PI * 2);
+            ctx.arc(3.8, -1.8, 2.0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Catchlight sparkles
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.arc(-4.4, -2.5, 0.9, 0, Math.PI * 2);
+            ctx.arc(3.2, -2.5, 0.9, 0, Math.PI * 2);
+            ctx.arc(-3.2, -1.1, 0.45, 0, Math.PI * 2);
+            ctx.arc(4.4, -1.1, 0.45, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Gentle eyebrows
+            ctx.strokeStyle = outline;
+            ctx.lineWidth = 1.0;
+            ctx.beginPath();
+            ctx.arc(-3.8, -4.5, 2.0, 0.9 * Math.PI, 1.8 * Math.PI);
+            ctx.arc(3.8, -4.5, 2.0, 1.2 * Math.PI, 2.1 * Math.PI);
+            ctx.stroke();
+        }
+
+        // Broad Cute Button Nose
+        ctx.fillStyle = faceDark;
+        ctx.beginPath();
+        ctx.ellipse(0, 1.4, 2.2, 1.4, 0, 0, Math.PI * 2);
+        ctx.fill();
+        // Nostrils
+        ctx.fillStyle = outline;
+        ctx.beginPath();
+        ctx.arc(-0.8, 1.5, 0.55, 0, Math.PI * 2);
+        ctx.arc(0.8, 1.5, 0.55, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Gentle Mouth / Smile
+        ctx.strokeStyle = outline;
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        if (isHappy) {
+            // Open happy smile!
+            ctx.arc(0, 3.0, 2.5, 0.1 * Math.PI, 0.9 * Math.PI, false);
+            ctx.fillStyle = '#F43F5E';
+            ctx.fill();
+            ctx.stroke();
+        } else if (isSleeping) {
+            // Sweet sleeping smile
+            ctx.arc(0, 3.4, 1.8, 0.1 * Math.PI, 0.9 * Math.PI, false);
+            ctx.stroke();
+        } else {
+            // Peaceful content smile
+            ctx.arc(0, 3.2, 2.0, 0.15 * Math.PI, 0.85 * Math.PI, false);
+            ctx.stroke();
+        }
+
+        ctx.restore(); // restore head
     }
 
     // 6. RENDER PET PREVIEW ON CANVAS (For Gallery & Cards)

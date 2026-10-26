@@ -354,6 +354,14 @@ const DECORATION_CATALOG = [
         height: 58
     },
     {
+        type: 'pet_pillow',
+        name: 'Bantal Tidur Hewan',
+        icon: '<svg class="w-6 h-6 text-pink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8c0-2 2-3 4-3h8c2 0 4 1 4 3v8c0 2-2 3-4 3H8c-2 0-4-1-4-3V8z"/><path d="M7 10c2 1 4 1 5 1s3 0 5-1M12 11v4"/></svg>',
+        habitat: 'land',
+        width: 54,
+        height: 38
+    },
+    {
         type: 'fountain',
         name: 'Air Mancur Taman',
         icon: '<svg class="w-6 h-6 text-sky-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v6M9 5c0-1.6 1.3-3 3-3s3 1.4 3 3M7 9c0-2.8 2.2-5 5-5s5 2.2 5 5M5 14h14v2a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4v-2zM12 14v6"/></svg>',
@@ -657,6 +665,10 @@ function getDecorationCollisionFootprint(d) {
             rx = isEastWest ? 25 : 26;
             ry = isEastWest ? 20 : 16;
             break;
+        case 'pet_pillow':
+            rx = 24;
+            ry = 14;
+            break;
         case 'fountain':
             rx = 30;
             ry = 14;
@@ -784,6 +796,10 @@ function isPointBlockedByDecoration(x, y, animalRadius = 9) {
 
     for (let i = 0; i < decorations.length; i++) {
         const d = decorations[i];
+        if (d.type === 'pet_pillow') {
+            // Animals can freely walk onto and sleep on pet pillow!
+            continue;
+        }
         if (d.type === 'bridge') {
             const dir = normalizeCardinalDirection(d.rotation);
             const dx = x - d.x;
@@ -823,6 +839,7 @@ function resolveAnimalDecorationCollisions() {
     if (typeof animals === 'undefined' || !Array.isArray(animals)) return;
     for (const a of animals) {
         if (a.type === 'butterfly' || a.habitat === 'flying') continue;
+        if (a.sleepingOnPillowId) continue; // Don't push sleeping pet off its pillow!
         if (!isPointBlockedByDecoration(a.x, a.y, 9)) continue;
 
         for (let r = 14; r <= 96; r += 10) {
@@ -2633,6 +2650,102 @@ function drawRealisticGoldenLotus(ctx, d, now) {
     ctx.restore();
 }
 
+function drawRealisticPetPillow(ctx, d, now) {
+    const isSleepingOccupied = (typeof animals !== 'undefined' && Array.isArray(animals)) &&
+        animals.some(a => (a.sleepingOnPillowId === d.id || Math.hypot(a.x - d.x, a.y - d.y) < 16) && a.state === 'sleeping');
+
+    const breathPulse = isSleepingOccupied ? Math.sin(now * 0.003) * 1.5 : 0;
+    const pw = (d.width || 54) * 0.5;
+    const ph = (d.height || 38) * 0.5;
+
+    // 1. Soft Pillow Base / Lower Rim
+    ctx.save();
+    ctx.fillStyle = '#FB7185'; // Soft rose piping
+    ctx.strokeStyle = '#BE123C';
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.ellipse(0, 1, pw, ph + 1, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // 2. Main Plush Cushion Surface
+    const pillowGrad = ctx.createRadialGradient(0, -3 + breathPulse * 0.5, 2, 0, 0, pw);
+    pillowGrad.addColorStop(0, '#FFF5F8'); // Warm soft cream center
+    pillowGrad.addColorStop(0.65, '#FCE7F3'); // Pastel blush
+    pillowGrad.addColorStop(1, '#FDA4AF'); // Plush edge shading
+
+    ctx.fillStyle = pillowGrad;
+    ctx.strokeStyle = '#F43F5E';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.ellipse(0, -2 + breathPulse * 0.4, pw - 2, ph - 2, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // 3. Delicate Tufted Quilt Stitching
+    ctx.strokeStyle = 'rgba(225, 29, 72, 0.35)';
+    ctx.lineWidth = 1.0;
+    ctx.setLineDash([3, 2]);
+    // Diamond stitch lines
+    ctx.beginPath();
+    ctx.moveTo(-pw * 0.55, -2);
+    ctx.lineTo(0, -ph * 0.6);
+    ctx.lineTo(pw * 0.55, -2);
+    ctx.lineTo(0, ph * 0.4);
+    ctx.closePath();
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // 4. Center Gold Tufted Button or Starlight Embroidery
+    ctx.fillStyle = '#F59E0B';
+    ctx.strokeStyle = '#B45309';
+    ctx.lineWidth = 1.0;
+    ctx.beginPath();
+    ctx.arc(0, -2 + breathPulse * 0.5, 3.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#FEF3C7';
+    ctx.beginPath();
+    ctx.arc(-0.8, -2.8 + breathPulse * 0.5, 1.0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 5. Four Corner Fluffy Golden Tassels
+    const tasselCoords = [
+        [-pw * 0.78, -ph * 0.62],
+        [ pw * 0.78, -ph * 0.62],
+        [-pw * 0.78,  ph * 0.62],
+        [ pw * 0.78,  ph * 0.62]
+    ];
+    ctx.fillStyle = '#FBBF24';
+    ctx.strokeStyle = '#D97706';
+    ctx.lineWidth = 1.0;
+    tasselCoords.forEach(([tx, ty]) => {
+        ctx.beginPath();
+        ctx.arc(tx, ty, 2.8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        // Tiny tassel skirt
+        ctx.beginPath();
+        ctx.moveTo(tx - 2, ty + 1);
+        ctx.lineTo(tx, ty + 4.5);
+        ctx.lineTo(tx + 2, ty + 1);
+        ctx.closePath();
+        ctx.fill();
+    });
+
+    // 6. If pet is sleeping: Dream sparkles floating from pillow
+    if (isSleepingOccupied && Math.random() < 0.15) {
+        const sparkX = (Math.random() - 0.5) * pw * 1.2;
+        const sparkY = -6 + (Math.random() - 0.5) * 8;
+        ctx.fillStyle = '#C084FC';
+        ctx.beginPath();
+        ctx.arc(sparkX, sparkY, 1.2, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    ctx.restore();
+}
+
 function drawDecorationInstance(ctx, d, now, dt) {
     if (!d) return;
     if (d.birthScale !== undefined && d.birthScale < 1) {
@@ -2711,6 +2824,8 @@ function drawDecorationInstance(ctx, d, now, dt) {
         drawRealisticTreeSwing(ctx, d, now);
     } else if (d.type === 'golden_lotus') {
         drawRealisticGoldenLotus(ctx, d, now);
+    } else if (d.type === 'pet_pillow') {
+        drawRealisticPetPillow(ctx, d, now);
     } else if (d.type === 'easel' && typeof drawRealisticEasel === 'function') {
         drawRealisticEasel(ctx, d, now);
     }

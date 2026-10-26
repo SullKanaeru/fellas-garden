@@ -133,7 +133,8 @@ function updateGalleryBadge() {
     const aTabBadge = document.getElementById('galAnimalsCount');
     if (aTabBadge) aTabBadge.textContent = aCount;
     const exTabBadge = document.getElementById('galExclusiveCount');
-    if (exTabBadge) exTabBadge.textContent = `${exDiscovered}/15`;
+    const totalEx = (typeof EXCLUSIVE_PET_LIST !== 'undefined' && Array.isArray(EXCLUSIVE_PET_LIST)) ? EXCLUSIVE_PET_LIST.length : 16;
+    if (exTabBadge) exTabBadge.textContent = `${exDiscovered}/${totalEx}`;
 
     // Modal subtitle pill
     const pill = document.getElementById('galleryCounterPill');
@@ -143,7 +144,7 @@ function updateGalleryBadge() {
         } else if (currentGalleryTab === 'animals') {
             pill.textContent = `${aCount} Hewan`;
         } else if (currentGalleryTab === 'exclusive') {
-            pill.textContent = `${exDiscovered}/15 Pet Misterius`;
+            pill.textContent = `${exDiscovered}/${totalEx} Pet Misterius`;
         }
     }
 }

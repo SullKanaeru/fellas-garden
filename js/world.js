@@ -885,6 +885,20 @@ async function createNewWorld(name, template = "classic") {
     flowers = [];
     createStarterFlowersMatchingReference();
     spawnStarterAnimals();
+    if (typeof decorations !== "undefined") {
+      decorations.length = 0;
+      decorations.push({
+        id: "dec_pillow_" + Date.now(),
+        type: "pet_pillow",
+        x: Math.round(WORLD_W * 0.5 + 130),
+        y: Math.round(WORLD_H * 0.52 - 40),
+        width: 54,
+        height: 38,
+        habitat: "land",
+        rotation: 0,
+        birthScale: 1,
+      });
+    }
   } else if (template === "empty") {
     maskCtx.clearRect(0, 0, WORLD_W, WORLD_H);
     grassDetails = [];

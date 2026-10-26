@@ -623,6 +623,8 @@ function focusAnimal(id) {
 
 function petAnimal(a) {
     if (!a) return;
+    a.sleepingOnPillowId = null;
+    a.targetPillowId = null;
     a.petAnim = 1.0;
     a.state = 'happy';
     a.stateTimer = 3.5;
@@ -736,6 +738,8 @@ function updateAnimals(dt, now) {
 
         // If currently being dragged by player: stays terrified!
         if (a.isBeingDragged) {
+            a.sleepingOnPillowId = null;
+            a.targetPillowId = null;
             a.state = 'scared';
             a.bubbleText = '(⸝⸝๑﹏๑⸝⸝)';
             a.bubbleTimer = 0.5;
@@ -1036,7 +1040,26 @@ function updateAnimals(dt, now) {
                     }
                 }
 
-                if (!targetedBridge) {
+                let targetedPillow = false;
+                if (!targetedBridge && typeof decorations !== 'undefined' && Array.isArray(decorations)) {
+                    const emptyPillows = decorations.filter(d => {
+                        if (d.type !== 'pet_pillow') return false;
+                        const occupied = animals.some(other => other !== a && (other.sleepingOnPillowId === d.id || Math.hypot(other.x - d.x, other.y - d.y) < 16) && other.state === 'sleeping');
+                        return !occupied;
+                    });
+                    if (emptyPillows.length > 0 && Math.random() < 0.45) {
+                        const pil = emptyPillows[Math.floor(Math.random() * emptyPillows.length)];
+                        a.targetX = pil.x;
+                        a.targetY = pil.y - 1;
+                        a.targetPillowId = pil.id;
+                        a.state = 'walking';
+                        a.stateTimer = 9.0;
+                        a.facingLeft = pil.x < a.x;
+                        targetedPillow = true;
+                    }
+                }
+
+                if (!targetedBridge && !targetedPillow) {
                     const wanderChance = a.type === 'dog' ? 0.8 : (a.type === 'cat' ? 0.6 : 0.7);
                     if (Math.random() < wanderChance) {
                         let foundTarget = false;
@@ -1072,9 +1095,23 @@ function updateAnimals(dt, now) {
             const dy = a.targetY - a.y;
             const dist = Math.hypot(dx, dy);
 
-            if (dist < 5) {
+            if (dist < 6) {
                 a.x = a.targetX;
                 a.y = a.targetY;
+                if (a.targetPillowId && typeof decorations !== 'undefined') {
+                    const pil = decorations.find(d => d.id === a.targetPillowId);
+                    if (pil && Math.hypot(a.x - pil.x, a.y - pil.y) < 16) {
+                        a.x = pil.x;
+                        a.y = pil.y - 1;
+                        a.state = 'sleeping';
+                        a.sleepingOnPillowId = pil.id;
+                        a.stateTimer = 16.0 + Math.random() * 12.0; // Sweet peaceful nap!
+                        a.targetPillowId = null;
+                        a.bubbleText = '💤';
+                        a.bubbleTimer = 2.5;
+                        continue;
+                    }
+                }
                 if (a.bridgeWaypoints && a.bridgeWaypoints.length > 0) {
                     const nextWp = a.bridgeWaypoints.shift();
                     a.targetX = nextWp.x;
@@ -1117,6 +1154,24 @@ function updateAnimals(dt, now) {
         } else if (a.state === 'idle' || a.state === 'happy') {
             const wagRate = a.state === 'happy' ? (a.type === 'dog' ? 3.8 : 2.8) : (a.type === 'dog' ? 1.2 : 1.0);
             a.tailPhase += dt * wagRate;
+        } else if (a.state === 'sleeping') {
+            if (a.stateTimer <= 0) {
+                a.sleepingOnPillowId = null;
+                a.state = 'idle';
+                a.stateTimer = 2.0 + Math.random() * 2.0;
+            } else if (Math.random() < 0.035 && typeof particles !== 'undefined') {
+                particles.push({
+                    type: 'zzz',
+                    x: a.x + (Math.random() - 0.5) * 8,
+                    y: a.y - (a.type === 'exclusive' ? 18 : 14),
+                    vx: (Math.random() - 0.5) * 0.4 + (a.facingLeft ? -0.4 : 0.4),
+                    vy: -15 - Math.random() * 6,
+                    size: 11 + Math.random() * 4,
+                    alpha: 0.95,
+                    text: Math.random() < 0.4 ? 'Z' : 'z',
+                    color: a.sleepingOnPillowId ? '#EC4899' : '#A855F7'
+                });
+            }
         }
     }
 }
