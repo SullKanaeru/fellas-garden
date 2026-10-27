@@ -1450,7 +1450,7 @@ function renderPhotoStudioPreview() {
     }
 }
 
-function downloadPolaroidPhoto() {
+async function downloadPolaroidPhoto() {
     const previewCanvas = document.getElementById('photoPreviewCanvas');
     if (!previewCanvas) return;
 
@@ -1459,12 +1459,17 @@ function downloadPolaroidPhoto() {
     const titleText = (document.getElementById('gardenTitle')?.innerText || 'fellas-garden')
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-');
-    const fullPng = previewCanvas.toDataURL('image/png');
+    const filename = `${titleText}-polaroid-${Date.now()}.png`;
 
-    const link = document.createElement('a');
-    link.download = `${titleText}-polaroid-${Date.now()}.png`;
-    link.href = fullPng;
-    link.click();
+    if (typeof saveImageFile === 'function') {
+        await saveImageFile(previewCanvas, filename, 'image/png', "Fella's Garden Polaroid");
+    } else {
+        const fullPng = previewCanvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        link.download = filename;
+        link.href = fullPng;
+        link.click();
+    }
 
     // Feature 10: Save to Polaroid Album in Journal (compact JPEG format to save storage)
     try {

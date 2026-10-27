@@ -4668,33 +4668,39 @@
 
         <!-- Footer -->
         <div
-          class="px-5 py-3.5 bg-[#eef5e6] border-t border-[#c5d9b7] flex items-center justify-end gap-2.5"
+          class="px-4 sm:px-5 py-3 bg-[#eef5e6] border-t border-[#c5d9b7] flex flex-col sm:flex-row items-center justify-between gap-2.5"
         >
-          <button
-            onclick="closePhotoStudioModal()"
-            class="px-4 py-2 rounded-full border border-gray-300 bg-white hover:bg-gray-100 text-gray-700 text-xs sm:text-sm font-semibold transition"
-          >
-            Batal
-          </button>
-          <button
-            onclick="downloadPolaroidPhoto()"
-            class="px-6 py-2 rounded-full bg-[#2B5B35] hover:bg-[#1f4627] text-white font-bold text-xs sm:text-sm shadow-md transition active:scale-95 inline-flex items-center gap-2"
-          >
-            <svg
-              class="w-4 h-4"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2.2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
+          <p class="text-[11px] text-[#477431] flex items-center gap-1 order-2 sm:order-1 text-center sm:text-left">
+            <span>💡</span>
+            <span>Di iPhone, pilih menu <b>"Simpan Gambar"</b> agar langsung masuk ke Galeri Foto.</span>
+          </p>
+          <div class="flex items-center justify-end gap-2.5 w-full sm:w-auto order-1 sm:order-2">
+            <button
+              onclick="closePhotoStudioModal()"
+              class="px-4 py-2 rounded-full border border-gray-300 bg-white hover:bg-gray-100 text-gray-700 text-xs sm:text-sm font-semibold transition"
             >
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
-            <span>Simpan Foto Polaroid (PNG)</span>
-          </button>
+              Batal
+            </button>
+            <button
+              onclick="downloadPolaroidPhoto()"
+              class="px-6 py-2 rounded-full bg-[#2B5B35] hover:bg-[#1f4627] text-white font-bold text-xs sm:text-sm shadow-md transition active:scale-95 inline-flex items-center justify-center gap-2"
+            >
+              <svg
+                class="w-4 h-4"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              <span>Simpan Foto Polaroid (PNG)</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>

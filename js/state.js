@@ -176,3 +176,80 @@ var MAX_TERRAIN_UNDO = 10;
 
 // Falling Objects Animation (Bunga & Hewan Darat Jatuh & Menghilang)
 var fallingObjects = [];
+
+/**
+ * Universal Image Saver that supports iOS Safari (Web Share API -> Save Image to Camera Roll)
+ * as well as direct instant downloads on Android and Desktop.
+ */
+async function saveImageFile(source, filename, mimeType = 'image/png', title = "Fella's Garden") {
+    try {
+        let blob = null;
+        if (source instanceof HTMLCanvasElement) {
+            blob = await new Promise(resolve => source.toBlob(resolve, mimeType, 0.95));
+        } else if (source instanceof Blob) {
+            blob = source;
+        } else if (typeof source === 'string') {
+            const res = await fetch(source);
+            blob = await res.blob();
+        }
+
+        if (!blob) throw new Error('Blob could not be generated');
+
+        const isIOS = (typeof navigator !== 'undefined') && (
+            /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+            (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+        );
+
+        // On iOS: Use Web Share API if supported so user can tap "Simpan Gambar" (Save Image)
+        // directly into the native Photos (Camera Roll) app!
+        if (isIOS && navigator.canShare && typeof File !== 'undefined') {
+            const file = new File([blob], filename, { type: mimeType });
+            if (navigator.canShare({ files: [file] })) {
+                try {
+                    await navigator.share({
+                        files: [file],
+                        title: title,
+                        text: "Foto dari Fella's Garden 🌸"
+                    });
+                    if (typeof showGardenNotice === 'function') {
+                        showGardenNotice('Pilih "Simpan Gambar" pada menu untuk menyimpan ke Galeri Foto! 📸');
+                    }
+                    return true;
+                } catch (err) {
+                    if (err && (err.name === 'AbortError' || err.code === 20)) {
+                        // User dismissed share sheet
+                        return false;
+                    }
+                    console.warn('Web Share failed, falling back:', err);
+                }
+            }
+        }
+
+        // Standard direct download for Android, PC, Mac, tablets
+        const blobUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.download = filename;
+        link.href = blobUrl;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+
+        if (isIOS && typeof showGardenNotice === 'function') {
+            showGardenNotice("Di iPhone: jika foto terbuka di tab baru, tekan dan tahan lalu pilih 'Simpan ke Foto'! 📸");
+        }
+        return true;
+    } catch (e) {
+        console.error('saveImageFile error:', e);
+        if (typeof source === 'string') {
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = source;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        return false;
+    }
+}
+window.saveImageFile = saveImageFile;

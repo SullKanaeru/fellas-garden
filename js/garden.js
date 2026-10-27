@@ -6394,7 +6394,7 @@ function resetToDefaultGarden() {
   scheduleAutoSave();
 }
 
-function downloadGardenSnapshot() {
+async function downloadGardenSnapshot() {
   // Render a clean snapshot including the title at top
   const snapCanvas = document.createElement("canvas");
   snapCanvas.width = screenW;
@@ -6412,10 +6412,15 @@ function downloadGardenSnapshot() {
   sCtx.textAlign = "center";
   sCtx.fillText(titleText, screenW / 2, 46);
 
-  const link = document.createElement("a");
-  link.download = "fellas-garden.png";
-  link.href = snapCanvas.toDataURL("image/png");
-  link.click();
+  const filename = "fellas-garden.png";
+  if (typeof saveImageFile === "function") {
+    await saveImageFile(snapCanvas, filename, "image/png", titleText);
+  } else {
+    const link = document.createElement("a");
+    link.download = filename;
+    link.href = snapCanvas.toDataURL("image/png");
+    link.click();
+  }
 }
 
 /**

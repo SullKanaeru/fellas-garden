@@ -3454,15 +3454,20 @@ function deleteAlbumPhoto(id) {
     if (typeof scheduleAutoSave === 'function') scheduleAutoSave();
 }
 
-function downloadAlbumPhoto(id) {
+async function downloadAlbumPhoto(id) {
     const photo = polaroidAlbum.find(p => p.id === id);
     if (!photo || !photo.dataUrl) return;
-    const a = document.createElement('a');
-    a.download = `polaroid-${photo.id}.jpg`;
-    a.href = photo.dataUrl;
-    a.click();
+    const filename = `polaroid-${photo.id}.jpg`;
+    if (typeof saveImageFile === 'function') {
+        await saveImageFile(photo.dataUrl, filename, 'image/jpeg', "Fella's Garden Polaroid");
+    } else {
+        const a = document.createElement('a');
+        a.download = filename;
+        a.href = photo.dataUrl;
+        a.click();
+    }
     if (typeof showGardenNotice === 'function') {
-        showGardenNotice('Foto Polaroid berhasil diunduh ke komputermu! 📸');
+        showGardenNotice('Foto Polaroid berhasil diunduh! 📸');
     }
 }
 
