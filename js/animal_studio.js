@@ -22,10 +22,27 @@ var isAnimalPanning = false;
 var animalPanStartX = 0;
 var animalPanStartY = 0;
 
-function applyAnimalTransform() {
-    if (!animalPadCanvas) return;
-    animalPadCanvas.style.transformOrigin = 'center center';
-    animalPadCanvas.style.transform = `translate(${animalPanX}px, ${animalPanY}px) scale(${animalZoom})`;
+// Multi-touch 2-finger zoom & pan state
+var isTwoFingerTransformingAnimal = false;
+var animalGestureInitialDist = 0;
+var animalGestureInitialZoom = 1.0;
+var animalGestureInitialMidX = 0;
+var animalGestureInitialMidY = 0;
+var animalGestureInitialPanX = 0;
+var animalGestureInitialPanY = 0;
+var suppressAnimalDrawUntilAllUp = false;
+var activeAnimalTouchPointers = new Set();
+
+function applyAnimalTransform(immediate = false) {
+    const paper = document.getElementById('animalCanvasPaper');
+    if (paper) {
+        paper.style.transformOrigin = 'center center';
+        paper.style.transition = immediate ? 'none' : 'transform 0.15s cubic-bezier(0.2, 0, 0, 1)';
+        paper.style.transform = `translate3d(${animalPanX}px, ${animalPanY}px, 0) scale(${animalZoom})`;
+    }
+    if (animalPadCanvas) {
+        animalPadCanvas.style.transform = 'none';
+    }
     const txt = document.getElementById('animalZoomLevelText');
     if (txt) txt.textContent = `${Math.round(animalZoom * 100)}%`;
 }
@@ -33,11 +50,7 @@ function applyAnimalTransform() {
 function zoomAnimalCanvas(delta) {
     const next = Math.min(3.0, Math.max(0.75, Math.round((animalZoom + delta) * 100) / 100));
     animalZoom = next;
-    if (animalZoom === 1.0) {
-        animalPanX = 0;
-        animalPanY = 0;
-    }
-    applyAnimalTransform();
+    applyAnimalTransform(false);
 }
 
 function resetAnimalZoom() {
@@ -46,7 +59,17 @@ function resetAnimalZoom() {
     animalPanY = 0;
     isAnimalPanMode = false;
     updateAnimalPanButtonUI();
-    applyAnimalTransform();
+    applyAnimalTransform(false);
+}
+
+function cancelAnimalStrokeImmediately() {
+    if (isDrawingAnimalStudio) {
+        isDrawingAnimalStudio = false;
+        document.getElementById('animalStudioModal')?.classList.remove('drawing-active');
+        try { animalPadCtx.restore(); } catch (err) {}
+        if (typeof currentStroke !== 'undefined') currentStroke = null;
+        redrawAnimalPadFromStrokes();
+    }
 }
 
 function toggleAnimalPanMode() {
@@ -288,8 +311,102 @@ function initAnimalStudioEventListeners() {
         };
     }
 
+    const animalStudioViewport = document.getElementById('animalStudioViewport');
+    if (animalStudioViewport) {
+        animalStudioViewport.addEventListener('touchstart', (e) => {
+            if (e.touches.length >= 2) {
+                cancelAnimalStrokeImmediately();
+                suppressAnimalDrawUntilAllUp = true;
+                isTwoFingerTransformingAnimal = true;
+                isAnimalPanning = false;
+
+                const t1 = e.touches[0];
+                const t2 = e.touches[1];
+                animalGestureInitialDist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+                animalGestureInitialZoom = animalZoom;
+                animalGestureInitialMidX = (t1.clientX + t2.clientX) / 2;
+                animalGestureInitialMidY = (t1.clientY + t2.clientY) / 2;
+                animalGestureInitialPanX = animalPanX;
+                animalGestureInitialPanY = animalPanY;
+            } else if (e.touches.length === 1) {
+                if (suppressAnimalDrawUntilAllUp) return;
+                const isOutside = (e.target !== animalPadCanvas);
+                if (isAnimalPanMode || isOutside) {
+                    isAnimalPanning = true;
+                    animalPanStartX = e.touches[0].clientX - animalPanX;
+                    animalPanStartY = e.touches[0].clientY - animalPanY;
+                }
+            }
+        }, { passive: false });
+
+        animalStudioViewport.addEventListener('touchmove', (e) => {
+            if (e.touches.length >= 2 && isTwoFingerTransformingAnimal && animalGestureInitialDist > 0) {
+                e.preventDefault();
+                const t1 = e.touches[0];
+                const t2 = e.touches[1];
+                const currentDist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+                const currentMidX = (t1.clientX + t2.clientX) / 2;
+                const currentMidY = (t1.clientY + t2.clientY) / 2;
+
+                const scale = currentDist / animalGestureInitialDist;
+                animalZoom = Math.min(3.0, Math.max(0.75, Math.round(animalGestureInitialZoom * scale * 100) / 100));
+
+                const deltaX = currentMidX - animalGestureInitialMidX;
+                const deltaY = currentMidY - animalGestureInitialMidY;
+
+                const maxPan = Math.max(350, 420 * animalZoom);
+                animalPanX = Math.max(-maxPan, Math.min(maxPan, animalGestureInitialPanX + deltaX));
+                animalPanY = Math.max(-maxPan, Math.min(maxPan, animalGestureInitialPanY + deltaY));
+
+                applyAnimalTransform(true);
+            } else if (e.touches.length === 1 && isAnimalPanning) {
+                e.preventDefault();
+                const maxPan = Math.max(350, 420 * animalZoom);
+                animalPanX = Math.max(-maxPan, Math.min(maxPan, e.touches[0].clientX - animalPanStartX));
+                animalPanY = Math.max(-maxPan, Math.min(maxPan, e.touches[0].clientY - animalPanStartY));
+                applyAnimalTransform(true);
+            }
+        }, { passive: false });
+
+        const endAnimalTouch = (e) => {
+            if (e.touches.length < 2) {
+                isTwoFingerTransformingAnimal = false;
+            }
+            if (e.touches.length === 0) {
+                suppressAnimalDrawUntilAllUp = false;
+                isAnimalPanning = false;
+                activeAnimalTouchPointers.clear();
+            }
+        };
+        animalStudioViewport.addEventListener('touchend', endAnimalTouch);
+        animalStudioViewport.addEventListener('touchcancel', endAnimalTouch);
+
+        animalStudioViewport.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const delta = e.deltaY < 0 ? 0.2 : -0.2;
+            zoomAnimalCanvas(delta);
+        }, { passive: false });
+
+        animalStudioViewport.addEventListener('pointerdown', (e) => {
+            if (e.target !== animalPadCanvas) {
+                isAnimalPanning = true;
+                animalPanStartX = e.clientX - animalPanX;
+                animalPanStartY = e.clientY - animalPanY;
+            }
+        });
+    }
+
     animalPadCanvas.addEventListener('pointerdown', (e) => {
-        try { animalPadCanvas.setPointerCapture(e.pointerId); } catch (err) {}
+        if (e.pointerType === 'touch') {
+            activeAnimalTouchPointers.add(e.pointerId);
+            if (activeAnimalTouchPointers.size >= 2 || suppressAnimalDrawUntilAllUp || !e.isPrimary) {
+                cancelAnimalStrokeImmediately();
+                suppressAnimalDrawUntilAllUp = true;
+                return;
+            }
+        }
+
+        if (suppressAnimalDrawUntilAllUp) return;
 
         if (isAnimalPanMode || e.button === 1 || e.shiftKey) {
             isAnimalPanning = true;
@@ -298,6 +415,8 @@ function initAnimalStudioEventListeners() {
             if (animalPadCanvas) animalPadCanvas.style.cursor = 'grabbing';
             return;
         }
+
+        if (e.button !== 0 && e.pointerType === 'mouse') return;
 
         const pos = getPos(e);
 
@@ -338,25 +457,31 @@ function initAnimalStudioEventListeners() {
         animalPadCtx.moveTo(pos.x, pos.y);
     });
 
-    animalPadCanvas.addEventListener('pointermove', (e) => {
+    window.addEventListener('pointermove', (e) => {
         if (isAnimalPanning) {
             animalPanX = e.clientX - animalPanStartX;
             animalPanY = e.clientY - animalPanStartY;
-            const maxPan = 260 * animalZoom;
+            const maxPan = Math.max(350, 420 * animalZoom);
             animalPanX = Math.max(-maxPan, Math.min(maxPan, animalPanX));
             animalPanY = Math.max(-maxPan, Math.min(maxPan, animalPanY));
-            applyAnimalTransform();
+            applyAnimalTransform(true);
             return;
         }
 
-        if (!isDrawingAnimalStudio || !currentStroke) return;
+        if (!isDrawingAnimalStudio || !currentStroke || suppressAnimalDrawUntilAllUp || isTwoFingerTransformingAnimal) return;
         const pos = getPos(e);
         currentStroke.points.push(pos);
         animalPadCtx.lineTo(pos.x, pos.y);
         animalPadCtx.stroke();
     });
 
-    function endDrawing() {
+    function endDrawing(e) {
+        if (e && e.pointerType === 'touch') {
+            activeAnimalTouchPointers.delete(e.pointerId);
+            if (activeAnimalTouchPointers.size === 0) {
+                suppressAnimalDrawUntilAllUp = false;
+            }
+        }
         if (isAnimalPanning) {
             isAnimalPanning = false;
             if (animalPadCanvas) animalPadCanvas.style.cursor = isAnimalPanMode ? 'grab' : 'crosshair';
@@ -369,45 +494,11 @@ function initAnimalStudioEventListeners() {
             animalStudioRedoStack = [];
             currentStroke = null;
         }
-        animalPadCtx.restore();
+        try { animalPadCtx.restore(); } catch (err) {}
     }
 
     window.addEventListener('pointerup', endDrawing);
     window.addEventListener('pointercancel', endDrawing);
-
-    animalPadCanvas.addEventListener('wheel', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const delta = e.deltaY < 0 ? 0.2 : -0.2;
-        zoomAnimalCanvas(delta);
-    }, { passive: false });
-
-    let animalPinchDist = 0;
-    let animalPinchStartZoom = 1.0;
-    animalPadCanvas.addEventListener('touchstart', (e) => {
-        if (e.touches.length === 2) {
-            isDrawingAnimalStudio = false;
-            isAnimalPanning = false;
-            animalPinchDist = Math.hypot(
-                e.touches[0].clientX - e.touches[1].clientX,
-                e.touches[0].clientY - e.touches[1].clientY
-            );
-            animalPinchStartZoom = animalZoom;
-        }
-    }, { passive: true });
-
-    animalPadCanvas.addEventListener('touchmove', (e) => {
-        if (e.touches.length === 2 && animalPinchDist > 0) {
-            e.preventDefault();
-            const dist = Math.hypot(
-                e.touches[0].clientX - e.touches[1].clientX,
-                e.touches[0].clientY - e.touches[1].clientY
-            );
-            const scale = dist / animalPinchDist;
-            animalZoom = Math.min(3.0, Math.max(0.75, Math.round(animalPinchStartZoom * scale * 100) / 100));
-            applyAnimalTransform();
-        }
-    }, { passive: false });
 }
 
 /**

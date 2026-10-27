@@ -30,10 +30,27 @@
         let panStartX = 0;
         let panStartY = 0;
 
-        function applyFlowerTransform() {
-            if (!flowerPadCanvas) return;
-            flowerPadCanvas.style.transformOrigin = 'center center';
-            flowerPadCanvas.style.transform = `translate(${flowerPanX}px, ${flowerPanY}px) scale(${flowerZoom})`;
+        // Multi-touch 2-finger zoom & pan state
+        let isTwoFingerTransformingFlower = false;
+        let flowerGestureInitialDist = 0;
+        let flowerGestureInitialZoom = 1.0;
+        let flowerGestureInitialMidX = 0;
+        let flowerGestureInitialMidY = 0;
+        let flowerGestureInitialPanX = 0;
+        let flowerGestureInitialPanY = 0;
+        let suppressFlowerDrawUntilAllUp = false;
+        let activeFlowerTouchPointers = new Set();
+
+        function applyFlowerTransform(immediate = false) {
+            const paper = document.getElementById('flowerCanvasPaper');
+            if (paper) {
+                paper.style.transformOrigin = 'center center';
+                paper.style.transition = immediate ? 'none' : 'transform 0.15s cubic-bezier(0.2, 0, 0, 1)';
+                paper.style.transform = `translate3d(${flowerPanX}px, ${flowerPanY}px, 0) scale(${flowerZoom})`;
+            }
+            if (flowerPadCanvas) {
+                flowerPadCanvas.style.transform = 'none';
+            }
             const txt = document.getElementById('flowerZoomLevelText');
             if (txt) txt.textContent = `${Math.round(flowerZoom * 100)}%`;
         }
@@ -41,11 +58,7 @@
         function zoomFlowerCanvas(delta) {
             const next = Math.min(3.0, Math.max(0.75, Math.round((flowerZoom + delta) * 100) / 100));
             flowerZoom = next;
-            if (flowerZoom === 1.0) {
-                flowerPanX = 0;
-                flowerPanY = 0;
-            }
-            applyFlowerTransform();
+            applyFlowerTransform(false);
         }
 
         function resetFlowerZoom() {
@@ -54,7 +67,23 @@
             flowerPanY = 0;
             isStudioPanMode = false;
             updatePanButtonUI();
-            applyFlowerTransform();
+            applyFlowerTransform(false);
+        }
+
+        function cancelFlowerStrokeImmediately() {
+            if (isDrawingFlower) {
+                isDrawingFlower = false;
+                document.getElementById('flowerStudioModal')?.classList.remove('drawing-active');
+                if (flowerHistory.length > 0) {
+                    const lastState = flowerHistory.pop();
+                    flowerPadCtx.putImageData(lastState, 0, 0);
+                }
+                if (typeof cancelRecordingStroke === 'function') {
+                    cancelRecordingStroke();
+                }
+                updatePendingSpriteFromPad();
+                updateDraftBadge();
+            }
         }
 
         function toggleStudioPanMode() {
@@ -291,9 +320,106 @@
             };
         }
 
+        // Viewport and Touch Pinch & Pan Gestures
+        const studioViewport = document.getElementById('studioViewport');
+        if (studioViewport) {
+            studioViewport.addEventListener('touchstart', (e) => {
+                if (e.touches.length >= 2) {
+                    cancelFlowerStrokeImmediately();
+                    suppressFlowerDrawUntilAllUp = true;
+                    isTwoFingerTransformingFlower = true;
+                    isStudioPanning = false;
+
+                    const t1 = e.touches[0];
+                    const t2 = e.touches[1];
+                    flowerGestureInitialDist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+                    flowerGestureInitialZoom = flowerZoom;
+                    flowerGestureInitialMidX = (t1.clientX + t2.clientX) / 2;
+                    flowerGestureInitialMidY = (t1.clientY + t2.clientY) / 2;
+                    flowerGestureInitialPanX = flowerPanX;
+                    flowerGestureInitialPanY = flowerPanY;
+                } else if (e.touches.length === 1) {
+                    if (suppressFlowerDrawUntilAllUp) return;
+                    const isOutside = (e.target !== flowerPadCanvas);
+                    if (isStudioPanMode || isOutside) {
+                        isStudioPanning = true;
+                        panStartX = e.touches[0].clientX - flowerPanX;
+                        panStartY = e.touches[0].clientY - flowerPanY;
+                    }
+                }
+            }, { passive: false });
+
+            studioViewport.addEventListener('touchmove', (e) => {
+                if (e.touches.length >= 2 && isTwoFingerTransformingFlower && flowerGestureInitialDist > 0) {
+                    e.preventDefault();
+                    const t1 = e.touches[0];
+                    const t2 = e.touches[1];
+                    const currentDist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+                    const currentMidX = (t1.clientX + t2.clientX) / 2;
+                    const currentMidY = (t1.clientY + t2.clientY) / 2;
+
+                    const scale = currentDist / flowerGestureInitialDist;
+                    flowerZoom = Math.min(3.0, Math.max(0.75, Math.round(flowerGestureInitialZoom * scale * 100) / 100));
+
+                    const deltaX = currentMidX - flowerGestureInitialMidX;
+                    const deltaY = currentMidY - flowerGestureInitialMidY;
+
+                    const maxPan = Math.max(350, 420 * flowerZoom);
+                    flowerPanX = Math.max(-maxPan, Math.min(maxPan, flowerGestureInitialPanX + deltaX));
+                    flowerPanY = Math.max(-maxPan, Math.min(maxPan, flowerGestureInitialPanY + deltaY));
+
+                    applyFlowerTransform(true);
+                } else if (e.touches.length === 1 && isStudioPanning) {
+                    e.preventDefault();
+                    const maxPan = Math.max(350, 420 * flowerZoom);
+                    flowerPanX = Math.max(-maxPan, Math.min(maxPan, e.touches[0].clientX - panStartX));
+                    flowerPanY = Math.max(-maxPan, Math.min(maxPan, e.touches[0].clientY - panStartY));
+                    applyFlowerTransform(true);
+                }
+            }, { passive: false });
+
+            const endStudioTouch = (e) => {
+                if (e.touches.length < 2) {
+                    isTwoFingerTransformingFlower = false;
+                }
+                if (e.touches.length === 0) {
+                    suppressFlowerDrawUntilAllUp = false;
+                    isStudioPanning = false;
+                    activeFlowerTouchPointers.clear();
+                }
+            };
+            studioViewport.addEventListener('touchend', endStudioTouch);
+            studioViewport.addEventListener('touchcancel', endStudioTouch);
+
+            studioViewport.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const delta = e.deltaY < 0 ? 0.2 : -0.2;
+                zoomFlowerCanvas(delta);
+            }, { passive: false });
+
+            studioViewport.addEventListener('pointerdown', (e) => {
+                if (e.target !== flowerPadCanvas) {
+                    isStudioPanning = true;
+                    panStartX = e.clientX - flowerPanX;
+                    panStartY = e.clientY - flowerPanY;
+                }
+            });
+        }
+
         flowerPadCanvas.addEventListener('pointerdown', (e) => {
             e.stopPropagation();
             initAudio();
+
+            if (e.pointerType === 'touch') {
+                activeFlowerTouchPointers.add(e.pointerId);
+                if (activeFlowerTouchPointers.size >= 2 || suppressFlowerDrawUntilAllUp || !e.isPrimary) {
+                    cancelFlowerStrokeImmediately();
+                    suppressFlowerDrawUntilAllUp = true;
+                    return;
+                }
+            }
+
+            if (suppressFlowerDrawUntilAllUp) return;
 
             // Panning trigger: either Pan Mode active, middle mouse button, or Shift key
             if (isStudioPanMode || e.button === 1 || e.shiftKey) {
@@ -303,6 +429,8 @@
                 if (flowerPadCanvas) flowerPadCanvas.style.cursor = 'grabbing';
                 return;
             }
+
+            if (e.button !== 0 && e.pointerType === 'mouse') return;
 
             const pos = getPadCoords(e);
 
@@ -337,19 +465,18 @@
             }
         });
 
-        flowerPadCanvas.addEventListener('pointermove', (e) => {
+        window.addEventListener('pointermove', (e) => {
             if (isStudioPanning) {
                 flowerPanX = e.clientX - panStartX;
                 flowerPanY = e.clientY - panStartY;
-                const maxPan = 260 * flowerZoom;
+                const maxPan = Math.max(350, 420 * flowerZoom);
                 flowerPanX = Math.max(-maxPan, Math.min(maxPan, flowerPanX));
                 flowerPanY = Math.max(-maxPan, Math.min(maxPan, flowerPanY));
-                applyFlowerTransform();
+                applyFlowerTransform(true);
                 return;
             }
 
-            if (!isDrawingFlower) return;
-            e.stopPropagation();
+            if (!isDrawingFlower || suppressFlowerDrawUntilAllUp || isTwoFingerTransformingFlower) return;
             const pos = getPadCoords(e);
 
             const bType = window.studioBrushType || 'pencil';
@@ -377,7 +504,13 @@
             flowerLastY = pos.y;
         });
 
-        window.addEventListener('pointerup', () => {
+        const handleStudioPointerUp = (e) => {
+            if (e && e.pointerType === 'touch') {
+                activeFlowerTouchPointers.delete(e.pointerId);
+                if (activeFlowerTouchPointers.size === 0) {
+                    suppressFlowerDrawUntilAllUp = false;
+                }
+            }
             if (isStudioPanning) {
                 isStudioPanning = false;
                 if (flowerPadCanvas) flowerPadCanvas.style.cursor = isStudioPanMode ? 'grab' : 'crosshair';
@@ -389,49 +522,10 @@
                 updatePendingSpriteFromPad();
                 updateDraftBadge();
             }
-        });
+        };
 
-        window.addEventListener('pointercancel', () => {
-            isDrawingFlower = false;
-            isStudioPanning = false;
-            document.getElementById('flowerStudioModal')?.classList.remove('drawing-active');
-        });
-
-        // Wheel Zoom on Canvas
-        flowerPadCanvas.addEventListener('wheel', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const delta = e.deltaY < 0 ? 0.2 : -0.2;
-            zoomFlowerCanvas(delta);
-        }, { passive: false });
-
-        // Touch Pinch Zoom on Canvas
-        let flowerPinchDist = 0;
-        let flowerPinchStartZoom = 1.0;
-        flowerPadCanvas.addEventListener('touchstart', (e) => {
-            if (e.touches.length === 2) {
-                isDrawingFlower = false;
-                isStudioPanning = false;
-                flowerPinchDist = Math.hypot(
-                    e.touches[0].clientX - e.touches[1].clientX,
-                    e.touches[0].clientY - e.touches[1].clientY
-                );
-                flowerPinchStartZoom = flowerZoom;
-            }
-        }, { passive: true });
-
-        flowerPadCanvas.addEventListener('touchmove', (e) => {
-            if (e.touches.length === 2 && flowerPinchDist > 0) {
-                e.preventDefault();
-                const dist = Math.hypot(
-                    e.touches[0].clientX - e.touches[1].clientX,
-                    e.touches[0].clientY - e.touches[1].clientY
-                );
-                const scale = dist / flowerPinchDist;
-                flowerZoom = Math.min(3.0, Math.max(0.75, Math.round(flowerPinchStartZoom * scale * 100) / 100));
-                applyFlowerTransform();
-            }
-        }, { passive: false });
+        window.addEventListener('pointerup', handleStudioPointerUp);
+        window.addEventListener('pointercancel', handleStudioPointerUp);
 
         /**
          * Crops the non-empty bounding box of the user's flower drawing on flowerPadCanvas

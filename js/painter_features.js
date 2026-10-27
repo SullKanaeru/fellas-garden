@@ -375,6 +375,17 @@
         liveStroke = null;
     }
 
+    function cancelRecordingStroke() {
+        if (currentRecordingStroke) {
+            const idx = recordedFlowerStrokes.indexOf(currentRecordingStroke);
+            if (idx !== -1) {
+                recordedFlowerStrokes.splice(idx, 1);
+            }
+        }
+        currentRecordingStroke = null;
+        liveStroke = null;
+    }
+
     // =========================================================================
     // 2. STUDIO TIMELAPSE REPLAY & GARDEN PLANTING TIMELAPSE
     // =========================================================================
@@ -2406,6 +2417,7 @@
     window.startRecordingStroke = startRecordingStroke;
     window.appendRecordingStrokePoint = appendRecordingStrokePoint;
     window.endRecordingStroke = endRecordingStroke;
+    window.cancelRecordingStroke = cancelRecordingStroke;
     window.resetPadPainterMetadata = resetPadPainterMetadata;
     window.replayStudioTimelapse = replayStudioTimelapse;
     window.attachPainterDataToNewFlower = attachPainterDataToNewFlower;

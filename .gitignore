@@ -13,3 +13,6 @@ Desktop.ini
 inspect_audio.js
 
 .vercel
+
+.vercel
+.env*
