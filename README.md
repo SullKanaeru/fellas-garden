@@ -13,6 +13,11 @@
   [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](#)
   [![Tone.js Audio](https://img.shields.io/badge/Audio-Tone.js-green?style=for-the-badge)](#)
 
+  <br/><br/>
+
+  > 💐 **Dedikasi Spesial**: Proyek ini dibuat dan dipersembahkan secara khusus untuk teman saya, **Fella**.<br/>
+  > Semoga kebun virtual yang damai ini selalu bisa menjadi tempat beristirahat sejenak, melepas penat, dan menghadirkan senyuman hangat di setiap harimu. 🌸✨
+
 </div>
 
 ---
@@ -173,6 +178,7 @@ Proyek ini dirilis di bawah lisensi [MIT License](LICENSE). Anda bebas untuk mem
 ---
 
 <div align="center">
-  Dibuat dengan penuh ❤️ dan kehangatan untuk menemani hari-harimu.<br/>
+  Dibuat dengan penuh ❤️ dan kehangatan, dipersembahkan secara istimewa untuk <b>Fella</b> 🌸<br/>
+  <i>Semoga harimu selalu mekar seindah dan sehangat bunga-bunga di kebun ini.</i><br/><br/>
   <b><a href="https://fellas-garden.vercel.app">🌸 Mainkan Fella's Garden Sekarang 🌸</a></b>
 </div>
